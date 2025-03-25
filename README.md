@@ -22,11 +22,6 @@ The core idea revolves around:
 - Simulate a **stateful system** with complex internal logic.
 - Trigger **animated auxiliary systems**, alarms, or shifting states in response to changes.
 - Develop a **startup and shutdown sequence** for immersion.
-- Use this project to **learn and practice**:
-  - **React**
-  - **TypeScript**
-  - **Node.js** (future backend and Discord integration)
-  - Optionally PostgreSQL (in a future persistent version)
 
 ---
 
@@ -117,24 +112,6 @@ The core idea revolves around:
 - [ ] Add theming (retro-futuristic or brutalist industrial)
 - [ ] (Optional) Add Discord bot integration
 - [ ] (Optional) Persist historical logs via Node/PostgreSQL
-
----
-
-## 📦 Folder Structure (Planned)
-
-```
-/reactor
-  /src
-    /components
-    /state
-    /systems
-    /ui
-    App.tsx
-    main.tsx
-  /public
-  tailwind.config.ts
-  index.html
-```
 
 ---
 
