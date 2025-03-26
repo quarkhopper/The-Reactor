@@ -15,7 +15,7 @@ interface PanelButtonProps {
   color: ButtonColor;
 }
 
-export function PanelButton({
+export default function PanelButton({
   x,
   y,
   label,
@@ -26,6 +26,16 @@ export function PanelButton({
 
   useEffect(() => {
     console.log('Mounted PanelButton:', { x, y, label, topLabel, color });
+  
+    const el = document.getElementById('test-button');
+    const parent = el?.parentElement;
+  
+    if (parent) {
+      const parentBox = parent.getBoundingClientRect();
+      console.log('PARENT BOUNDS:', parentBox);
+    } else {
+      console.warn('No parent found for PanelButton!');
+    }
   }, []);
 
   const glowMap: Record<ButtonColor, string> = {
@@ -37,14 +47,17 @@ export function PanelButton({
 
   return (
     <div
+      id="test-button"
       className="absolute z-50 border border-red-500 bg-black"
       style={{
         top: `${y}%`,
         left: `${x}%`,
-        transform: 'translate(-50%, -50%)',
         width: '60px',
         height: 'auto',
+        outline: '2px solid lime',
+        background: 'black',
       }}
+      
       onClick={() => setIsOn((prev) => !prev)}
     >
       <div className="text-white text-[10px] font-mono bg-black bg-opacity-60 px-1 text-center absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none">
