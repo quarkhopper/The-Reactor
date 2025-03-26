@@ -1,11 +1,22 @@
 import emptyPanel from "/src/images/empty_panel.png";
+import { ReactNode } from "react";
+import "../css/components/Panel.css";
 
-export default function Panel() {
+interface PanelProps {
+  children?: ReactNode;
+}
+
+export default function Panel({ children }: PanelProps) {
   return (
-    <img
-      src={emptyPanel}
-      alt="Empty Panel"
-      className="absolute inset-0 object-cover w-full h-full z-0"
-    />
+    <div className="panel">
+      <img
+        src={emptyPanel}
+        alt="Empty Panel"
+        className="panel-background"
+      />
+      <div className="panel-content">
+        {children}
+      </div>
+    </div>
   );
 }

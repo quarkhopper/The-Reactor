@@ -1,0 +1,44 @@
+.panel-button-wrapper {
+    position: absolute;
+    transform: translate(-50%, -50%);
+  }
+  
+  .panel-button-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    user-select: none;
+    cursor: pointer;
+    width: 36px; /* scaled-down size */
+  }
+  
+  .panel-button-img {
+    width: 100%;
+    height: auto;
+    transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
+    box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.8);
+  }
+  
+  .panel-button-img.pressed {
+    transform: scale(0.9); /* relative to container size */
+    box-shadow: none;
+  }
+  
+  .panel-button-label,
+  .panel-button-top-label {
+    font-size: 10px;
+    font-family: monospace;
+    color: black;
+    font-weight: bold;
+    text-align: center;
+    line-height: 1;
+  }
+  
+  .panel-button-top-label {
+    margin-bottom: 4px;
+  }
+  
+  .panel-button-label {
+    margin-top: 2px;
+  }
+  

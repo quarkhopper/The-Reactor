@@ -1,0 +1,25 @@
+.panel {
+    position: relative;
+    width: 900px;
+    height: 600px;
+    margin: 0 auto;
+    border: 4px solid white;
+    overflow: hidden;
+  }
+  
+  .panel-background {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+  }
+  
+  .panel-content {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    height: 100%;
+  }
+  
