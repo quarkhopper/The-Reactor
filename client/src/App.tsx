@@ -2,7 +2,7 @@ import Panel from './components/Panel';
 import ConditionPanel from './components/ConditionPanel';
 import ButtonPanel from './components/ButtonPanel';
 import MasterButton from './components/MasterButton';
-import VerticalMeter from './components/VerticalMeter';
+import MeterRow from './components/MeterRow';
 
 function App() {
   return (
@@ -51,7 +51,19 @@ function App() {
           ]}
         />
         <MasterButton x={120} y={580} />
-        <VerticalMeter x={1200} y={500} value={0.5} />
+        <MeterRow
+          x={540}
+          y={390}
+          columns={5}
+          spacingX={55}
+          meters={[
+            { value: 0.0 },
+            { value: 0.25 },
+            { value: 0.5 },
+            { value: 0.75 },
+            { value: 1.0 },
+          ]}
+        />
       </Panel>
     </div>
   );

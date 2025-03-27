@@ -1,8 +1,8 @@
 .vertical-meter-wrapper {
     position: absolute;
     transform: translate(-50%, -50%);
-    width: 40px;
-    height: calc(40px * 3.58); /* = 214.8px */
+    width: 50px;
+    height: calc(50px * 3.58); /* = 214.8px */
     pointer-events: none;
   }
   
