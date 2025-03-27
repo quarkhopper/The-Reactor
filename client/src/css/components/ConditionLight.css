@@ -1,0 +1,12 @@
+/* client/src/css/components/ConditionLight.css */
+.condition-light-wrapper {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    pointer-events: none; /* if you want it non-interactive */
+  }
+  
+  .condition-light-img {
+    height: auto;
+    display: block;
+  }
+  

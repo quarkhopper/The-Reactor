@@ -1,11 +1,21 @@
 import Panel from './components/Panel';
 import PanelButton from './components/PanelButton';
+import ConditionLight from './components/ConditionLight';
+import ConditionPanel from './components/ConditionPanel';
 
 function App() {
   return (
-    <div className="flex justify-center items-center w-screen h-screen bg-black">
+    <div>
       <Panel>
-        <PanelButton x={50} y={50} color="green" label="LAUNCH" />
+      <ConditionPanel
+        x={750}
+        y={170}
+        width={1450}
+        rows={2}
+        columns={5}
+        values={[
+        ]}
+      />
       </Panel>
     </div>
   );
