@@ -2,6 +2,7 @@ import Panel from './components/Panel';
 import ConditionPanel from './components/ConditionPanel';
 import ButtonPanel from './components/ButtonPanel';
 import MasterButton from './components/MasterButton';
+import VerticalMeter from './components/VerticalMeter';
 
 function App() {
   return (
@@ -50,6 +51,7 @@ function App() {
           ]}
         />
         <MasterButton x={120} y={580} />
+        <VerticalMeter x={1200} y={500} value={0.5} />
       </Panel>
     </div>
   );
