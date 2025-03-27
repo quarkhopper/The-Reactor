@@ -1,0 +1,21 @@
+/* client/src/css/components/MasterButton.css */
+.master-button-wrapper {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    width: 150px; /* scale as needed */
+    height: 150px;
+    cursor: pointer;
+    outline: none;           /* <- disables outline */
+    -webkit-tap-highlight-color: transparent; /* <- disables blue on mobile */
+  }
+    
+  .master-button-img,
+  .master-button-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+  

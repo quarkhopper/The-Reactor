@@ -36,34 +36,24 @@ export default function PanelButton({
   return (
     <div
       className="panel-button-wrapper"
-      style={{
-        top: `${y}%`,
-        left: `${x}%`,
-      }}
+      style={{ top: `${y}px`, left: `${x}px` }}
     >
-      <div
-        className="panel-button-inner"
+      {topLabel && (
+        <div className="panel-button-top-label">{topLabel}</div>
+      )}
+      <img
+        src={isOn ? glowMap[color] : offImg}
+        alt="Panel Button"
+        className={`panel-button-img ${isPressed ? 'pressed' : ''}`}
         onMouseDown={() => setIsPressed(true)}
         onMouseUp={() => {
           setIsPressed(false);
           setIsOn((prev) => !prev);
         }}
         onMouseLeave={() => setIsPressed(false)}
-      >
-        {topLabel && (
-          <div className="panel-button-top-label">{topLabel}</div>
-        )}
-
-        <img
-          src={isOn ? glowMap[color] : offImg}
-          alt="Panel Button"
-          className={`panel-button-img ${isPressed ? 'pressed' : ''}`}
-        />
-
-        {label && (
-          <div className="panel-button-label">{label}</div>
-        )}
-      </div>
+      />
+      {label && <div className="panel-button-label">{label}</div>}
     </div>
   );
 }
+

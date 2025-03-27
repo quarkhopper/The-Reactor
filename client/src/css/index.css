@@ -63,3 +63,21 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* Remove outline only for mouse users */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Prevent blue highlight flash on mobile Safari/Chrome */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-focus-ring-color: transparent;
+}
+
+/* Disable selection globally */
+* {
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
