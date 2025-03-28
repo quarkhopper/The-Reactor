@@ -24,10 +24,15 @@ export default function KnobPanel({
 }: KnobPanelProps) {
   const spacingX = width / (columns - 1);
   const spacingY = 80;
+  const total = rows * columns;
+
+  const filledValues = Array.from({ length: total }, (_, i) =>
+    values[i] ?? { leftLabel: '', rightLabel: '' }
+  );
 
   return (
     <>
-      {values.map((val, idx) => {
+      {filledValues.map((val, idx) => {
         const col = idx % columns;
         const row = Math.floor(idx / columns);
         const px = x + col * spacingX;

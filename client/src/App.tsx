@@ -111,17 +111,6 @@ function App() {
             { leftLabel: 'LOW',   rightLabel: 'HIGH' },
             { leftLabel: 'COOL',  rightLabel: 'HEAT' },
             { leftLabel: 'MAN',   rightLabel: 'AUTO' },
-            { leftLabel: 'OPEN',  rightLabel: 'CLOSE' },
-            { leftLabel: 'IDLE',  rightLabel: 'RUN' },
-            { leftLabel: 'SAFE',  rightLabel: 'ARM' },
-            { leftLabel: 'IN',    rightLabel: 'OUT' },
-            { leftLabel: 'LOW',   rightLabel: 'FULL' },
-            { leftLabel: 'LOCK',  rightLabel: 'FREE' },
-            { leftLabel: 'AUX',   rightLabel: 'MAIN' },
-            { leftLabel: 'ENG',   rightLabel: 'AUX' },
-            { leftLabel: 'IN',    rightLabel: 'OUT' },
-            { leftLabel: 'LOW',   rightLabel: 'FULL' },
-            { leftLabel: 'LOCK',  rightLabel: 'FREE' },
           ]}
         />
         <ButtonPanel
@@ -176,15 +165,6 @@ function App() {
             { color: 'red', label: 'B3' },
             { color: 'amber', label: 'B4' },
             { color: 'white', label: 'C1' },
-            { color: 'green', label: 'C2' },
-            { color: 'off', label: 'C3' },
-            { color: 'red', label: 'C4' },
-            { color: 'off', label: 'C3' },
-            { color: 'red', label: 'C4' },
-            { color: 'red', label: 'C4' },
-            { color: 'off', label: 'C3' },
-            { color: 'red', label: 'C4' },
-            { color: 'red', label: 'C4' },
           ]}
         />
 

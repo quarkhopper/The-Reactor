@@ -25,9 +25,15 @@ export default function LightPanel({
   ySpacing = 60,
   values,
 }: LightPanelProps) {
+  const total = rows * columns;
+
+  const filledValues = Array.from({ length: total }, (_, i) =>
+    values[i] ?? { color: 'off' }
+  );
+
   return (
     <>
-      {values.map((entry, i) => {
+      {filledValues.map((entry, i) => {
         const row = Math.floor(i / columns);
         const col = i % columns;
         return (
