@@ -1,0 +1,21 @@
+/* client/src/css/components/ScramButton.css */
+.scram-button-wrapper {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    width: 150px;
+    height: 150px;
+    cursor: pointer;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .scram-button-img,
+  .scram-button-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+  

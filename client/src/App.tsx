@@ -2,6 +2,7 @@ import Panel from './components/Panel';
 import ConditionPanel from './components/ConditionPanel';
 import ButtonPanel from './components/ButtonPanel';
 import MasterButton from './components/MasterButton';
+import ScramButton from './components/ScramButton';
 import MeterRow from './components/MeterRow';
 
 function App() {
@@ -51,6 +52,7 @@ function App() {
           ]}
         />
         <MasterButton x={120} y={580} />
+        <ScramButton x={280} y={580} />
         <MeterRow
           x={540}
           y={390}
