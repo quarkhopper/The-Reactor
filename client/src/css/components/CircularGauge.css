@@ -1,0 +1,39 @@
+.circular-gauge-wrapper {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  height: 300px;
+  pointer-events: none;
+}
+
+.circular-gauge {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.circular-gauge img {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.gauge-card {
+  z-index: 1;
+}
+
+.gauge-needle {
+  z-index: 2;
+  
+  transform-origin: 50% 55%; /* Estimated needle pivot — adjust as needed */
+  transition: transform 0.2s ease-out;
+}
+
+.gauge-light {
+  z-index: 3;
+}
+
+.gauge-bezel {
+  z-index: 4;
+}

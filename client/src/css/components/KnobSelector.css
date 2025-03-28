@@ -1,0 +1,32 @@
+.knob-selector-wrapper {
+    position: absolute;
+    width: 64px;
+    height: 64px;
+    transform: translate(-50%, -50%);
+  }
+  
+  .knob-selector-img {
+    width: 100%;
+    height: auto;
+    cursor: pointer;
+    display: block;
+  }
+  
+  .knob-label {
+    position: absolute;
+    font-size: 10px;
+    font-family: monospace;
+    font-weight: bold;
+    color: black;
+  }
+  
+  .knob-label.left {
+    top: -12px;
+    left: -10px;
+  }
+  
+  .knob-label.right {
+    top: -12px;
+    right: -10px;
+  }
+  
