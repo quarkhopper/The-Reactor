@@ -1,0 +1,42 @@
+.indicator-light-wrapper {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 48px;
+  /* Removed height to allow overflow */
+}
+
+.indicator-light-img {
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+  display: block;
+  margin: 0 auto;
+}
+
+.indicator-light-label {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translate(-50%, 0);
+  margin-top: 0px;
+  font-size: 10px;
+  font-family: monospace;
+  font-weight: bold;
+  color: black;
+  pointer-events: none;
+  text-align: center;
+}
+
+.indicator-light-top-label {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translate(-50%, 0);
+  margin-bottom: 4px;
+  font-size: 10px;
+  font-family: monospace;
+  font-weight: bold;
+  color: black;
+  pointer-events: none;
+  text-align: center;
+}

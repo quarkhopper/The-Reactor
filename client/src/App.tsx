@@ -5,6 +5,8 @@ import MasterButton from './components/MasterButton';
 import ScramButton from './components/ScramButton';
 import MeterRow from './components/MeterRow';
 import DigitalDisplayPanel from './components/DigitalDisplayPanel';
+import LightPanel from './components/LightPanel'; // Make sure the path is correct!
+
 
 function App() {
   return (
@@ -92,6 +94,32 @@ function App() {
             { value: 0.02, label: 'RDN' },
             { value: 0.31, label: 'ALT' },
             { value: 0.95, label: 'AMP' },
+          ]}
+        />
+        <LightPanel
+          x={850}
+          y={350}
+          rows={4}
+          columns={4}
+          xSpacing={60}
+          ySpacing={60}
+          values={[
+            { color: 'red', label: 'A1' },
+            { color: 'green', label: 'A2' },
+            { color: 'amber', label: 'A3' },
+            { color: 'white', label: 'A4' },
+            { color: 'green', label: 'B1' },
+            { color: 'off', label: 'B2' },
+            { color: 'red', label: 'B3' },
+            { color: 'amber', label: 'B4' },
+            { color: 'white', label: 'C1' },
+            { color: 'green', label: 'C2' },
+            { color: 'off', label: 'C3' },
+            { color: 'red', label: 'C4' },
+            { color: 'amber', label: 'D1' },
+            { color: 'white', label: 'D2' },
+            { color: 'green', label: 'D3' },
+            { color: 'off', label: '' },
           ]}
         />
       </Panel>
