@@ -6,6 +6,8 @@ import ScramButton from './components/ScramButton';
 import MeterRow from './components/MeterRow';
 import DigitalDisplayPanel from './components/DigitalDisplayPanel';
 import LightPanel from './components/LightPanel';
+import IndicatorLight from './components/IndicatorLight';
+import KnobSelector from './components/KnobSelector';
 import KnobPanel from './components/KnobPanel';
 import CircularGauge from './components/CircularGauge';
 
@@ -33,77 +35,12 @@ function App() {
             { color: 'white', label: '' },
           ]}
         />
-
-
-        <ButtonPanel
-          x={200}
-          y={400}
-          rows={3}
-          columns={4}
-          spacingX={80}
-          spacingY={60}
-          values={[
-            { label: 'A1', color: 'green' },
-            { label: 'A2', color: 'amber' },
-            { label: 'A3', color: 'red' },
-            { label: 'B1', color: 'white' },
-            { label: 'B2', color: 'green' },
-            { label: 'B3', color: 'amber' },
-          ]}
-        />
-        <MasterButton x={120} y={580} />
-        <ScramButton x={280} y={580} />
-        <ButtonPanel
-          x={200}
-          y={770}
-          rows={3}
-          columns={4}
-          spacingX={80}
-          spacingY={60}
-          values={[
-            { label: 'A1', color: 'green' },
-            { label: 'A2', color: 'amber' },
-            { label: 'A3', color: 'red' },
-            { label: 'B1', color: 'white' },
-            { label: 'B2', color: 'green' },
-            { label: 'B3', color: 'amber' },
-          ]}
-        />
-        <ButtonPanel
-        x={520}
-        y={900}
-        rows={1}
-        columns={12}
-        spacingX={80}
-        spacingY={60}
-        values={[
-          { label: 'A1', color: 'green' },
-          { label: 'A2', color: 'amber' },
-          { label: 'A3', color: 'red' },
-          { label: 'B1', color: 'white' },
-          { label: 'B2', color: 'green' },
-          { label: 'B3', color: 'amber' },
-        ]}
-        />
-        <MeterRow
-          x={540}
-          y={390}
-          columns={5}
-          spacingX={55}
-          meters={[
-            { value: 0.0 },
-            { value: 0.25 },
-            { value: 0.5 },
-            { value: 0.75 },
-            { value: 1.0 },
-          ]}
-        />
         <DigitalDisplayPanel
-          x={780}
+          x={58}
           y={340}
-          columns={3}
-          rows={4}
-          spacingX={120}
+          columns={12}
+          rows={1}
+          spacingX={126}
           spacingY={150}
           values={[
             { value: 0.25, label: 'PWR' },
@@ -120,12 +57,114 @@ function App() {
             { value: 0.95, label: 'AMP' },
           ]}
         />
-        <LightPanel
-          x={1130}
+        <ButtonPanel
+          x={280}
+          y={680}
+          rows={8}
+          columns={6}
+          spacingX={90}
+          spacingY={70}
+          values={[
+            { label: 'A1', color: 'green' },
+            { label: 'A2', color: 'amber' },
+            { label: 'A3', color: 'red' },
+            { label: 'B1', color: 'white' },
+            { label: 'B2', color: 'green' },
+            { label: 'B3', color: 'amber' },
+            { label: 'A1', color: 'green' },
+            { label: 'A2', color: 'amber' },
+            { label: 'A3', color: 'red' },
+            { label: 'B1', color: 'white' },
+            { label: 'B2', color: 'green' },
+            { label: 'B3', color: 'amber' },
+          ]}
+        />
+
+       <MeterRow
+          x={750}
+          y={480}
+          columns={5}
+          spacingX={55}
+          meters={[
+            { value: 0.0 },
+            { value: 0.25 },
+            { value: 0.5 },
+            { value: 0.75 },
+            { value: 1.0 },
+          ]}
+        />
+        <CircularGauge x={750} y={690} value={1} limit={0.8} />
+        <KnobSelector x={620} y={625} leftLabel='PZ' rightLabel='RZ' />
+        <KnobSelector x={880} y={625} leftLabel='X^2' rightLabel='DIV' />
+        <IndicatorLight x={630} y={750} color='red' label='OPR' />
+        <IndicatorLight x={870} y={750} color='red' label='OPR' />
+        <MasterButton x={670} y={880} />
+        <ScramButton x={830} y={880} />
+        <KnobPanel
+          x={990}
+          y={440}
+          width={430}
+          rows={3}
+          columns={5}
+          values={[
+            { leftLabel: 'OFF',   rightLabel: 'ON' },
+            { leftLabel: 'LOW',   rightLabel: 'HIGH' },
+            { leftLabel: 'COOL',  rightLabel: 'HEAT' },
+            { leftLabel: 'MAN',   rightLabel: 'AUTO' },
+            { leftLabel: 'OPEN',  rightLabel: 'CLOSE' },
+            { leftLabel: 'IDLE',  rightLabel: 'RUN' },
+            { leftLabel: 'SAFE',  rightLabel: 'ARM' },
+            { leftLabel: 'IN',    rightLabel: 'OUT' },
+            { leftLabel: 'LOW',   rightLabel: 'FULL' },
+            { leftLabel: 'LOCK',  rightLabel: 'FREE' },
+            { leftLabel: 'AUX',   rightLabel: 'MAIN' },
+            { leftLabel: 'ENG',   rightLabel: 'AUX' },
+            { leftLabel: 'IN',    rightLabel: 'OUT' },
+            { leftLabel: 'LOW',   rightLabel: 'FULL' },
+            { leftLabel: 'LOCK',  rightLabel: 'FREE' },
+          ]}
+        />
+        <ButtonPanel
+          x={1205}
           y={670}
-          rows={4}
-          columns={4}
-          xSpacing={100}
+          rows={1}
+          columns={6}
+          spacingX={87}
+          spacingY={70}
+          values={[
+            { label: 'A1', color: 'green' },
+            { label: 'A2', color: 'amber' },
+            { label: 'A3', color: 'red' },
+            { label: 'B1', color: 'white' },
+            { label: 'B2', color: 'green' },
+            { label: 'B3', color: 'amber' },
+            { label: 'A1', color: 'green' },
+            { label: 'A2', color: 'amber' },
+            { label: 'A3', color: 'red' },
+            { label: 'B1', color: 'white' },
+            { label: 'B2', color: 'green' },
+            { label: 'B3', color: 'amber' },
+          ]}
+        />
+        <DigitalDisplayPanel
+          x={988}
+          y={750}
+          columns={1}
+          rows={3}
+          spacingX={126}
+          spacingY={80}
+          values={[
+            { value: 0.25, label: 'PWR' },
+            { value: 0.57, label: 'TMP' },
+            { value: 0.88, label: 'FLX' },
+          ]}
+        />
+        <LightPanel
+          x={1075}
+          y={740}
+          rows={3}
+          columns={6}
+          xSpacing={70}
           ySpacing={80}
           values={[
             { color: 'red', label: 'A1' },
@@ -140,34 +179,16 @@ function App() {
             { color: 'green', label: 'C2' },
             { color: 'off', label: 'C3' },
             { color: 'red', label: 'C4' },
-            { color: 'amber', label: 'D1' },
-            { color: 'white', label: 'D2' },
-            { color: 'green', label: 'D3' },
-            { color: 'off', label: '' },
+            { color: 'off', label: 'C3' },
+            { color: 'red', label: 'C4' },
+            { color: 'red', label: 'C4' },
+            { color: 'off', label: 'C3' },
+            { color: 'red', label: 'C4' },
+            { color: 'red', label: 'C4' },
           ]}
         />
-        <KnobPanel
-          x={1130}
-          y={350}
-          width={300}
-          rows={4}
-          columns={3}
-          values={[
-            { leftLabel: 'OFF',   rightLabel: 'ON' },
-            { leftLabel: 'LOW',   rightLabel: 'HIGH' },
-            { leftLabel: 'COOL',  rightLabel: 'HEAT' },
-            { leftLabel: 'MAN',   rightLabel: 'AUTO' },
-            { leftLabel: 'OPEN',  rightLabel: 'CLOSE' },
-            { leftLabel: 'IDLE',  rightLabel: 'RUN' },
-            { leftLabel: 'SAFE',  rightLabel: 'ARM' },
-            { leftLabel: 'IN',    rightLabel: 'OUT' },
-            { leftLabel: 'LOW',   rightLabel: 'FULL' },
-            { leftLabel: 'LOCK',  rightLabel: 'FREE' },
-            { leftLabel: 'AUX',   rightLabel: 'MAIN' },
-            { leftLabel: 'ENG',   rightLabel: 'AUX' }
-          ]}
-        />
-       <CircularGauge x={550} y={670} value={0.81} limit={0.8} />
+
+
       </Panel>
     </div>
   );
