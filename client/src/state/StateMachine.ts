@@ -4,31 +4,53 @@ import { UIEvent, Command, CommandCallback } from './types';
 
 class StateMachine {
   private commandCallbacks: CommandCallback[] = [];
-  private state: Record<string, any> = {}; // internal simulation state
-
-  constructor() {
-    // You could pre-populate state or call this.init()
-  }
+  private state: {
+    powerState: 'off' | 'startup' | 'on' | 'shutdown';
+  } = {
+    powerState: 'off',
+  };
 
   public handleEvent(event: UIEvent) {
     switch (event.type) {
       case 'button_press':
-        this.log(`Button pressed: ${event.id}`);
-        this.setLight(event.id, true);
-        break;
-
-      case 'button_release':
-        this.log(`Button released: ${event.id}`);
-        this.setLight(event.id, false);
-        break;
-
-      case 'knob_turn':
-        this.log(`Knob turned: ${event.id} → ${event.direction}`);
+        if (event.id === 'master') {
+          this.handleMasterButtonPress();
+        }
         break;
 
       case 'init':
         this.log('Initializing state machine');
+        this.setMasterLight(false);
         break;
+    }
+  }
+
+  private handleMasterButtonPress() {
+    const current = this.state.powerState;
+
+    if (current === 'off') {
+      this.log('Powering up → startup');
+      this.state.powerState = 'startup';
+      this.emit({ type: 'start_blinking', id: 'master' });
+
+      setTimeout(() => {
+        this.log('Startup complete → on');
+        this.state.powerState = 'on';
+        this.emit({ type: 'stop_blinking', id: 'master' });
+        this.emit({ type: 'set_button_light', id: 'master', on: true }); // ✅ stays lit
+      }, 5000);
+
+    } else if (current === 'on') {
+      this.log('Powering down → shutdown');
+      this.state.powerState = 'shutdown';
+      this.emit({ type: 'start_blinking', id: 'master' });
+
+      setTimeout(() => {
+        this.log('Shutdown complete → off');
+        this.state.powerState = 'off';
+        this.emit({ type: 'stop_blinking', id: 'master' });
+        this.emit({ type: 'set_button_light', id: 'master', on: false }); // ✅ stays false
+      }, 5000);
     }
   }
 
@@ -42,8 +64,9 @@ class StateMachine {
     }
   }
 
-  private setLight(id: string, on: boolean) {
-    this.emit({ type: 'set_button_light', id, on });
+  private setMasterLight(on: boolean) {
+    console.log(`[EMIT] set_button_light id=master on=${on}`);
+    this.emit({ type: 'set_button_light', id: 'master', on });
   }
 
   private log(msg: string) {
