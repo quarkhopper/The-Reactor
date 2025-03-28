@@ -1,54 +1,51 @@
-// client/src/components/ConditionPanel.tsx
 import React from 'react';
 import ConditionLight from './ConditionLight';
-import '../css/components/ConditionPanel.css';
 
-type ConditionColor = 'off' | 'green' | 'red' | 'amber' | 'white';
-
-interface ConditionPanelProps {
-  x: number;             // center x in px
-  y: number;             // center y in px
-  width: number;         // total width of the grid in px
+export interface ConditionPanelProps {
+  x: number;
+  y: number;
+  width: number;
   rows: number;
   columns: number;
-  values?: ConditionColor[]; // length = rows * columns
+  values: {
+    color: 'red' | 'green' | 'amber' | 'white' | 'off';
+    label?: string;
+  }[];
 }
 
 export default function ConditionPanel({
-    x,
-    y,
-    width,
-    rows,
-    columns,
-    values = [],
-  }: ConditionPanelProps) {
-    const lightWidth = width / columns;
-    const aspectRatio = 707 / 274; // or 2.58
-    const lightHeight = lightWidth / aspectRatio;
-    const totalHeight = lightHeight * rows;
-  
-    const lights = [];
-  
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < columns; col++) {
-        const index = row * columns + col;
-        const color = values[index] ?? 'off';
-  
-        const cx = x - width / 2 + lightWidth * (col + 0.5);
-        const cy = y - totalHeight / 2 + lightHeight * (row + 0.5);
-  
-        lights.push(
+  x,
+  y,
+  width,
+  rows,
+  columns,
+  values,
+}: ConditionPanelProps) {
+  const lightWidth = width / columns;
+  const lightHeight = lightWidth / (707 / 274); // Maintain aspect ratio
+  const totalHeight = lightHeight * rows;
+  const startX = x - width / 2 + lightWidth / 2;
+  const startY = y - totalHeight / 2 + lightHeight / 2;
+
+  return (
+    <>
+      {values.map((entry, index) => {
+        const col = index % columns;
+        const row = Math.floor(index / columns);
+        const cx = startX + col * lightWidth;
+        const cy = startY + row * lightHeight;
+
+        return (
           <ConditionLight
             key={index}
             x={cx}
             y={cy}
             width={lightWidth}
-            color={color}
+            color={entry.color}
+            label={entry.label}
           />
         );
-      }
-    }
-  
-    return <>{lights}</>;
-  }
-  
+      })}
+    </>
+  );
+}

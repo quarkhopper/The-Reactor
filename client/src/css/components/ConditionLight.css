@@ -1,12 +1,27 @@
-/* client/src/css/components/ConditionLight.css */
 .condition-light-wrapper {
-    position: absolute;
-    transform: translate(-50%, -50%);
-    pointer-events: none; /* if you want it non-interactive */
-  }
-  
-  .condition-light-img {
-    height: auto;
-    display: block;
-  }
-  
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  width: 100%;
+  height: auto;
+}
+
+.condition-light-img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.condition-light-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  font-weight: bold;
+  color: black;
+  text-align: center;
+  width: 100%;
+  pointer-events: none;
+  user-select: none;
+}

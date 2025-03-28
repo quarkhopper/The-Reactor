@@ -17,8 +17,19 @@ function App() {
           rows={2}
           columns={5}
           values={[
+            { color: 'red', label: 'SCRAM' },
+            { color: 'green', label: 'POWER' },
+            { color: 'amber', label: 'FAULT' },
+            { color: 'white', label: 'COOL' },
+            { color: 'off', label: 'STANDBY' },
+            { color: 'green', label: 'RUN' },
+            { color: 'amber', label: 'WARN' },
+            { color: 'red', label: 'LOCKED' },
+            { color: 'off', label: 'AUX' },
+            { color: 'white', label: '' },
           ]}
         />
+
         {/* bottom row */}
         <ButtonPanel
           x={500}
