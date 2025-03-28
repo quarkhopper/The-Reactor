@@ -4,6 +4,7 @@ import ButtonPanel from './components/ButtonPanel';
 import MasterButton from './components/MasterButton';
 import ScramButton from './components/ScramButton';
 import MeterRow from './components/MeterRow';
+import DigitalDisplayPanel from './components/DigitalDisplayPanel';
 
 function App() {
   return (
@@ -64,6 +65,22 @@ function App() {
             { value: 0.5 },
             { value: 0.75 },
             { value: 1.0 },
+          ]}
+        />
+        <DigitalDisplayPanel
+          x={730}
+          y={340}
+          columns={1}
+          rows={4}
+          spacingX={70}
+          spacingY={80}
+          values={[
+            { value: 0.25, label: 'PWR' },
+            { value: 0.57, label: 'TMP' },
+            { value: 0.88, label: 'FLX' },
+            { value: 0.02, label: 'RDN' },
+            { value: 0.31, label: 'ALT' },
+            { value: 0.95, label: 'AMP' },
           ]}
         />
       </Panel>

@@ -1,0 +1,42 @@
+/* client/src/css/components/DigitalDisplay.css */
+.digital-display-wrapper {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column; /* 👈 stack vertically */
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+  }
+  
+  
+  .digit {
+    height: 100%;
+    image-rendering: crisp-edges;
+    user-select: none;
+    pointer-events: none;
+  }
+  
+  .digit-left,
+  .digit-right {
+    height: 60px; /* or whatever looks good */
+  }
+
+  .digits-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .digital-label {
+    margin-top: 2px;
+    font-size: 12px;
+    height: 16px; /* or enough for one line of text */
+    color: white;
+    text-align: center;
+    font-family: monospace;
+    pointer-events: none;
+  }
+  
+  
+  
