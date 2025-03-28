@@ -24,4 +24,16 @@
   width: 100%;
   pointer-events: none;
   user-select: none;
+  z-index: 2;
+}
+
+.condition-light-shine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+  z-index: 3;
 }

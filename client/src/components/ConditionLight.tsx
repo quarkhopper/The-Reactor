@@ -6,6 +6,7 @@ import red from '../images/condition_red.png';
 import green from '../images/condition_green.png';
 import amber from '../images/condition_amber.png';
 import white from '../images/condition_white.png';
+import shine from '../images/condition_shine.png';
 
 type ConditionColor = 'off' | 'red' | 'green' | 'amber' | 'white';
 
@@ -43,6 +44,11 @@ export default function ConditionLight({
         className="condition-light-img"
       />
       {label && <div className="condition-light-label">{label}</div>}
+      <img
+        src={shine}
+        alt="shine overlay"
+        className="condition-light-shine"
+      />
     </div>
   );
 }
