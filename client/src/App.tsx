@@ -1,6 +1,7 @@
 import Panel from './components/Panel';
 import ConditionPanel from './components/ConditionPanel';
 import ButtonPanel from './components/ButtonPanel';
+import SliderRow from './components/SliderRow';
 import MasterButton from './components/MasterButton';
 import ScramButton from './components/ScramButton';
 import MeterRow from './components/MeterRow';
@@ -59,11 +60,11 @@ function App() {
         />
         <ButtonPanel
           x={280}
-          y={680}
-          rows={8}
+          y={570}
+          rows={6}
           columns={6}
           spacingX={90}
-          spacingY={70}
+          spacingY={60}
           values={[
             { label: 'A1', color: 'green' },
             { label: 'A2', color: 'amber' },
@@ -79,7 +80,16 @@ function App() {
             { label: 'B3', color: 'amber' },
           ]}
         />
-
+        <SliderRow
+          x={280}
+          y={850}
+          columns={8}
+          spacingX={65}
+          height={200}
+          onChange={(i, v) => {
+            console.log(`Slider ${i} = ${v.toFixed(2)}`);
+          }}
+        />
        <MeterRow
           x={750}
           y={480}
@@ -167,8 +177,6 @@ function App() {
             { color: 'white', label: 'C1' },
           ]}
         />
-
-
       </Panel>
     </div>
   );

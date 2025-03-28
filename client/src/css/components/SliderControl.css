@@ -1,0 +1,26 @@
+.slider-control-wrapper {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+  
+    /* Force aspect ratio */
+    aspect-ratio: 113 / 462;
+    height: 200px; /* or make this a prop if needed */
+  }
+  
+  .slider-base {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(4px 4px 6px rgba(0, 0, 0, 0.5)); /* Adjust values as needed */
+  }
+  
+  .slider-knob {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    pointer-events: none;
+    filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.5)); /* Adjust values as needed */
+  }
+  
+  
