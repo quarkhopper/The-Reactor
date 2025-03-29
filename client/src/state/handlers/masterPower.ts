@@ -20,4 +20,16 @@ export function handleMasterPower() {
     });
     window.dispatchEvent(event);
   }
+  else if (state === 'startup') {
+    stateMachine.setAppState('on');
+    stateMachine.log('Startup complete. System is now on.');
+  }
+  else if (state === 'on') {
+    stateMachine.setAppState('shutdown');
+    stateMachine.log('Shutdown initiated.');
+  }
+  else if (state === 'shutdown') {
+    stateMachine.setAppState('off');
+    stateMachine.log('Shutdown complete. System is now off.');
+  }
 }

@@ -20,9 +20,7 @@ export type Command =
   | { type: 'button_press'; id: string };
 
 export type AppState = 'off' | 'init' | 'startup' | 'on' | 'shutdown';
-
 export type ConditionColor = 'red' | 'green' | 'amber' | 'white' | 'off';
-
 export type CommandCallback = (command: Command) => void;
 
 export interface StateMachineAPI {
