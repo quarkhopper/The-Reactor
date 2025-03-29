@@ -27,33 +27,37 @@ class StateMachine {
 
   private handleMasterButtonPress() {
     const current = this.state.powerState;
-
+  
     if (current === 'off') {
       this.log('Powering up → startup');
       this.state.powerState = 'startup';
       this.emit({ type: 'start_blinking', id: 'master' });
-
+      this.setConditionColor('POWER', 'amber');
+  
       setTimeout(() => {
         this.log('Startup complete → on');
         this.state.powerState = 'on';
         this.emit({ type: 'stop_blinking', id: 'master' });
-        this.emit({ type: 'set_button_light', id: 'master', on: true }); // ✅ stays lit
+        this.setMasterLight(true);
+        this.setConditionColor('POWER', 'green');
       }, 5000);
-
+  
     } else if (current === 'on') {
       this.log('Powering down → shutdown');
       this.state.powerState = 'shutdown';
       this.emit({ type: 'start_blinking', id: 'master' });
-
+      this.setConditionColor('POWER', 'amber');
+  
       setTimeout(() => {
         this.log('Shutdown complete → off');
         this.state.powerState = 'off';
         this.emit({ type: 'stop_blinking', id: 'master' });
-        this.emit({ type: 'set_button_light', id: 'master', on: false }); // ✅ stays false
+        this.setMasterLight(false);
+        this.setConditionColor('POWER', 'off');
       }, 5000);
     }
   }
-
+  
   public subscribe(callback: CommandCallback) {
     this.commandCallbacks.push(callback);
   }
@@ -67,6 +71,23 @@ class StateMachine {
   private setMasterLight(on: boolean) {
     console.log(`[EMIT] set_button_light id=master on=${on}`);
     this.emit({ type: 'set_button_light', id: 'master', on });
+  }
+
+  private setConditionColor(label: string, color: 'red' | 'green' | 'amber' | 'white' | 'off') {
+    console.log(`[EMIT] set_condition_color label=${label} color=${color}`);
+    this.emit({
+      type: 'set_condition_color',
+      id: `cond_${label}`, // ✅ new: derived id
+      label,
+      color,
+    });
+  }
+  
+  public unsubscribe(callback: CommandCallback) {
+    const index = this.commandCallbacks.indexOf(callback);
+    if (index !== -1) {
+      this.commandCallbacks.splice(index, 1);
+    }
   }
 
   private log(msg: string) {

@@ -13,7 +13,10 @@ export type UIEvent =
   | { type: 'start_blinking'; id: string }
   | { type: 'stop_blinking'; id: string }
   | { type: 'set_indicator'; id: string; color: string; label?: string }
-  | { type: 'set_condition_color'; label: string; color: 'red' | 'green' | 'amber' | 'white' | 'off' }; // ✅ NEW
+  | { type: 'set_condition_color'; id: string; label: string; color: 'red' | 'green' | 'amber' | 'white' | 'off' }
+  | { type: 'state_change'; id: string; state: AppState };
 
+export type AppState = 'off' | 'startup' | 'on' | 'shutdown';
+export type ConditionColor = 'red' | 'green' | 'amber' | 'white' | 'off';
 
 export type CommandCallback = (command: Command) => void;
