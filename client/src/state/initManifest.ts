@@ -67,7 +67,9 @@ const initComponentIds = [
   'panel_btn_strip_0', 'panel_btn_strip_1', 'panel_btn_strip_2',
   'panel_btn_strip_3', 'panel_btn_strip_4', 'panel_btn_strip_5',
 
-  
+  'scram',
+
+  'meter_0', 'meter_1', 'meter_2', 'meter_3', 'meter_4',
 ];
 
 export default initComponentIds;

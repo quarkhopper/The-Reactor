@@ -22,6 +22,7 @@ export default function MeterBlock() {
         return (
           <VerticalMeter
             key={`meter-${index}`}
+            id={`meter_${index}`}
             x={cx}
             y={baseY}
             value={meter.value}
