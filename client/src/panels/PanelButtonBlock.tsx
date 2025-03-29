@@ -18,12 +18,6 @@ export default function PanelButtonBlock() {
     { label: 'B1', color: 'white' },
     { label: 'B2', color: 'green' },
     { label: 'B3', color: 'amber' },
-    { label: 'A1', color: 'green' },
-    { label: 'A2', color: 'amber' },
-    { label: 'A3', color: 'red' },
-    { label: 'B1', color: 'white' },
-    { label: 'B2', color: 'green' },
-    { label: 'B3', color: 'amber' },
   ];
 
   for (let i = 0; i < gridRows; i++) {
@@ -35,6 +29,7 @@ export default function PanelButtonBlock() {
       buttons.push(
         <PanelButton
           key={`grid-${index}`}
+          id={`panel_btn_grid_${index}`}
           x={x}
           y={y}
           color={def.color as ButtonColor}
@@ -65,6 +60,7 @@ export default function PanelButtonBlock() {
     buttons.push(
       <PanelButton
         key={`strip-${i}`}
+        id={`panel_btn_strip_${i}`}
         x={x}
         y={y}
         color={def.color as ButtonColor}

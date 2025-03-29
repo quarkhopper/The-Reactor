@@ -6,8 +6,8 @@ export default function IndicatorLightBlock() {
 
   // Individual OPR lights
   lights.push(
-    <IndicatorLight key="opr-left" x={630} y={750} color="red" label="OPR" />,
-    <IndicatorLight key="opr-right" x={870} y={750} color="red" label="OPR" />
+    <IndicatorLight key="opr-left" id="blink_opr_left" x={630} y={750} color="red" label="OPR" />,
+    <IndicatorLight key="opr-right" id="blink_opr_right" x={870} y={750} color="red" label="OPR" />
   );
 
   // Light grid (formerly LightPanel)
@@ -44,6 +44,7 @@ export default function IndicatorLightBlock() {
     lights.push(
       <IndicatorLight
         key={`grid-${i}`}
+        id={`blink_grid_${i}`}
         x={x}
         y={y}
         color={entry.color}

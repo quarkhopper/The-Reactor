@@ -1,16 +1,24 @@
-import SliderRow from '../components/SliderRow';
+import SliderControl from '../components/SliderControl';
 
 export default function SliderBlock() {
-  return (
-    <SliderRow
-      x={280}
-      y={850}
-      columns={8}
-      spacingX={65}
-      height={200}
-      onChange={(i, v) => {
-        console.log(`Slider ${i} = ${v.toFixed(2)}`);
-      }}
-    />
-  );
+  const sliders = [];
+  const baseX = 52;
+  const baseY = 855;
+  const spacingX = 65;
+
+  for (let i = 0; i < 8; i++) {
+    sliders.push(
+      <SliderControl
+        key={`slider_${i}`}
+        id={`slider_${i}`}
+        x={baseX + i * spacingX}
+        y={baseY}
+        onChange={(value) => {
+          console.log(`Slider ${i} = ${value.toFixed(2)}`);
+        }}
+      />
+    );
+  }
+
+  return <>{sliders}</>;
 }

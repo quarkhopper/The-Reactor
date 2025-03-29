@@ -7,6 +7,7 @@ import glowOff from '../images/master_button_off.png';
 import glowOn from '../images/master_button_on.png';
 
 import stateMachine from '../state/StateMachine';
+import initRegistry from '../state/initRegistry';
 
 interface MasterButtonProps {
   x: number;
@@ -18,16 +19,17 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
   const [blinking, setBlinking] = useState(false);
   const [visible, setVisible] = useState(false);
 
+  // Handle state machine commands
   useEffect(() => {
     stateMachine.subscribe((cmd) => {
       if (cmd.id !== 'master') return;
 
-      console.log('[RECV]', cmd); // Optional debug
+      console.log('[RECV]', cmd);
 
       if (cmd.type === 'set_button_light') {
         setLit(cmd.on);
         setBlinking(false);
-        setVisible(cmd.on); // reset visible to the actual lit state
+        setVisible(cmd.on);
       }
 
       if (cmd.type === 'start_blinking') {
@@ -36,14 +38,14 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
 
       if (cmd.type === 'stop_blinking') {
         setBlinking(false);
-        // ✅ no visible change here; let the blinking effect reset it
       }
     });
   }, []);
 
+  // Blinking animation loop
   useEffect(() => {
     if (!blinking) {
-      setVisible(lit); // ✅ Fix: restore true visual state after blinking
+      setVisible(lit);
       return;
     }
 
@@ -53,6 +55,21 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
 
     return () => clearInterval(interval);
   }, [blinking, lit]);
+
+  // Init event handling
+  useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      if (e.detail.type === 'init') {
+        setLit(false);
+        setBlinking(false);
+        setVisible(false);
+        initRegistry.acknowledge('master');
+      }
+    };
+
+    window.addEventListener('ui-event', handler as EventListener);
+    return () => window.removeEventListener('ui-event', handler as EventListener);
+  }, []);
 
   const handlePress = () => {
     stateMachine.handleEvent({ type: 'button_press', id: 'master' });

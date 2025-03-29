@@ -2,19 +2,21 @@ import React, { useRef, useState, useEffect } from 'react';
 import baseImg from '../images/slider_base.png';
 import knobImg from '../images/slider_knob.png';
 import '../css/components/SliderControl.css';
+import initRegistry from '../state/initRegistry';
 
 interface SliderControlProps {
+  id: string;
   x: number;
   y: number;
   onChange?: (value: number) => void;
 }
 
-const SliderControl: React.FC<SliderControlProps> = ({ x, y, onChange }) => {
+const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, onChange }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
   const [value, setValue] = useState(0);
 
-  const knobTravelRatio = 0.68; // Knob moves over 90% of the slider height
+  const knobTravelRatio = 0.68;
 
   const updateValue = (clientY: number) => {
     if (!containerRef.current) return;
@@ -47,6 +49,17 @@ const SliderControl: React.FC<SliderControlProps> = ({ x, y, onChange }) => {
     };
   }, [dragging]);
 
+  // Init support: no reset, just acknowledgment
+  useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      if (e.detail.type === 'init') {
+        initRegistry.acknowledge(id);
+      }
+    };
+    window.addEventListener('ui-event', handler as EventListener);
+    return () => window.removeEventListener('ui-event', handler as EventListener);
+  }, [id]);
+
   const travelHeight = containerRef.current
     ? containerRef.current.clientHeight * knobTravelRatio
     : 0;
@@ -62,19 +75,19 @@ const SliderControl: React.FC<SliderControlProps> = ({ x, y, onChange }) => {
         updateValue(e.clientY);
       }}
     >
-        <img
+      <img
         src={baseImg}
         className="slider-base"
         alt="Slider base"
         draggable={false}
-        />
-        <img
+      />
+      <img
         src={knobImg}
         className="slider-knob"
         alt="Slider knob"
         draggable={false}
         style={{ top: `${knobOffset}px` }}
-        />
+      />
     </div>
   );
 };

@@ -1,16 +1,12 @@
-// client/src/blocks/KnobSelectorBlock.tsx
-
 import KnobSelector from '../components/KnobSelector';
 
 export default function KnobSelectorBlock() {
-  // Panel origin and layout
   const originX = 990;
   const originY = 440;
   const columns = 5;
-  const spacingX = 107.5; // 430 / (5 - 1)
+  const spacingX = 107.5;
   const spacingY = 80;
 
-  // Original values from App.tsx
   const knobValues = [
     { leftLabel: 'OFF', rightLabel: 'ON' },
     { leftLabel: 'LOW', rightLabel: 'HIGH' },
@@ -18,7 +14,6 @@ export default function KnobSelectorBlock() {
     { leftLabel: 'MAN', rightLabel: 'AUTO' },
   ];
 
-  // Fill the rest with blanks up to 15
   while (knobValues.length < 15) {
     knobValues.push({ leftLabel: '', rightLabel: '' });
   }
@@ -30,7 +25,8 @@ export default function KnobSelectorBlock() {
     const y = originY + row * spacingY;
     return (
       <KnobSelector
-        key={`grid-${index}`}
+        key={`knob_grid_${index}`}
+        id={`knob_grid_${index}`}
         x={x}
         y={y}
         leftLabel={val.leftLabel}
@@ -39,17 +35,18 @@ export default function KnobSelectorBlock() {
     );
   });
 
-  // The two independent knobs from App.tsx
   const individualKnobs = [
     <KnobSelector
-      key="independent-1"
+      key="knob_ind_0"
+      id="knob_ind_0"
       x={620}
       y={625}
       leftLabel="PZ"
       rightLabel="RZ"
     />,
     <KnobSelector
-      key="independent-2"
+      key="knob_ind_1"
+      id="knob_ind_1"
       x={880}
       y={625}
       leftLabel="X^2"
