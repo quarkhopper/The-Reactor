@@ -5,8 +5,6 @@ import type {
   StateMachineAPI,
 } from './types';
 
-import { handleMasterPower } from './handlers/masterPower';
-
 let currentState: AppState = 'off';
 let callbacks: CommandCallback[] = [];
 
@@ -22,15 +20,6 @@ const stateMachine: StateMachineAPI = {
 
   emit(cmd: Command) {
     for (const cb of callbacks) cb(cmd);
-
-    // Match on command shape more safely
-    if (
-      cmd.type === 'button_press' &&
-      typeof (cmd as any).id === 'string' &&
-      (cmd as any).id === 'master'
-    ) {
-      handleMasterPower();
-    }
   },
 
   subscribe(cb: CommandCallback): void {
