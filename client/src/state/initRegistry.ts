@@ -4,6 +4,7 @@ import type { InitRegistry } from './types';
 const registry: InitRegistry = {
   pending: new Set(initManifest),
   acknowledge(id: string) {
+    console.log(`[initRegistry] Acknowledged: ${id}`);
     this.pending.delete(id);
   },
   reset() {
