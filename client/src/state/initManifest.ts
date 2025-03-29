@@ -12,7 +12,11 @@ const initComponentIds = [
   'cond_AUX',
   'cond_COOL',
 
-  // Add more as each block gets wired for init
+  'digi_0', 'digi_1', 'digi_2', 'digi_3', 'digi_4', 'digi_5',
+  'digi_6', 'digi_7', 'digi_8', 'digi_9', 'digi_10', 'digi_11',
+  'digi_12', 'digi_13', 'digi_14',
+
+  
 ];
 
 export default initComponentIds;

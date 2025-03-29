@@ -1,5 +1,4 @@
-// client/src/components/DigitalDisplay.tsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import '../css/components/DigitalDisplay.css';
 
 import numbersLeft0 from '../images/numbers_left_0.png';
@@ -24,6 +23,8 @@ import numbersRight7 from '../images/numbers_right_7.png';
 import numbersRight8 from '../images/numbers_right_8.png';
 import numbersRight9 from '../images/numbers_right_9.png';
 
+import initRegistry from '../state/initRegistry';
+
 const leftDigits = [
   numbersLeft0, numbersLeft1, numbersLeft2, numbersLeft3, numbersLeft4,
   numbersLeft5, numbersLeft6, numbersLeft7, numbersLeft8, numbersLeft9,
@@ -39,36 +40,43 @@ function clamp(v: number, min: number, max: number) {
 }
 
 interface DigitalDisplayProps {
+  id: string;
   x: number;
   y: number;
-  value: number; // expected 0 to 1
+  value: number;
   label?: string;
 }
 
-export default function DigitalDisplay({ x, y, value, label }: DigitalDisplayProps) {
-    const displayValue = Math.min(99, Math.floor(clamp(value, 0, 1) * 100));
-    const leftDigit = Math.floor(displayValue / 10);
-    const rightDigit = displayValue % 10;
-  
-    return (
-      <div
-        className="digital-display-wrapper"
-        style={{ left: `${x}px`, top: `${y}px` }}
-      >
-        <div className="digits-row">
-          <img
-            src={leftDigits[leftDigit]}
-            className="digit digit-left"
-            alt={`Left digit ${leftDigit}`}
-          />
-          <img
-            src={rightDigits[rightDigit]}
-            className="digit digit-right"
-            alt={`Right digit ${rightDigit}`}
-          />
-        </div>
-        <div className="digital-label">{label || '\u00A0'}</div>
+export default function DigitalDisplay({ id, x, y, value, label }: DigitalDisplayProps) {
+  const [displayValue, setDisplayValue] = useState(value);
+
+  useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      if (e.detail.type === 'init') {
+        setDisplayValue(0);
+        initRegistry.acknowledge(id);
+      }
+    };
+
+    window.addEventListener('ui-event', handler as EventListener);
+    return () => window.removeEventListener('ui-event', handler as EventListener);
+  }, [id]);
+
+  useEffect(() => {
+    setDisplayValue(value);
+  }, [value]);
+
+  const clamped = Math.min(99, Math.floor(clamp(displayValue, 0, 1) * 100));
+  const leftDigit = Math.floor(clamped / 10);
+  const rightDigit = clamped % 10;
+
+  return (
+    <div className="digital-display-wrapper" style={{ left: `${x}px`, top: `${y}px` }}>
+      <div className="digits-row">
+        <img src={leftDigits[leftDigit]} className="digit digit-left" alt={`Left ${leftDigit}`} />
+        <img src={rightDigits[rightDigit]} className="digit digit-right" alt={`Right ${rightDigit}`} />
       </div>
-    );
-  }
-  
+      <div className="digital-label">{label || '\u00A0'}</div>
+    </div>
+  );
+}

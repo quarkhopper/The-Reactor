@@ -1,45 +1,49 @@
-// client/src/panels/DigitalDisplayBlock.tsx
-import DigitalDisplayPanel from '../components/DigitalDisplayPanel';
+import DigitalDisplay from '../components/DigitalDisplay';
 
 export default function DigitalDisplayBlock() {
-  return (
-    <>
-      <DigitalDisplayPanel
-        x={58}
-        y={340}
-        columns={12}
-        rows={1}
-        spacingX={126}
-        spacingY={150}
-        values={[
-          { value: 0.25, label: 'PWR' },
-          { value: 0.57, label: 'TMP' },
-          { value: 0.88, label: 'FLX' },
-          { value: 0.02, label: 'RDN' },
-          { value: 0.31, label: 'ALT' },
-          { value: 0.95, label: 'AMP' },
-          { value: 0.25, label: 'PWR' },
-          { value: 0.57, label: 'TMP' },
-          { value: 0.88, label: 'FLX' },
-          { value: 0.02, label: 'RDN' },
-          { value: 0.31, label: 'ALT' },
-          { value: 0.95, label: 'AMP' },
-        ]}
-      />
+  const displays = [];
 
-      <DigitalDisplayPanel
-        x={988}
-        y={750}
-        columns={1}
-        rows={3}
-        spacingX={126}
-        spacingY={80}
-        values={[
-          { value: 0.25, label: 'PWR' },
-          { value: 0.57, label: 'TMP' },
-          { value: 0.88, label: 'FLX' },
-        ]}
+  // Top row (1x12)
+  const topStartX = 58;
+  const topY = 340;
+  const topSpacingX = 126;
+  const topLabels = [
+    'PWR', 'TMP', 'FLX', 'RDN', 'ALT', 'AMP',
+    'PWR', 'TMP', 'FLX', 'RDN', 'ALT', 'AMP'
+  ];
+
+  for (let i = 0; i < topLabels.length; i++) {
+    displays.push(
+      <DigitalDisplay
+        key={`digi_${i}`}
+        id={`digi_${i}`}
+        x={topStartX + i * topSpacingX}
+        y={topY}
+        value={0}
+        label={topLabels[i]}
       />
-    </>
-  );
+    );
+  }
+
+  // Side stack (3x1)
+  const sideX = 988;
+  const sideStartY = 750;
+  const sideSpacingY = 80;
+  const sideLabels = ['PWR', 'TMP', 'FLX'];
+
+  for (let i = 0; i < sideLabels.length; i++) {
+    const index = topLabels.length + i;
+    displays.push(
+      <DigitalDisplay
+        key={`digi_${index}`}
+        id={`digi_${index}`}
+        x={sideX}
+        y={sideStartY + i * sideSpacingY}
+        value={0}
+        label={sideLabels[i]}
+      />
+    );
+  }
+
+  return <>{displays}</>;
 }
