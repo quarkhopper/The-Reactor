@@ -1,7 +1,7 @@
 import React from 'react';
 import ConditionLight from '../components/ConditionLight';
 import type { ConditionColor } from '../state/types';
-
+import initRegistry from '../state/initRegistry';
 
 export default function ConditionLightBlock() {
   const x = 750;
@@ -10,17 +10,17 @@ export default function ConditionLightBlock() {
   const columns = 5;
   const rows = 2;
 
-  const values: { color: ConditionColor; label: string }[] = [
-    { color: 'off', label: 'SCRAM' },
-    { color: 'off', label: 'POWER' },
-    { color: 'off', label: 'FAULT' },
-    { color: 'off', label: 'TEST' },
-    { color: 'off', label: 'STANDBY' },
-    { color: 'off', label: 'RUN' },
-    { color: 'off', label: 'WARN' },
-    { color: 'off', label: 'LOCKED' },
-    { color: 'off', label: 'AUX' },
-    { color: 'off', label: 'COOL' },
+  const values: { id: string; color: ConditionColor; label: string }[] = [
+    { id: 'cond_SCRAM', color: 'off', label: 'SCRAM' },
+    { id: 'cond_POWER', color: 'off', label: 'POWER' },
+    { id: 'cond_FAULT', color: 'off', label: 'FAULT' },
+    { id: 'cond_TEST', color: 'off', label: 'TEST' },
+    { id: 'cond_STANDBY', color: 'off', label: 'STANDBY' },
+    { id: 'cond_RUN', color: 'off', label: 'RUN' },
+    { id: 'cond_WARN', color: 'off', label: 'WARN' },
+    { id: 'cond_LOCKED', color: 'off', label: 'LOCKED' },
+    { id: 'cond_AUX', color: 'off', label: 'AUX' },
+    { id: 'cond_COOL', color: 'off', label: 'COOL' },
   ];
 
   const lightWidth = width / columns;
@@ -40,6 +40,7 @@ export default function ConditionLightBlock() {
         return (
           <ConditionLight
             key={index}
+            id={entry.id}
             x={cx}
             y={cy}
             width={lightWidth}
