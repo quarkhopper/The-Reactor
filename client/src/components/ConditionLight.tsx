@@ -43,7 +43,6 @@ export default function ConditionLight({
     const handler = (e: CustomEvent) => {
       if (e.detail.type === 'init') {
         setDisplayColor('off');
-        console.log(`[${id}] received init, sending ack`);
         initRegistry.acknowledge(id);
       }
     };

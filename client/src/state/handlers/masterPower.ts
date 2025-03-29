@@ -8,16 +8,16 @@ export function handleMasterPower() {
     stateMachine.setAppState('init');
     stateMachine.log('System initializing');
 
-    // Send out init event to all components
-    const event = new CustomEvent('ui-event', {
-      detail: { type: 'init' }
-    });
-    window.dispatchEvent(event);
-
     // Check completion
     initRegistry.begin(() => {
       stateMachine.setAppState('startup');
       stateMachine.log('Init complete. Moving to startup.');
     });
+    
+    // Send out init event to all components
+    const event = new CustomEvent('ui-event', {
+      detail: { type: 'init' }
+    });
+    window.dispatchEvent(event);
   }
 }

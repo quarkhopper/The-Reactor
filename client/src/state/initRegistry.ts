@@ -12,15 +12,13 @@ const registry: InitRegistry = {
   },
   begin(callback: () => void) {
     this.reset();
-    console.log('[initRegistry] Begin init cycle with keys:', [...this.pending]);
     const interval = setInterval(() => {
-      console.log('[initRegistry] Pending keys:', [...this.pending]);
       if (this.pending.size === 0) {
         clearInterval(interval);
         console.log('[initRegistry] All components ready, invoking callback');
         callback();
       }
-    }, 1000);
+    }, 100);
   },
 };
 
