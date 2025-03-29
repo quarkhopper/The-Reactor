@@ -7,6 +7,7 @@ import glowOff from '../images/master_button_off.png';
 import glowOn from '../images/master_button_on.png';
 
 import stateMachine from '../state/StateMachine';
+import { handleMasterPower } from '../state/handlers/masterPower';
 import initRegistry from '../state/initRegistry';
 
 interface MasterButtonProps {
@@ -72,7 +73,7 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
   }, []);
 
   const handlePress = () => {
-    stateMachine.handleEvent({ type: 'button_press', id: 'master' });
+    handleMasterPower();
   };
 
   return (

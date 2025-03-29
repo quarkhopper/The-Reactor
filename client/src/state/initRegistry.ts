@@ -1,24 +1,23 @@
-import initComponentIds from './initManifest';
+import initManifest from './initManifest';
+import type { InitRegistry } from './types';
 
-class InitRegistry {
-  private received: Set<string> = new Set();
-
+const registry: InitRegistry = {
+  pending: new Set(initManifest),
   acknowledge(id: string) {
-    this.received.add(id);
-  }
-
-  allAcknowledged() {
-    return initComponentIds.every((id) => this.received.has(id));
-  }
-
+    this.pending.delete(id);
+  },
   reset() {
-    this.received.clear();
-  }
+    this.pending = new Set(initManifest);
+  },
+  begin(callback: () => void) {
+    this.reset();
+    const interval = setInterval(() => {
+      if (this.pending.size === 0) {
+        clearInterval(interval);
+        callback();
+      }
+    }, 100);
+  },
+};
 
-  getUnresponsive(): string[] {
-    return initComponentIds.filter((id) => !this.received.has(id));
-  }
-}
-
-const instance = new InitRegistry();
-export default instance;
+export default registry;

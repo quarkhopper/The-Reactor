@@ -1,99 +1,51 @@
-// client/src/state/StateMachine.ts
+import type {
+  Command,
+  CommandCallback,
+  AppState,
+  StateMachineAPI,
+} from './types';
 
-import { UIEvent, Command, CommandCallback } from './types';
+import { handleMasterPower } from './handlers/masterPower';
 
-class StateMachine {
-  private commandCallbacks: CommandCallback[] = [];
-  private state: {
-    powerState: 'off' | 'startup' | 'on' | 'shutdown';
-  } = {
-    powerState: 'off',
-  };
+let currentState: AppState = 'off';
+let callbacks: CommandCallback[] = [];
 
-  public handleEvent(event: UIEvent) {
-    switch (event.type) {
-      case 'button_press':
-        if (event.id === 'master') {
-          this.handleMasterButtonPress();
-        }
-        break;
+const stateMachine: StateMachineAPI = {
+  getAppState() {
+    return currentState;
+  },
 
-      case 'init':
-        this.log('Initializing state machine');
-        this.setMasterLight(false);
-        break;
+  setAppState(state) {
+    currentState = state;
+    stateMachine.emit({ type: 'state_change', id: 'system', state });
+  },
+
+  emit(cmd: Command) {
+    for (const cb of callbacks) cb(cmd);
+
+    // Match on command shape more safely
+    if (
+      cmd.type === 'button_press' &&
+      typeof (cmd as any).id === 'string' &&
+      (cmd as any).id === 'master'
+    ) {
+      handleMasterPower();
     }
-  }
+  },
 
-  private handleMasterButtonPress() {
-    const current = this.state.powerState;
-  
-    if (current === 'off') {
-      this.log('Powering up → startup');
-      this.state.powerState = 'startup';
-      this.emit({ type: 'start_blinking', id: 'master' });
-      this.setConditionColor('POWER', 'amber');
-  
-      setTimeout(() => {
-        this.log('Startup complete → on');
-        this.state.powerState = 'on';
-        this.emit({ type: 'stop_blinking', id: 'master' });
-        this.setMasterLight(true);
-        this.setConditionColor('POWER', 'green');
-      }, 5000);
-  
-    } else if (current === 'on') {
-      this.log('Powering down → shutdown');
-      this.state.powerState = 'shutdown';
-      this.emit({ type: 'start_blinking', id: 'master' });
-      this.setConditionColor('POWER', 'amber');
-  
-      setTimeout(() => {
-        this.log('Shutdown complete → off');
-        this.state.powerState = 'off';
-        this.emit({ type: 'stop_blinking', id: 'master' });
-        this.setMasterLight(false);
-        this.setConditionColor('POWER', 'off');
-      }, 5000);
-    }
-  }
-  
-  public subscribe(callback: CommandCallback) {
-    this.commandCallbacks.push(callback);
-  }
+  subscribe(cb: CommandCallback): void {
+    callbacks.push(cb);
+    // No return!
+  },
 
-  private emit(command: Command) {
-    for (const cb of this.commandCallbacks) {
-      cb(command);
-    }
-  }
+  unsubscribe(cb: CommandCallback): void {
+    const index = callbacks.indexOf(cb);
+    if (index !== -1) callbacks.splice(index, 1);
+  },
 
-  private setMasterLight(on: boolean) {
-    console.log(`[EMIT] set_button_light id=master on=${on}`);
-    this.emit({ type: 'set_button_light', id: 'master', on });
-  }
+  log(msg: string) {
+    console.log(`[state] ${msg}`);
+  },
+};
 
-  private setConditionColor(label: string, color: 'red' | 'green' | 'amber' | 'white' | 'off') {
-    console.log(`[EMIT] set_condition_color label=${label} color=${color}`);
-    this.emit({
-      type: 'set_condition_color',
-      id: `cond_${label}`, // ✅ new: derived id
-      label,
-      color,
-    });
-  }
-  
-  public unsubscribe(callback: CommandCallback) {
-    const index = this.commandCallbacks.indexOf(callback);
-    if (index !== -1) {
-      this.commandCallbacks.splice(index, 1);
-    }
-  }
-
-  private log(msg: string) {
-    console.log(`[StateMachine] ${msg}`);
-  }
-}
-
-const instance = new StateMachine();
-export default instance;
+export default stateMachine;
