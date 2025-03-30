@@ -18,32 +18,27 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
   const [blinking, setBlinking] = useState(false);
   const [visible, setVisible] = useState(false);
 
-  // Subscribe to state machine messages
+  // Watch app state and respond accordingly
   useEffect(() => {
-    const unsubscribe = stateMachine.subscribe((cmd) => {
-      if (cmd.id !== 'master') return;
-
-      console.log('[RECV]', cmd);
-
-      if (cmd.type === 'set_button_light') {
-        setLit(cmd.on);
+    const unsubscribe = stateMachine.subscribeToAppState((state) => {
+      if (state === 'on') {
+        setLit(true);
         setBlinking(false);
-        setVisible(cmd.on);
-      }
-
-      if (cmd.type === 'start_blinking') {
+        setVisible(true);
+      } else if (state === 'startup' || state === 'shutdown') {
+        setLit(true);
         setBlinking(true);
-      }
-
-      if (cmd.type === 'stop_blinking') {
+      } else {
+        setLit(false);
         setBlinking(false);
+        setVisible(false);
       }
     });
 
     return unsubscribe;
   }, []);
 
-  // Blinking animation
+  // Blinking animation loop
   useEffect(() => {
     if (!blinking) {
       setVisible(lit);

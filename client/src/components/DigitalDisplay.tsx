@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+
 import '../css/components/DigitalDisplay.css';
 
 import numbersLeft0 from '../images/numbers_left_0.png';
@@ -24,6 +25,7 @@ import numbersRight8 from '../images/numbers_right_8.png';
 import numbersRight9 from '../images/numbers_right_9.png';
 
 import initRegistry from '../state/initRegistry';
+import testRegistry from '../state/testRegistry';
 
 const leftDigits = [
   numbersLeft0, numbersLeft1, numbersLeft2, numbersLeft3, numbersLeft4,
@@ -56,6 +58,19 @@ export default function DigitalDisplay({ id, x, y, value, label }: DigitalDispla
         setDisplayValue(0);
         initRegistry.acknowledge(id);
       }
+
+      if (e.detail.type === 'test') {
+        let i = 0;
+        const interval = setInterval(() => {
+          setDisplayValue(i / 99); // 0 to 1 mapped to value
+          i++;
+          if (i > 99) {
+            clearInterval(interval);
+            setDisplayValue(0);
+            testRegistry.acknowledge(id);
+          }
+        }, 15);
+      }
     };
 
     window.addEventListener('ui-event', handler as EventListener);
@@ -76,7 +91,7 @@ export default function DigitalDisplay({ id, x, y, value, label }: DigitalDispla
         <img src={leftDigits[leftDigit]} className="digit digit-left" alt={`Left ${leftDigit}`} />
         <img src={rightDigits[rightDigit]} className="digit digit-right" alt={`Right ${rightDigit}`} />
       </div>
-      <div className="digital-label">{label || '\u00A0'}</div>
+      {label && <div className="digital-display-label">{label}</div>}
     </div>
   );
 }

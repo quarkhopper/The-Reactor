@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+
 import '../css/components/ConditionLight.css';
 
 import off from '../images/condition_off.png';
@@ -9,6 +10,7 @@ import white from '../images/condition_white.png';
 import shine from '../images/condition_shine.png';
 
 import initRegistry from '../state/initRegistry';
+import testRegistry from '../state/testRegistry';
 
 type ConditionColor = 'off' | 'red' | 'green' | 'amber' | 'white';
 
@@ -45,12 +47,25 @@ export default function ConditionLight({
         setDisplayColor('off');
         initRegistry.acknowledge(id);
       }
+
+      if (e.detail.type === 'test') {
+        const sequence: ConditionColor[] = ['red', 'amber', 'green', 'white', 'off'];
+        let step = 0;
+
+        const interval = setInterval(() => {
+          setDisplayColor(sequence[step]);
+          step++;
+
+          if (step >= sequence.length) {
+            clearInterval(interval);
+            testRegistry.acknowledge(id);
+          }
+        }, 150); // flash every 150ms
+      }
     };
 
     window.addEventListener('ui-event', handler as EventListener);
-    return () => {
-      window.removeEventListener('ui-event', handler as EventListener);
-    };
+    return () => window.removeEventListener('ui-event', handler as EventListener);
   }, [id]);
 
   return (
