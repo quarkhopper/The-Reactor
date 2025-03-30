@@ -2,7 +2,7 @@ import manifest from './initManifest';
 
 const registry = {
   isReady: false,
-  pending: new Set(manifest),
+  pending: new Set<string>(),
 
   acknowledge(id: string) {
     if (!this.isReady) {
@@ -22,9 +22,15 @@ const registry = {
   begin(callback: () => void) {
     this.reset();
 
-    setTimeout(() => {
+    // Defer until all components have mounted and registered listeners
+    requestAnimationFrame(() => {
       this.isReady = true;
-    }, 0); // allow event listeners to attach
+
+      const event = new CustomEvent('ui-event', {
+        detail: { type: 'test' },
+      });
+      window.dispatchEvent(event);
+    });
 
     const interval = setInterval(() => {
       if (this.pending.size === 0) {
