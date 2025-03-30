@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
+
 import knobImg from '../images/knob_selector.png';
 import '../css/components/KnobSelector.css';
+
 import initRegistry from '../state/initRegistry';
+import testRegistry from '../state/testRegistry';
 
 interface KnobSelectorProps {
   id: string;
@@ -18,8 +21,12 @@ export default function KnobSelector({ id, x, y, leftLabel, rightLabel }: KnobSe
   useEffect(() => {
     const handler = (e: CustomEvent) => {
       if (e.detail.type === 'init') {
-        // Physical knobs don't reset, only acknowledge
         initRegistry.acknowledge(id);
+      }
+
+      if (e.detail.type === 'test') {
+        // No visual test yet, but must acknowledge
+        testRegistry.acknowledge(id);
       }
     };
 

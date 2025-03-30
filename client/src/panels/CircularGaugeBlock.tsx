@@ -6,8 +6,8 @@ export default function CircularGaugeBlock() {
       id="circular_gauge"
       x={750}
       y={690}
-      value={0.75}
-      limit={0.8}
+      value={0}
+      limit={0}
     />
   );
 }

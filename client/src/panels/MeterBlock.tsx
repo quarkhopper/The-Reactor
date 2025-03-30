@@ -3,10 +3,10 @@ import VerticalMeter from '../components/VerticalMeter';
 export default function MeterBlock() {
   const meters = [
     { value: 0.0 },
-    { value: 0.25 },
-    { value: 0.5 },
-    { value: 0.75 },
-    { value: 1.0 },
+    { value: 0.0 },
+    { value: 0.0 },
+    { value: 0.0 },
+    { value: 0.0 },
   ];
 
   const baseX = 750;

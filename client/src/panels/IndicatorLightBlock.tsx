@@ -1,13 +1,12 @@
 import IndicatorLight from '../components/IndicatorLight';
-import type { IndicatorColor } from '../components/IndicatorLight';
 
 export default function IndicatorLightBlock() {
   const lights: React.ReactElement[] = [];
 
   // Individual OPR lights
   lights.push(
-    <IndicatorLight key="opr-left" id="blink_opr_left" x={630} y={750} color="red" label="OPR" />,
-    <IndicatorLight key="opr-right" id="blink_opr_right" x={870} y={750} color="red" label="OPR" />
+    <IndicatorLight key="opr-left" id="blink_opr_left" x={630} y={750} label="OPR" />,
+    <IndicatorLight key="opr-right" id="blink_opr_right" x={870} y={750} label="OPR" />
   );
 
   // Light grid (formerly LightPanel)
@@ -18,16 +17,16 @@ export default function IndicatorLightBlock() {
   const xSpacing = 70;
   const ySpacing = 80;
 
-  const gridValues: { color: IndicatorColor; label?: string }[] = [
-    { color: 'red', label: 'A1' },
-    { color: 'green', label: 'A2' },
-    { color: 'amber', label: 'A3' },
-    { color: 'white', label: 'A4' },
-    { color: 'green', label: 'B1' },
-    { color: 'off', label: 'B2' },
-    { color: 'red', label: 'B3' },
-    { color: 'amber', label: 'B4' },
-    { color: 'white', label: 'C1' },
+  const gridValues: { label?: string }[] = [
+    { label: 'A1' },
+    { label: 'A2' },
+    { label: 'A3' },
+    { label: 'A4' },
+    { label: 'B1' },
+    { label: 'B2' },
+    { label: 'B3' },
+    { label: 'B4' },
+    { label: 'C1' },
   ];
 
   const total = rows * columns;
@@ -47,7 +46,6 @@ export default function IndicatorLightBlock() {
         id={`blink_grid_${i}`}
         x={x}
         y={y}
-        color={entry.color}
         label={entry.label}
       />
     );

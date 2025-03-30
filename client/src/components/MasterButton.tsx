@@ -7,6 +7,7 @@ import glowOn from '../images/master_button_on.png';
 import stateMachine from '../state/StateMachine';
 import { handleMasterPower } from '../state/handlers/masterPower';
 import initRegistry from '../state/initRegistry';
+import testRegistry from '../state/testRegistry';
 
 interface MasterButtonProps {
   x: number;
@@ -60,6 +61,11 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
         setBlinking(false);
         setVisible(false);
         initRegistry.acknowledge('master');
+      }
+
+      if (e.detail.type === 'test') {
+        // No visual test yet, but must acknowledge
+        testRegistry.acknowledge('master');
       }
     };
 

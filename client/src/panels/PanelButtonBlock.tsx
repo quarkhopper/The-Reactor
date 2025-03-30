@@ -1,5 +1,4 @@
 import PanelButton from '../components/PanelButton';
-import type { ButtonColor } from '../components/PanelButton';
 
 export default function PanelButtonBlock() {
   const buttons: React.ReactElement[] = [];
@@ -12,12 +11,12 @@ export default function PanelButtonBlock() {
   const spacingX = 90;
   const spacingY = 60;
   const gridValues = [
-    { label: 'A1', color: 'green' },
-    { label: 'A2', color: 'amber' },
-    { label: 'A3', color: 'red' },
-    { label: 'B1', color: 'white' },
-    { label: 'B2', color: 'green' },
-    { label: 'B3', color: 'amber' },
+    { label: 'A1' },
+    { label: 'A2' },
+    { label: 'A3' },
+    { label: 'B1' },
+    { label: 'B2' },
+    { label: 'B3' },
   ];
 
   for (let i = 0; i < gridRows; i++) {
@@ -32,7 +31,6 @@ export default function PanelButtonBlock() {
           id={`panel_btn_grid_${index}`}
           x={x}
           y={y}
-          color={def.color as ButtonColor}
           label={def.label}
         />
       );
@@ -45,12 +43,12 @@ export default function PanelButtonBlock() {
   const stripCols = 6;
   const stripSpacing = 87;
   const stripValues = [
-    { label: 'A1', color: 'green' },
-    { label: 'A2', color: 'amber' },
-    { label: 'A3', color: 'red' },
-    { label: 'B1', color: 'white' },
-    { label: 'B2', color: 'green' },
-    { label: 'B3', color: 'amber' },
+    { label: 'A1' },
+    { label: 'A2' },
+    { label: 'A3' },
+    { label: 'B1' },
+    { label: 'B2' },
+    { label: 'B3' },
   ];
 
   for (let i = 0; i < stripCols; i++) {
@@ -63,7 +61,6 @@ export default function PanelButtonBlock() {
         id={`panel_btn_strip_${i}`}
         x={x}
         y={y}
-        color={def.color as ButtonColor}
         label={def.label}
       />
     );

@@ -1,5 +1,5 @@
-// client/src/components/ScramButton.tsx
 import React, { useState, useEffect } from 'react';
+
 import '../css/components/ScramButton.css';
 
 import bezel from '../images/e-stop_bezel.png';
@@ -7,6 +7,7 @@ import buttonOut from '../images/e-stop_out.png';
 import buttonIn from '../images/e-stop_in.png';
 
 import initRegistry from '../state/initRegistry';
+import testRegistry from '../state/testRegistry';
 
 interface ScramButtonProps {
   id: string;
@@ -21,6 +22,14 @@ export default function ScramButton({ id, x, y }: ScramButtonProps) {
     const handler = (e: CustomEvent) => {
       if (e.detail.type === 'init') {
         initRegistry.acknowledge(id);
+      }
+
+      if (e.detail.type === 'test') {
+        setPressed(true);
+        setTimeout(() => {
+          setPressed(false);
+          testRegistry.acknowledge(id);
+        }, 500);
       }
     };
 
