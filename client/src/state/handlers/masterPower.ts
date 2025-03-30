@@ -9,32 +9,34 @@ export function handleMasterPower() {
     stateMachine.setAppState('init');
     stateMachine.log('System initializing');
 
-    // INIT PHASE
+    // Begin init phase
     initRegistry.begin(() => {
       stateMachine.setAppState('startup');
       stateMachine.log('Init complete. Beginning startup test sequence.');
 
-      // TEST PHASE
-      const testEvent = new CustomEvent('ui-event', {
-        detail: { type: 'test' }
-      });
-      window.dispatchEvent(testEvent);
-
+      // Begin test registry phase
       testRegistry.begin(() => {
         stateMachine.setAppState('on');
         stateMachine.log('Startup test complete. System is now ON.');
       });
+
+      // Dispatch AFTER testRegistry is ready and all components have mounted
+      const testEvent = new CustomEvent('ui-event', {
+        detail: { type: 'test' },
+      });
+      window.dispatchEvent(testEvent);
     });
 
+    // Dispatch init event
     const initEvent = new CustomEvent('ui-event', {
-      detail: { type: 'init' }
+      detail: { type: 'init' },
     });
     window.dispatchEvent(initEvent);
   }
 
-  // No manual advancement allowed during startup or shutdown
   else if (state === 'startup') {
-    stateMachine.log('Startup in progress. Awaiting test completion.');
+    stateMachine.setAppState('on');
+    stateMachine.log('Startup complete. System is now on.');
   }
 
   else if (state === 'on') {
@@ -43,6 +45,7 @@ export function handleMasterPower() {
   }
 
   else if (state === 'shutdown') {
-    stateMachine.log('Shutdown in progress. Please wait.');
+    stateMachine.setAppState('off');
+    stateMachine.log('Shutdown complete. System is now off.');
   }
 }
