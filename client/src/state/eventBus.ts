@@ -9,9 +9,10 @@ type EventType =
   | 'scram_initiated'
   | 'control_rod_set'
   | 'turbine_throttle'
+  | 'control_input' 
   | string; // Allow extensibility
 
-export interface ReactorEvent {
+  export interface ReactorEvent {
   type: EventType;
   source: string;
   payload?: any;

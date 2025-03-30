@@ -44,3 +44,10 @@ export interface Subsystem {
   tick(): void;
   getState(): Record<string, any>;
 }
+
+export interface ControlInput {
+  target: string;       // e.g., 'coreSystem', 'coolSystem'
+  action: string;       // e.g., 'set_control_rod_limit'
+  index?: number;       // e.g., which slider or button
+  value?: number | boolean; // e.g., 0.75 or true/false
+}

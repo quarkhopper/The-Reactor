@@ -1,4 +1,7 @@
 import { Subsystem } from '../types';
+import { ControlInput } from '../types';
+import eventBus from '../eventBus';
+
 
 const coolSystem: Subsystem = {
   tick() {
