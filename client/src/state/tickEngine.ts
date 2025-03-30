@@ -11,31 +11,31 @@ let tickInterval: NodeJS.Timeout | null = null;
 
 const tickRate = 1000; // ms per tick (adjust later)
 
-const core: Subsystem = {
+const coreSystem: Subsystem = {
   tick: () => {},
   getState: () => ({})
 };
 
-const cool: Subsystem = {
+const coolSystem: Subsystem = {
   tick: () => {},
   getState: () => ({})
 };
 
-const load: Subsystem = {
+const loadSystem: Subsystem = {
   tick: () => {},
   getState: () => ({})
 };
 
-const ctrl: Subsystem = {
+const ctrlSystem: Subsystem = {
   tick: () => {},
   getState: () => ({})
 };
 
 function tickOnce() {
-  core.tick();
-  cool.tick();
-  load.tick();
-  ctrl.tick();
+  coreSystem.tick();
+  coolSystem.tick();
+  loadSystem.tick();
+  ctrlSystem.tick();
 
   eventBus.publish({ type: 'tick_complete', source: 'tickEngine' });
 }

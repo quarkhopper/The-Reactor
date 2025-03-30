@@ -40,3 +40,7 @@ export interface InitRegistry {
   begin: (callback: () => void) => void;
 }
 
+export interface Subsystem {
+  tick(): void;
+  getState(): Record<string, any>;
+}
