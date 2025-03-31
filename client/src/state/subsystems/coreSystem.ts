@@ -194,6 +194,7 @@ eventBus.subscribe((event) => {
       const rawValue = parseFloat(event.payload?.value);
       const clamped = Math.max(0, Math.min(1, rawValue));
       controlRodPositions[index] = clamped;
+      console.log(`[coreSystem] control rod init position: ${clamped}`)
     }
   }
 });

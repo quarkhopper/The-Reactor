@@ -13,9 +13,9 @@ export default function SliderBlock() {
         id={`slider_${i}`}
         x={baseX + i * spacingX}
         y={baseY}
-        onChange={(value) => {
-          console.log(`Slider ${i} = ${value.toFixed(2)}`);
-        }}
+        // onChange={(value) => {
+        //   console.log(`Slider ${i} = ${value.toFixed(2)}`);
+        // }}
       />
     );
   }

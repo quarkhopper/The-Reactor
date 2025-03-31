@@ -45,7 +45,7 @@ const PanelButton: React.FC<PanelButtonProps> = ({ id, x, y, label }) => {
       const fy = parseInt(match[2]);
 
       const updateState = () => {
-        console.log(`[button ${id}] ui state:`, coreSystem.getState().getFuelRodUIState(fx, fy));
+        // console.log(`[button ${id}] ui state:`, coreSystem.getState().getFuelRodUIState(fx, fy));
         const ui = coreSystem.getState().getFuelRodUIState(fx, fy);
         setDisplayColor(ui.color);
         setDisabled(ui.locked);

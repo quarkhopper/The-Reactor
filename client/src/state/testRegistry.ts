@@ -6,11 +6,11 @@ const registry = {
 
   acknowledge(id: string) {
     if (!this.isReady) {
-      console.warn(`[testRegistry] Acknowledge ignored (not ready): ${id}`);
+      // console.warn(`[testRegistry] Acknowledge ignored (not ready): ${id}`);
       return;
     }
 
-    console.log(`[testRegistry] Acknowledged: ${id}`);
+    // console.log(`[testRegistry] Acknowledged: ${id}`);
     this.pending.delete(id);
   },
 
