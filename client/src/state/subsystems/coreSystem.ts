@@ -56,6 +56,7 @@ function regenerateRodMapping() {
 }
 
 function tick() {
+  // console.log("TICK")
   const now = Date.now();
 
   for (let x = 0; x < GRID_SIZE; x++) {
@@ -109,8 +110,10 @@ function tick() {
         source: 'coreSystem',
         payload: { x, y, temperature: rod.temperature },
       });
+      // console.log(`[coreSystem] (${x},${y}) temperature:`, rod.temperature);
     }
   }
+
 }
 
 function scram() {
