@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import eventBus from '../state/eventBus';
-import coreSystem from '../state/subsystems/coreSystem';
 import initRegistry from '../state/initRegistry';
 import testRegistry from '../state/testRegistry';
+
 import glow_off from '../images/button_off.png';
 import glow_green from '../images/button_glow_green.png';
 import glow_amber from '../images/button_glow_amber.png';
 import glow_red from '../images/button_glow_red.png';
 import glow_white from '../images/button_glow_white.png';
+
 import '../css/components/PanelButton.css';
 
 interface PanelButtonProps {
@@ -28,7 +29,15 @@ const glowMap: Record<string, string> = {
 const PanelButton: React.FC<PanelButtonProps> = ({ id, x, y, label }) => {
   const [isHeld, setIsHeld] = useState(false);
   const [displayColor, setDisplayColor] = useState('off');
-  const [disabled, setDisabled] = useState(false);
+  const [disabled, setDisabled] = useState(false); // currently unused, reserved for later logic
+
+  const getColorFromTemperature = (temperature: number): string => {
+    if (temperature <= 0) return 'off';
+    if (temperature < 100) return 'green';
+    if (temperature < 300) return 'amber';
+    if (temperature < 600) return 'red';
+    return 'white';
+  };
 
   useEffect(() => {
     const handleUiEvent = (e: Event) => {
@@ -44,19 +53,20 @@ const PanelButton: React.FC<PanelButtonProps> = ({ id, x, y, label }) => {
       const fx = parseInt(match[1]);
       const fy = parseInt(match[2]);
 
-      // const updateState = () => {
-      //   // console.log(`[button ${id}] ui state:`, coreSystem.getState().getFuelRodUIState(fx, fy));
-      //   const ui = coreSystem.getState().getFuelRodUIState(fx, fy);
-      //   setDisplayColor(ui.color);
-      //   setDisabled(ui.locked);
-      // };
+      const listener = (event: any) => {
+        if (event.type === 'core_tick_temperature') {
+          const { x: tx, y: ty, temperature } = event.payload;
+          if (tx === fx && ty === fy) {
+            setDisplayColor(getColorFromTemperature(temperature));
+          }
+        }
+      };
 
-      // updateState();
-      // const interval = setInterval(updateState, 200);
-      // return () => {
-      //   clearInterval(interval);
-      //   window.removeEventListener('ui-event', handleUiEvent);
-      // };
+      const unsubscribe = eventBus.subscribe(listener);
+      return () => {
+        unsubscribe();
+        window.removeEventListener('ui-event', handleUiEvent);
+      };
     }
 
     return () => window.removeEventListener('ui-event', handleUiEvent);
