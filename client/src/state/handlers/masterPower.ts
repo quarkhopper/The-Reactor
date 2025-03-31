@@ -33,6 +33,12 @@ export function handleMasterPower() {
   else if (state === 'on') {
     stateMachine.setAppState('shutdown');
     stateMachine.log('Shutdown initiated.');
+  
+    // Simulate shutdown routine
+    setTimeout(() => {
+      stateMachine.setAppState('off');
+      stateMachine.log('Shutdown complete. System is now off.');
+    }, 2000); // (Adjust time later or replace with actual test if desired)
   }
 
   else if (state === 'shutdown') {
