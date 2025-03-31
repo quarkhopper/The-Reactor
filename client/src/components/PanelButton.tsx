@@ -1,85 +1,81 @@
-import { useEffect, useState } from 'react';
-
-import offImg from '../images/button_off.png';
-import amber from '../images/button_glow_amber.png';
-import green from '../images/button_glow_green.png';
-import red from '../images/button_glow_red.png';
-import white from '../images/button_glow_white.png';
-
+import React, { useEffect, useState } from 'react';
+import eventBus from '../state/eventBus';
+import coreSystem from '../state/subsystems/coreSystem';
+import glow_off from '../images/button_off.png';
+import glow_green from '../images/button_glow_green.png';
+import glow_amber from '../images/button_glow_amber.png';
+import glow_red from '../images/button_glow_red.png';
+import glow_white from '../images/button_glow_white.png';
 import '../css/components/PanelButton.css';
-
-import initRegistry from '../state/initRegistry';
-import testRegistry from '../state/testRegistry';
-
-type TestColor = 'off' | 'red' | 'amber' | 'green' | 'white';
 
 interface PanelButtonProps {
   id: string;
   x: number;
   y: number;
   label?: string;
-  topLabel?: string;
 }
 
-export default function PanelButton({
-  id,
-  x,
-  y,
-  label,
-  topLabel,
-}: PanelButtonProps) {
-  const [isPressed, setIsPressed] = useState(false);
-  const [displayColor, setDisplayColor] = useState<TestColor>('off');
+const glowMap: Record<string, string> = {
+  off: glow_off,
+  green: glow_green,
+  amber: glow_amber,
+  red: glow_red,
+  white: glow_white,
+};
+
+const PanelButton: React.FC<PanelButtonProps> = ({ id, x, y, label }) => {
+  const [isHeld, setIsHeld] = useState(false);
+  const [displayColor, setDisplayColor] = useState('off');
+  const [disabled, setDisabled] = useState(false);
 
   useEffect(() => {
-    const handler = (e: CustomEvent) => {
-      if (e.detail.type === 'init') {
-        setIsPressed(false);
-        setDisplayColor('off');
-        initRegistry.acknowledge(id);
-      }
+    const match = id.match(/^fuel_rod_button_(\d+)_(\d+)$/);
+    if (!match) return;
 
-      if (e.detail.type === 'test') {
-        const sequence: TestColor[] = ['red', 'amber', 'green', 'white', 'off'];
-        let i = 0;
+    const fx = parseInt(match[1]);
+    const fy = parseInt(match[2]);
 
-        const interval = setInterval(() => {
-          setDisplayColor(sequence[i]);
-          i++;
-
-          if (i >= sequence.length) {
-            clearInterval(interval);
-            testRegistry.acknowledge(id);
-          }
-        }, 120);
-      }
+    const updateState = () => {
+      const ui = coreSystem.getState().getFuelRodUIState(fx, fy);
+      setDisplayColor(ui.color);
+      setDisabled(ui.locked);
     };
 
-    window.addEventListener('ui-event', handler as EventListener);
-    return () => window.removeEventListener('ui-event', handler as EventListener);
+    updateState();
+    const interval = setInterval(updateState, 200);
+    return () => clearInterval(interval);
   }, [id]);
 
-  const glowMap: Record<TestColor, string> = {
-    off: offImg,
-    red,
-    amber,
-    green,
-    white,
+  const handleMouseDown = () => {
+    if (!disabled) setIsHeld(true);
   };
 
+  const handleMouseUp = () => {
+    if (!disabled && isHeld) {
+      eventBus.publish({ type: 'button_press', source: 'user', payload: { id } });
+    }
+    setIsHeld(false);
+  };
+
+  const handleMouseLeave = () => setIsHeld(false);
+
   return (
-    <div className="panel-button-wrapper" style={{ top: `${y}px`, left: `${x}px` }}>
-      {topLabel && <div className="panel-button-top-label">{topLabel}</div>}
+    <div
+      className="panel-button-wrapper"
+      style={{ top: `${y}px`, left: `${x}px` }}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
+    >
       <img
-        src={glowMap[displayColor]}
-        alt={`Panel Button ${displayColor}`}
-        className={`panel-button-img ${isPressed ? 'pressed' : ''}`}
-        onMouseDown={() => setIsPressed(true)}
-        onMouseUp={() => setIsPressed(false)}
-        onMouseLeave={() => setIsPressed(false)}
+        src={glowMap[displayColor] || glow_off}
+        className="panel-button-img"
         draggable={false}
+        alt=""
       />
-      {label && <div className="panel-button-label">{label}</div>}
+      <div className="panel-button-label">{label}</div>
     </div>
   );
-}
+};
+
+export default PanelButton;

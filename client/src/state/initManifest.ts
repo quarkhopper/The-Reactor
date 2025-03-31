@@ -54,18 +54,14 @@ const initComponentIds = [
 
   'master',
 
-  'panel_btn_grid_0', 'panel_btn_grid_1', 'panel_btn_grid_2', 'panel_btn_grid_3',
-  'panel_btn_grid_4', 'panel_btn_grid_5', 'panel_btn_grid_6', 'panel_btn_grid_7',
-  'panel_btn_grid_8', 'panel_btn_grid_9', 'panel_btn_grid_10', 'panel_btn_grid_11',
-  'panel_btn_grid_12', 'panel_btn_grid_13', 'panel_btn_grid_14', 'panel_btn_grid_15',
-  'panel_btn_grid_16', 'panel_btn_grid_17', 'panel_btn_grid_18', 'panel_btn_grid_19',
-  'panel_btn_grid_20', 'panel_btn_grid_21', 'panel_btn_grid_22', 'panel_btn_grid_23',
-  'panel_btn_grid_24', 'panel_btn_grid_25', 'panel_btn_grid_26', 'panel_btn_grid_27',
-  'panel_btn_grid_28', 'panel_btn_grid_29', 'panel_btn_grid_30', 'panel_btn_grid_31',
-  'panel_btn_grid_32', 'panel_btn_grid_33', 'panel_btn_grid_34', 'panel_btn_grid_35',
+  // Fuel rod buttons (6x6)
+  ...Array.from({ length: 6 }, (_, y) =>
+    Array.from({ length: 6 }, (_, x) => `fuel_rod_button_${x}_${y}`)
+  ).flat(),
 
-  'panel_btn_strip_0', 'panel_btn_strip_1', 'panel_btn_strip_2',
-  'panel_btn_strip_3', 'panel_btn_strip_4', 'panel_btn_strip_5',
+  // Aux buttons (6)
+  'aux_button_0', 'aux_button_1', 'aux_button_2',
+  'aux_button_3', 'aux_button_4', 'aux_button_5',
 
   'scram',
 
