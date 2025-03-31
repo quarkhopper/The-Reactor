@@ -44,19 +44,19 @@ const PanelButton: React.FC<PanelButtonProps> = ({ id, x, y, label }) => {
       const fx = parseInt(match[1]);
       const fy = parseInt(match[2]);
 
-      const updateState = () => {
-        // console.log(`[button ${id}] ui state:`, coreSystem.getState().getFuelRodUIState(fx, fy));
-        const ui = coreSystem.getState().getFuelRodUIState(fx, fy);
-        setDisplayColor(ui.color);
-        setDisabled(ui.locked);
-      };
+      // const updateState = () => {
+      //   // console.log(`[button ${id}] ui state:`, coreSystem.getState().getFuelRodUIState(fx, fy));
+      //   const ui = coreSystem.getState().getFuelRodUIState(fx, fy);
+      //   setDisplayColor(ui.color);
+      //   setDisabled(ui.locked);
+      // };
 
-      updateState();
-      const interval = setInterval(updateState, 200);
-      return () => {
-        clearInterval(interval);
-        window.removeEventListener('ui-event', handleUiEvent);
-      };
+      // updateState();
+      // const interval = setInterval(updateState, 200);
+      // return () => {
+      //   clearInterval(interval);
+      //   window.removeEventListener('ui-event', handleUiEvent);
+      // };
     }
 
     return () => window.removeEventListener('ui-event', handleUiEvent);
