@@ -31,12 +31,13 @@ const PanelButton: React.FC<PanelButtonProps> = ({ id, x, y, label }) => {
   const [displayColor, setDisplayColor] = useState('off');
   const [disabled, setDisabled] = useState(false); // currently unused, reserved for later logic
 
+  // Updated to work with normalized temperatures (0 to 1)
   const getColorFromTemperature = (temperature: number): string => {
     if (temperature <= 0) return 'off';
-    if (temperature < 100) return 'green';
-    if (temperature < 300) return 'amber';
-    if (temperature < 600) return 'red';
-    return 'white';
+    if (temperature < 0.1) return 'green'; // 0.0 to 0.1
+    if (temperature < 0.3) return 'amber'; // 0.1 to 0.3
+    if (temperature < 0.6) return 'red';   // 0.3 to 0.6
+    return 'white';                        // 0.6 to 1.0
   };
 
   useEffect(() => {

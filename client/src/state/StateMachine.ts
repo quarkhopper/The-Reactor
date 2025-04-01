@@ -11,10 +11,14 @@ const stateMachine = {
 
   setAppState(state: AppState) {
     currentState = state;
+    console.log(`[stateMachine] State set to: ${state}`);
     stateMachine.emit({ type: 'state_change', id: 'system', state });
 
     // Notify all app state subscribers
-    for (const cb of appStateCallbacks) cb(state);
+    for (const cb of appStateCallbacks) {
+      console.log(`[stateMachine] Notifying subscriber of state: ${state}`);
+      cb(state);
+    }
   },
 
   emit(cmd: Command) {

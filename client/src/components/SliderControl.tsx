@@ -12,10 +12,11 @@ interface SliderControlProps {
   id: string;
   x: number;
   y: number;
-  onChange?: (value: number) => void;
+  rodIndex: number; // Add rodIndex prop
+  onChange?: (value: number, rodIndex: number) => void; // Pass rodIndex in onChange
 }
 
-const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, onChange }) => {
+const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, rodIndex, onChange }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
   const [value, setValue] = useState(0);
@@ -29,7 +30,7 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, onChange }) => 
     const clamped = Math.min(Math.max(relY, 0), travelHeight);
     const newValue = 1 - clamped / travelHeight;
     setValue(newValue);
-    if (onChange) onChange(newValue);
+    if (onChange) onChange(newValue, rodIndex); // Pass rodIndex with the value
   };
 
   useEffect(() => {
@@ -66,7 +67,7 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, onChange }) => 
         const interval = setInterval(() => {
           const phase = i < steps ? i / steps : 2 - i / steps;
           setValue(phase);
-          if (onChange) onChange(phase);
+          if (onChange) onChange(phase, rodIndex); // Pass rodIndex with the value
           i++;
           if (i > steps * 2) {
             clearInterval(interval);
@@ -78,7 +79,7 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, onChange }) => 
 
     window.addEventListener('ui-event', handler as EventListener);
     return () => window.removeEventListener('ui-event', handler as EventListener);
-  }, [id, onChange]);
+  }, [id, onChange, rodIndex]);
 
   const travelHeight = containerRef.current
     ? containerRef.current.clientHeight * knobTravelRatio

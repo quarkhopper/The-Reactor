@@ -13,9 +13,7 @@ export default function SliderBlock() {
         id={`slider_${i}`}
         x={baseX + i * spacingX}
         y={baseY}
-        // onChange={(value) => {
-        //   console.log(`Slider ${i} = ${value.toFixed(2)}`);
-        // }}
+        rodIndex={i} // Pass the control rod index
       />
     );
   }
