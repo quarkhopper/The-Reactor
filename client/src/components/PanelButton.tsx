@@ -34,10 +34,10 @@ const PanelButton: React.FC<PanelButtonProps> = ({ id, x, y, label }) => {
   // Updated to work with normalized temperatures (0 to 1)
   const getColorFromTemperature = (temperature: number): string => {
     if (temperature <= 0) return 'off';
-    if (temperature < 0.1) return 'green'; // 0.0 to 0.1
-    if (temperature < 0.3) return 'amber'; // 0.1 to 0.3
-    if (temperature < 0.6) return 'red';   // 0.3 to 0.6
-    return 'white';                        // 0.6 to 1.0
+    if (temperature < 0.2) return 'green'; // 0.0 to 0.2
+    if (temperature < 0.5) return 'amber'; // 0.2 to 0.5
+    if (temperature < 0.8) return 'red';   // 0.5 to 0.8
+    return 'white';                        // 0.8 to 1.0
   };
 
   useEffect(() => {

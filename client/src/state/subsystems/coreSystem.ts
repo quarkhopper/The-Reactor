@@ -8,6 +8,7 @@ const MOVE_DURATION = 10000; // Time for control rod movement (not currently use
 const BLINK_INTERVAL = 200; // Blink interval for UI (not currently used)
 
 let tickInterval: NodeJS.Timeout | null = null; // Store the interval ID
+let tickCounter = 0; // Track number of ticks
 
 interface FuelRod {
   temperature: number; // Normalized temperature (0 to 1)
@@ -34,10 +35,10 @@ let distanceGrid: number[][][] = Array.from({ length: GRID_SIZE }, () =>
 );
 
 // Variables for tuning (locked values)
-const HEAT_GAIN_SCALING_FACTOR = 0.005; // Final value for heat gain
-const HEAT_LOSS_SCALING_FACTOR = 0.1; // Final value for heat loss
-const INTERFERENCE_SCALING_FACTOR = 2.0; // Final value for control rod interference
-const NORMALIZATION_FACTOR = 1.5; // Final value for reactivity normalization
+const HEAT_GAIN_SCALING_FACTOR = 0.018; // Keep increased value for critical temperatures
+const HEAT_LOSS_SCALING_FACTOR = 0.1; // Keep original for stability
+const INTERFERENCE_SCALING_FACTOR = 3.5; // Increased to better suppress reactivity
+const NORMALIZATION_FACTOR = 1.3; // Keep current value
 
 function assignStructuredControlRodPositions() {
   controlRodCoords = [
@@ -49,23 +50,15 @@ function assignStructuredControlRodPositions() {
 
   // Exclude the middle four cells
   controlRodCoords = controlRodCoords.filter(([x, y]) => !(x >= 2 && x <= 3 && y >= 2 && y <= 3));
-
-  // Debug: Log the assigned positions
-  controlRodCoords.forEach(([x, y], i) => {
-    console.log(`[coreSystem] Control rod ${i} assigned to (${x}, ${y})`);
-  });
 }
 
 function precalculateDistances() {
   for (let x = 0; x < GRID_SIZE; x++) {
     for (let y = 0; y < GRID_SIZE; y++) {
       for (let i = 0; i < ROD_COUNT; i++) {
-        const [rx, ry] = controlRodCoords[i]; // Get the random position of the control rod
-        const distance = Math.sqrt((rx - x) ** 2 + (ry - y) ** 2); // Calculate geometric distance
+        const [rx, ry] = controlRodCoords[i];
+        const distance = Math.sqrt((rx - x) ** 2 + (ry - y) ** 2);
         distanceGrid[x][y][i] = distance;
-
-        // Debug: Log the distance
-        console.log(`[coreSystem] Distance from fuel rod (${x},${y}) to control rod ${i} at (${rx},${ry}): ${distance}`);
       }
     }
   }
@@ -79,17 +72,14 @@ function precalculateBaseReactivities() {
       // Calculate base reactivity from all other fuel rods
       for (let fx = 0; fx < GRID_SIZE; fx++) {
         for (let fy = 0; fy < GRID_SIZE; fy++) {
-          if (fx === x && fy === y) continue; // Skip the current fuel rod
+          if (fx === x && fy === y) continue;
           const distance = Math.sqrt((fx - x) ** 2 + (fy - y) ** 2);
-          baseReactivity += 1 / (1 + distance); // Reactivity increases with proximity
+          baseReactivity += 1 / (1 + distance);
         }
       }
 
-      baseReactivity /= NORMALIZATION_FACTOR; // Keep this scaling for consistency
+      baseReactivity /= NORMALIZATION_FACTOR;
       baseReactivityGrid[x][y] = baseReactivity;
-
-      // Debug: Log the base reactivity for each cell
-      console.log(`[coreSystem] Base reactivity at (${x}, ${y}): ${baseReactivity.toFixed(3)}`);
     }
   }
 }
@@ -97,17 +87,15 @@ function precalculateBaseReactivities() {
 // Function to start the tick interval
 function startTick() {
   if (!tickInterval) {
-    console.log('[coreSystem] Starting tick interval...');
     tickInterval = setInterval(() => {
       tick();
-    }, 1000); // Adjust interval as needed
+    }, 1000);
   }
 }
 
 // Function to stop the tick interval
 function stopTick() {
   if (tickInterval) {
-    console.log('[coreSystem] Stopping tick interval...');
     clearInterval(tickInterval);
     tickInterval = null;
   }
@@ -116,13 +104,7 @@ function stopTick() {
 // Main tick function
 function tick() {
   try {
-    let totalTemperature = 0;
-    let maxTemperature = -Infinity;
-    let minTemperature = Infinity;
-
-    let totalReactivity = 0;
-    let maxReactivity = -Infinity;
-    let minReactivity = Infinity;
+    tickCounter++;
 
     for (let x = 0; x < GRID_SIZE; x++) {
       for (let y = 0; y < GRID_SIZE; y++) {
@@ -133,8 +115,7 @@ function tick() {
         // Calculate control rod interference
         for (let i = 0; i < ROD_COUNT; i++) {
           const distance = distanceGrid[x][y][i];
-          const influence = 1 / (1 + distance); // Influence decreases with distance
-
+          const influence = 1 / (1 + distance);
           controlInterference += (1 - controlRodPositions[i]) * influence * INTERFERENCE_SCALING_FACTOR;
         }
 
@@ -152,23 +133,15 @@ function tick() {
         // Clamp temperature to [0, 1]
         rod.temperature = Math.max(0, Math.min(1, rod.temperature));
 
-        // Emit temperature for this coordinate
+        // Emit temperature for this coordinate (needed for UI)
         eventBus.publish({
           type: 'core_tick_temperature',
           source: 'coreSystem',
           payload: { x, y, temperature: rod.temperature },
         });
-
-        // Update stats
-        totalTemperature += rod.temperature;
-        maxTemperature = Math.max(maxTemperature, rod.temperature);
-        minTemperature = Math.min(minTemperature, rod.temperature);
-
-        totalReactivity += finalReactivity;
-        maxReactivity = Math.max(maxReactivity, finalReactivity);
-        minReactivity = Math.min(minReactivity, finalReactivity);
       }
     }
+
   } catch (error) {
     console.error('[coreSystem] Error in tick:', error);
   }
@@ -183,6 +156,16 @@ stateMachine.subscribeToAppState((newState) => {
     startTick();
   } else {
     stopTick();
+  }
+});
+
+// Subscribe to slider change events
+eventBus.subscribe((event) => {
+  if (event.type === 'slider-change') {
+    const { rodIndex, value } = event.payload;
+    if (rodIndex >= 0 && rodIndex < controlRodPositions.length) {
+      controlRodPositions[rodIndex] = value;
+    }
   }
 });
 

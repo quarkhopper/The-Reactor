@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import eventBus from '../state/eventBus';
 
 import baseImg from '../images/slider_base.png';
 import knobImg from '../images/slider_knob.png';
@@ -31,6 +32,13 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, rodIndex, onCha
     const newValue = 1 - clamped / travelHeight;
     setValue(newValue);
     if (onChange) onChange(newValue, rodIndex); // Pass rodIndex with the value
+    
+    // Emit event on the event bus
+    eventBus.publish({
+      type: 'slider-change',
+      source: 'SliderControl',
+      payload: { rodIndex, value: newValue }
+    });
   };
 
   useEffect(() => {
@@ -68,6 +76,14 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, rodIndex, onCha
           const phase = i < steps ? i / steps : 2 - i / steps;
           setValue(phase);
           if (onChange) onChange(phase, rodIndex); // Pass rodIndex with the value
+          
+          // Emit event on the event bus during test sweep
+          eventBus.publish({
+            type: 'slider-change',
+            source: 'SliderControl',
+            payload: { rodIndex, value: phase }
+          });
+          
           i++;
           if (i > steps * 2) {
             clearInterval(interval);
