@@ -33,6 +33,12 @@ let distanceGrid: number[][][] = Array.from({ length: GRID_SIZE }, () =>
   Array.from({ length: GRID_SIZE }, () => Array(ROD_COUNT).fill(0))
 );
 
+// Variables for tuning (locked values)
+const HEAT_GAIN_SCALING_FACTOR = 0.005; // Final value for heat gain
+const HEAT_LOSS_SCALING_FACTOR = 0.1; // Final value for heat loss
+const INTERFERENCE_SCALING_FACTOR = 2.0; // Final value for control rod interference
+const NORMALIZATION_FACTOR = 1.5; // Final value for reactivity normalization
+
 function assignStructuredControlRodPositions() {
   controlRodCoords = [
     // Main diagonal
@@ -79,20 +85,14 @@ function precalculateBaseReactivities() {
         }
       }
 
-      const NORMALIZATION_FACTOR = 1.5; // Further reduce to amplify base reactivity
-      baseReactivity /= NORMALIZATION_FACTOR;
-
+      baseReactivity /= NORMALIZATION_FACTOR; // Keep this scaling for consistency
       baseReactivityGrid[x][y] = baseReactivity;
+
+      // Debug: Log the base reactivity for each cell
+      console.log(`[coreSystem] Base reactivity at (${x}, ${y}): ${baseReactivity.toFixed(3)}`);
     }
   }
 }
-
-// Constants for tuning
-const NORMALIZATION_FACTOR = 2.5; // Increase to reduce base reactivity
-const INTERFERENCE_SCALING_FACTOR = 1.0; // Reduce to make control rods less aggressive
-const HEAT_GAIN_SCALING_FACTOR = 10; // Keep unchanged for now
-const HEAT_LOSS_SCALING_FACTOR = 0.003; // Increased to enhance cooling
-const HEAT_DIFFUSION_COEFFICIENT = 0.1; // Adjust as needed
 
 // Function to start the tick interval
 function startTick() {
@@ -124,25 +124,11 @@ function tick() {
     let maxReactivity = -Infinity;
     let minReactivity = Infinity;
 
-    // Create a copy of the current temperatures to calculate diffusion
-    const newTemperatures = fuelRods.map(row => row.map(rod => rod.temperature));
-
-    // Create a flux grid to store heat transfer during this tick
-    const fluxGrid = Array.from({ length: GRID_SIZE }, () =>
-      Array(GRID_SIZE).fill(0)
-    );
-
     for (let x = 0; x < GRID_SIZE; x++) {
       for (let y = 0; y < GRID_SIZE; y++) {
         const rod = fuelRods[x][y];
         let baseReactivity = baseReactivityGrid[x][y];
         let controlInterference = 0;
-
-        // Adjust base reactivity normalization
-        baseReactivity /= NORMALIZATION_FACTOR;
-
-        // Log base reactivity
-        console.log(`[coreSystem] Base reactivity at (${x}, ${y}): ${baseReactivity.toFixed(3)}`);
 
         // Calculate control rod interference
         for (let i = 0; i < ROD_COUNT; i++) {
@@ -150,79 +136,39 @@ function tick() {
           const influence = 1 / (1 + distance); // Influence decreases with distance
 
           controlInterference += (1 - controlRodPositions[i]) * influence * INTERFERENCE_SCALING_FACTOR;
-
-          // Debug: Log control rod influence
-          console.log(`[coreSystem] Control rod ${i} influence at (${x}, ${y}): ${influence.toFixed(3)}, position: ${controlRodPositions[i]}`);
         }
-        console.log(`[coreSystem] Total control interference at (${x}, ${y}): ${controlInterference.toFixed(3)}`);
 
         // Final reactivity is base reactivity minus control interference
         const finalReactivity = Math.max(0, baseReactivity - controlInterference);
         reactivity[x][y] = finalReactivity;
 
-        // Log final reactivity
-        console.log(`[coreSystem] Final reactivity at (${x}, ${y}): ${finalReactivity.toFixed(3)}`);
-
         // Update temperature based on reactivity
         const heatGain = HEAT_GAIN_SCALING_FACTOR * finalReactivity;
         rod.temperature += heatGain;
 
-        // Log heat gain
-        console.log(`[coreSystem] Heat gain at (${x}, ${y}): ${heatGain.toFixed(3)}`);
-
-        // Apply heat loss (natural cooling)
-        rod.temperature -= HEAT_LOSS_SCALING_FACTOR;
-
-        // Apply heat diffusion
-        const neighbors = [
-          [x - 1, y], // Top
-          [x + 1, y], // Bottom
-          [x, y - 1], // Left
-          [x, y + 1], // Right
-        ];
-
-        for (const [nx, ny] of neighbors) {
-          if (nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GRID_SIZE) {
-            const neighborTemp = fuelRods[nx][ny].temperature;
-            const heatTransfer = HEAT_DIFFUSION_COEFFICIENT * (rod.temperature - neighborTemp);
-
-            // Only adjust the flux for the current cell
-            fluxGrid[x][y] -= heatTransfer; // Lose or gain heat based on the transfer
-          }
-        }
+        // Apply proportional heat loss (natural cooling)
+        rod.temperature -= HEAT_LOSS_SCALING_FACTOR * rod.temperature;
 
         // Clamp temperature to [0, 1]
-        newTemperatures[x][y] = Math.max(0, Math.min(1, newTemperatures[x][y]));
+        rod.temperature = Math.max(0, Math.min(1, rod.temperature));
+
+        // Emit temperature for this coordinate
+        eventBus.publish({
+          type: 'core_tick_temperature',
+          source: 'coreSystem',
+          payload: { x, y, temperature: rod.temperature },
+        });
+
+        // Update stats
+        totalTemperature += rod.temperature;
+        maxTemperature = Math.max(maxTemperature, rod.temperature);
+        minTemperature = Math.min(minTemperature, rod.temperature);
+
+        totalReactivity += finalReactivity;
+        maxReactivity = Math.max(maxReactivity, finalReactivity);
+        minReactivity = Math.min(minReactivity, finalReactivity);
       }
     }
-
-    // Apply the flux grid to the new temperatures
-    for (let x = 0; x < GRID_SIZE; x++) {
-      for (let y = 0; y < GRID_SIZE; y++) {
-        newTemperatures[x][y] += fluxGrid[x][y];
-        newTemperatures[x][y] = Math.max(0, Math.min(1, newTemperatures[x][y])); // Clamp again after applying flux
-      }
-    }
-
-    // Apply the new temperatures to the fuel rods
-    for (let x = 0; x < GRID_SIZE; x++) {
-      for (let y = 0; y < GRID_SIZE; y++) {
-        fuelRods[x][y].temperature = newTemperatures[x][y];
-      }
-    }
-
-    // Calculate averages
-    const averageTemperature = totalTemperature / (GRID_SIZE * GRID_SIZE);
-    const averageReactivity = totalReactivity / (GRID_SIZE * GRID_SIZE);
-
-    // Output stats
-    console.log(`[coreSystem] Tick stats:`);
-    console.log(`  Average Temperature: ${averageTemperature.toFixed(3)}`);
-    console.log(`  Max Temperature: ${maxTemperature.toFixed(3)}`);
-    console.log(`  Min Temperature: ${minTemperature.toFixed(3)}`);
-    console.log(`  Average Reactivity: ${averageReactivity.toFixed(3)}`);
-    console.log(`  Max Reactivity: ${maxReactivity.toFixed(3)}`);
-    console.log(`  Min Reactivity: ${minReactivity.toFixed(3)}`);
   } catch (error) {
     console.error('[coreSystem] Error in tick:', error);
   }
