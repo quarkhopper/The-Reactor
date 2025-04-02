@@ -58,7 +58,9 @@ const PanelButton: React.FC<PanelButtonProps> = ({ id, x, y, label }) => {
   }, [id]);
 
   const handleMouseDown = () => {
-    if (!disabled) setIsHeld(true);
+    if (!disabled) {
+      setIsHeld(true);
+    }
   };
 
   const handleMouseUp = () => {
@@ -72,7 +74,9 @@ const PanelButton: React.FC<PanelButtonProps> = ({ id, x, y, label }) => {
     setIsHeld(false);
   };
 
-  const handleMouseLeave = () => setIsHeld(false);
+  const handleMouseLeave = () => {
+    setIsHeld(false);
+  };
 
   return (
     <div
@@ -84,11 +88,11 @@ const PanelButton: React.FC<PanelButtonProps> = ({ id, x, y, label }) => {
     >
       <img
         src={glowMap[displayColor] || glow_off}
-        className="panel-button-img"
+        className={`panel-button-img ${isHeld ? 'pressed' : ''}`}
         draggable={false}
         alt=""
       />
-      <div className="panel-button-label">{label}</div>
+      {label && <div className="panel-button-label">{label}</div>}
     </div>
   );
 };
