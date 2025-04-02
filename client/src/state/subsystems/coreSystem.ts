@@ -106,6 +106,10 @@ function tick() {
   try {
     tickCounter++;
 
+    let totalTemp = 0;
+    let minTemp = Infinity;
+    let maxTemp = -Infinity;
+
     for (let x = 0; x < GRID_SIZE; x++) {
       for (let y = 0; y < GRID_SIZE; y++) {
         const rod = fuelRods[x][y];
@@ -133,6 +137,11 @@ function tick() {
         // Clamp temperature to [0, 1]
         rod.temperature = Math.max(0, Math.min(1, rod.temperature));
 
+        // Track min/max/total temperature
+        totalTemp += rod.temperature;
+        minTemp = Math.min(minTemp, rod.temperature);
+        maxTemp = Math.max(maxTemp, rod.temperature);
+
         // Emit temperature for this coordinate (needed for UI)
         eventBus.publish({
           type: 'core_tick_temperature',
@@ -142,37 +151,64 @@ function tick() {
       }
     }
 
+    // Calculate and log average temperature
+    const avgTemp = totalTemp / (GRID_SIZE * GRID_SIZE);
+    console.log(`[coreSystem] Tick ${tickCounter}: Avg Temp: ${avgTemp.toFixed(3)}, Min: ${minTemp.toFixed(3)}, Max: ${maxTemp.toFixed(3)}`);
+
   } catch (error) {
     console.error('[coreSystem] Error in tick:', error);
   }
 }
 
-// Subscribe to state changes
-stateMachine.subscribeToAppState((newState) => {
-  if (newState === 'on') {
-    assignStructuredControlRodPositions(); // Use structured positions
-    precalculateDistances(); // Precompute distances after assigning positions
-    precalculateBaseReactivities();
-    startTick();
-  } else {
-    stopTick();
-  }
-});
+// Store unsubscribe functions
+let stateUnsubscribe: (() => void) | null = null;
+let eventUnsubscribe: (() => void) | null = null;
 
-// Subscribe to slider change events
-eventBus.subscribe((event) => {
-  if (event.type === 'slider-change') {
-    const { rodIndex, value } = event.payload;
-    if (rodIndex >= 0 && rodIndex < controlRodPositions.length) {
-      controlRodPositions[rodIndex] = value;
+// Initialize subscriptions
+function initSubscriptions() {
+  // Subscribe to state changes
+  stateUnsubscribe = stateMachine.subscribeToAppState((newState) => {
+    if (newState === 'on') {
+      assignStructuredControlRodPositions(); // Use structured positions
+      precalculateDistances(); // Precompute distances after assigning positions
+      precalculateBaseReactivities();
+      startTick();
+    } else {
+      stopTick();
     }
-  }
-});
+  });
 
+  // Subscribe to slider change events
+  eventUnsubscribe = eventBus.subscribe((event) => {
+    if (event.type === 'slider-change') {
+      const { rodIndex, value } = event.payload;
+      if (rodIndex >= 0 && rodIndex < controlRodPositions.length) {
+        controlRodPositions[rodIndex] = value;
+      }
+    }
+  });
+}
+
+// Cleanup function
+function cleanup() {
+  stopTick();
+  if (stateUnsubscribe) {
+    stateUnsubscribe();
+    stateUnsubscribe = null;
+  }
+  if (eventUnsubscribe) {
+    eventUnsubscribe();
+    eventUnsubscribe = null;
+  }
+}
+
+// Initialize the module
+initSubscriptions();
 console.log('[coreSystem] Module initialized');
 
 export default {
   tick,
   startTick,
   stopTick,
+  cleanup, // Export cleanup function
 };

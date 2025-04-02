@@ -29,48 +29,32 @@ const glowMap: Record<string, string> = {
 const PanelButton: React.FC<PanelButtonProps> = ({ id, x, y, label }) => {
   const [isHeld, setIsHeld] = useState(false);
   const [displayColor, setDisplayColor] = useState('off');
-  const [disabled, setDisabled] = useState(false); // currently unused, reserved for later logic
-
-  // Updated to work with normalized temperatures (0 to 1)
-  const getColorFromTemperature = (temperature: number): string => {
-    if (temperature <= 0) return 'off';
-    if (temperature < 0.2) return 'green'; // 0.0 to 0.2
-    if (temperature < 0.5) return 'amber'; // 0.2 to 0.5
-    if (temperature < 0.8) return 'red';   // 0.5 to 0.8
-    return 'white';                        // 0.8 to 1.0
-  };
+  const [disabled, setDisabled] = useState(false);
 
   useEffect(() => {
-    const handleUiEvent = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      if (detail.type === 'init') initRegistry.acknowledge(id);
-      if (detail.type === 'test') testRegistry.acknowledge(id);
+    const handler = (e: CustomEvent) => {
+      if (e.detail.type === 'init') {
+        setDisplayColor('off');
+        initRegistry.acknowledge(id);
+      }
+
+      if (e.detail.type === 'test') {
+        // Test sequence: off -> green -> amber -> red -> white -> off
+        const colors = ['off', 'green', 'amber', 'red', 'white', 'off'];
+        let i = 0;
+        const interval = setInterval(() => {
+          setDisplayColor(colors[i]);
+          i++;
+          if (i >= colors.length) {
+            clearInterval(interval);
+            testRegistry.acknowledge(id);
+          }
+        }, 100);
+      }
     };
 
-    window.addEventListener('ui-event', handleUiEvent);
-
-    const match = id.match(/^fuel_rod_button_(\d+)_(\d+)$/);
-    if (match) {
-      const fx = parseInt(match[1]);
-      const fy = parseInt(match[2]);
-
-      const listener = (event: any) => {
-        if (event.type === 'core_tick_temperature') {
-          const { x: tx, y: ty, temperature } = event.payload;
-          if (tx === fx && ty === fy) {
-            setDisplayColor(getColorFromTemperature(temperature));
-          }
-        }
-      };
-
-      const unsubscribe = eventBus.subscribe(listener);
-      return () => {
-        unsubscribe();
-        window.removeEventListener('ui-event', handleUiEvent);
-      };
-    }
-
-    return () => window.removeEventListener('ui-event', handleUiEvent);
+    window.addEventListener('ui-event', handler as EventListener);
+    return () => window.removeEventListener('ui-event', handler as EventListener);
   }, [id]);
 
   const handleMouseDown = () => {
@@ -79,7 +63,11 @@ const PanelButton: React.FC<PanelButtonProps> = ({ id, x, y, label }) => {
 
   const handleMouseUp = () => {
     if (!disabled && isHeld) {
-      eventBus.publish({ type: 'button_press', source: 'user', payload: { id } });
+      eventBus.publish({ 
+        type: 'button_press', 
+        source: 'PanelButton',
+        payload: { id } 
+      });
     }
     setIsHeld(false);
   };
