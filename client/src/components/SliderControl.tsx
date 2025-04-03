@@ -41,11 +41,14 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, rodIndex, onCha
     const unsubscribe = stateMachine.subscribe((cmd: Command) => {
       if (cmd.type === 'state_change') {
         handleStateChange(cmd.state);
+      } else if (cmd.type === 'rod_position_update' && cmd.id === `control_rod_${rodIndex}`) {
+        // Update slider position when receiving position update
+        setValue(cmd.value);
       }
     });
     
     return () => unsubscribe();
-  }, [id]);
+  }, [id, rodIndex]);
 
   // Handle test sequence
   useEffect(() => {

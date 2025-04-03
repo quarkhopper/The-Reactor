@@ -34,6 +34,10 @@ const stateMachine = {
     // Handle test sequence results
     if (cmd.type === 'test_result') {
       handleTestSequence(cmd);
+    } else if (cmd.type === 'scram_button_press') {
+      // Handle scram button press - transition to scram state
+      console.log('[stateMachine] SCRAM button pressed');
+      stateMachine.setAppState('scram');
     }
     
     for (const cb of callbacks) cb(cmd);

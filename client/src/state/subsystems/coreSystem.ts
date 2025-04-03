@@ -220,6 +220,18 @@ function initSubscriptions() {
       startTick();
     } else if (newState === 'off' || newState === 'shutdown') {
       stopTick();
+    } else if (newState === 'scram') {
+      // Set all control rods to fully inserted (0)
+      console.log('[coreSystem] SCRAM initiated - inserting control rods');
+      for (let i = 0; i < controlRodPositions.length; i++) {
+        controlRodPositions[i] = 0;
+        // Emit position update for slider
+        stateMachine.emit({
+          type: 'rod_position_update',
+          id: `control_rod_${i}`,
+          value: 0
+        });
+      }
     }
   });
 
