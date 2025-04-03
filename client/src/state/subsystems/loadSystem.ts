@@ -6,7 +6,6 @@ import type { Command } from '../types';
 const loadBanks: boolean[] = Array(4).fill(false); // Example 4 load banks
 
 function tick() {
-  console.log('[loadSystem] Tick - load banks:', loadBanks);
   // TODO: calculate power draw
 }
 

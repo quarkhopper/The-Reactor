@@ -6,7 +6,6 @@ import type { Command } from '../types';
 const loopEfficiency: boolean[] = Array(4).fill(true); // Example 4 routes
 
 function tick() {
-  console.log('[coolSystem] Tick - loop efficiency:', loopEfficiency);
   // TODO: react to current loop configuration
 }
 

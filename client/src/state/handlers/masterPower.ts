@@ -9,12 +9,12 @@ export function handleMasterPower() {
   switch (currentState) {
     case 'off':
       // Start the power-up sequence
-      transitionToNextState('off');
+      transitionToNextState(currentState);
       break;
 
     case 'on':
       // Start the shutdown sequence
-      transitionToNextState('on');
+      transitionToNextState(currentState);
       break;
 
     case 'startup':

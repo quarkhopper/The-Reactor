@@ -6,7 +6,6 @@ import type { Command } from '../types';
 const rodLimits: number[] = Array(8).fill(1.0); // Example 8 rods
 
 function tick() {
-  console.log('[ctrlSystem] Tick - rod limits:', rodLimits);
   // TODO: enforce rod limits
 }
 

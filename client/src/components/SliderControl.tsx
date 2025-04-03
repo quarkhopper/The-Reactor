@@ -53,7 +53,7 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, rodIndex, onCha
       if (cmd.type === 'test_sequence' && cmd.id === id) {
         setIsTestMode(true);
         
-        // Reset to bottom position
+        // Reset to bottom position (fully inserted)
         setValue(0);
         
         // Use a single continuous animation instead of steps
@@ -66,11 +66,11 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, rodIndex, onCha
           const progress = Math.min(elapsed / totalDuration, 1);
           
           if (progress >= 1) {
-            // Animation complete
-            setValue(0); // Ensure we end at the bottom
+            // Animation complete - ensure fully inserted
+            setValue(0);
             stateMachine.emit({
               type: 'rod_position_update',
-              id: `rod_${rodIndex}`,
+              id: `control_rod_${rodIndex}`,
               value: 0
             });
             setIsTestMode(false);
@@ -84,14 +84,14 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, rodIndex, onCha
           }
           
           // Use a custom easing function that starts and ends at 0
-          // This ensures the slider starts at 0, goes to 1, and back to 0
+          // This ensures the slider starts at 0 (inserted), goes to 1 (withdrawn), and back to 0 (inserted)
           let currentValue;
           if (progress < 0.5) {
-            // First half: go from 0 to 1
+            // First half: go from 0 (inserted) to 1 (withdrawn)
             const p = progress * 2; // Scale to [0, 1]
             currentValue = p;
           } else {
-            // Second half: go from 1 to 0
+            // Second half: go from 1 (withdrawn) to 0 (inserted)
             const p = (progress - 0.5) * 2; // Scale to [0, 1]
             currentValue = 1 - p;
           }
@@ -100,7 +100,7 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, rodIndex, onCha
           setValue(currentValue);
           stateMachine.emit({
             type: 'rod_position_update',
-            id: `rod_${rodIndex}`,
+            id: `control_rod_${rodIndex}`,
             value: currentValue
           });
           
@@ -127,6 +127,7 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, rodIndex, onCha
     const relY = clientY - rect.top;
     const travelHeight = rect.height * knobTravelRatio;
     const clamped = Math.min(Math.max(relY, 0), travelHeight);
+    // Value mapping: 0 = fully inserted (bottom), 1 = fully withdrawn (top)
     const newValue = 1 - clamped / travelHeight;
     setValue(newValue);
 
@@ -134,10 +135,10 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, rodIndex, onCha
       onChange(newValue, rodIndex);
     }
 
-    // Emit rod position update
+    // Emit control rod position update with correct ID format
     stateMachine.emit({
       type: 'rod_position_update',
-      id: `rod_${rodIndex}`,
+      id: `control_rod_${rodIndex}`,
       value: newValue
     });
   };

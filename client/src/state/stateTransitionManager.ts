@@ -52,13 +52,18 @@ const STATE_TRANSITION_HANDLERS: Record<AppState, () => void> = {
     });
   },
   'startup': () => {
-    // No logging needed
+    console.log('[stateTransitionManager] Starting up...');
+    // Schedule the transition to 'on' state
+    setTimeout(() => {
+      console.log('[stateTransitionManager] Startup complete, transitioning to on state');
+      stateMachine.setAppState('on');
+    }, STATE_TRANSITION_DELAYS['startup']);
   },
   'on': () => {
-    // No logging needed
+    console.log('[stateTransitionManager] Reactor online');
   },
   'shutdown': () => {
-    // No logging needed
+    console.log('[stateTransitionManager] Shutting down...');
   }
 };
 
@@ -77,11 +82,8 @@ export function transitionToNextState(currentState: AppState): void {
       handler();
     }
     
-    // Set the new state after the delay
-    const delay = STATE_TRANSITION_DELAYS[nextState];
-    setTimeout(() => {
-      stateMachine.setAppState(nextState);
-    }, delay);
+    // Set the new state immediately (the handler will handle any delays)
+    stateMachine.setAppState(nextState);
   } else {
     console.log(`[stateTransitionManager] No next state for ${currentState}`);
   }

@@ -111,6 +111,9 @@ function tick() {
     let minTemp = Infinity;
     let maxTemp = -Infinity;
 
+    // Log control rod positions at the start of each tick
+    console.log(`[coreSystem] Tick ${tickCounter} - Control rod positions: ${controlRodPositions.map(p => p.toFixed(2)).join(', ')}`);
+
     for (let x = 0; x < GRID_SIZE; x++) {
       for (let y = 0; y < GRID_SIZE; y++) {
         const rod = fuelRods[x][y];
@@ -169,19 +172,12 @@ function initSubscriptions() {
   // Subscribe to state changes
   stateUnsubscribe = stateMachine.subscribeToAppState((newState) => {
     if (newState === 'on') {
-      // First emit init state to trigger component initialization
-      stateMachine.emit({
-        type: 'state_change',
-        id: 'system',
-        state: 'init'
-      });
-      
-      // Then initialize the core system
+      // Initialize the core system's internal state
       assignStructuredControlRodPositions(); // Use structured positions
       precalculateDistances(); // Precompute distances after assigning positions
       precalculateBaseReactivities();
       startTick();
-    } else {
+    } else if (newState === 'off' || newState === 'shutdown') {
       stopTick();
     }
   });
@@ -189,22 +185,12 @@ function initSubscriptions() {
   // Subscribe to control rod position commands
   stateMachine.subscribe((cmd: Command) => {
     if (cmd.type === 'rod_position_update') {
-      // Extract grid coordinates from the ID (format: fuel_rod_button_X_Y)
-      const idParts = cmd.id.split('_');
-      if (idParts.length >= 5) {
-        const x = parseInt(idParts[3], 10);
-        const y = parseInt(idParts[4], 10);
-        
-        const rodIndex = controlRodCoords.findIndex(([rx, ry]) => rx === x && ry === y);
-        if (rodIndex >= 0 && rodIndex < controlRodPositions.length) {
+      // Handle control rod position updates (format: control_rod_X)
+      if (cmd.id.startsWith('control_rod_')) {
+        const rodIndex = parseInt(cmd.id.split('_')[2], 10);
+        if (!isNaN(rodIndex) && rodIndex >= 0 && rodIndex < controlRodPositions.length) {
           controlRodPositions[rodIndex] = cmd.value;
-          
-          // Emit updated position back to the UI
-          stateMachine.emit({
-            type: 'rod_position_update',
-            id: cmd.id,
-            value: cmd.value
-          });
+          console.log(`[coreSystem] Control rod ${rodIndex} position updated to ${cmd.value}`);
         }
       }
     }
@@ -256,3 +242,16 @@ export function useCoreSystem() {
 
 // Initialize the system
 initSubscriptions();
+
+// Export the core system as a subsystem
+const coreSystem = {
+  tick,
+  getState: () => ({
+    controlRodCoords,
+    controlRodPositions,
+    reactivity,
+    fuelRods
+  })
+};
+
+export default coreSystem;
