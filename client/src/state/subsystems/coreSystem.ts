@@ -14,6 +14,7 @@ let tickCounter = 0; // Track number of ticks
 interface FuelRod {
   temperature: number; // Normalized temperature (0 to 1)
   state: 'engaged' | 'withdrawn' | 'transitioning';
+  transitionStartTime?: number; // Optional transition start time
 }
 
 const fuelRods: FuelRod[][] = Array.from({ length: GRID_SIZE }, () =>
@@ -121,6 +122,32 @@ function tick() {
 
     // Create a 2D array to store temperatures for this tick
     const tempGrid: number[][] = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(0));
+
+    // Check for completed transitions
+    const now = Date.now();
+    for (let x = 0; x < GRID_SIZE; x++) {
+      for (let y = 0; y < GRID_SIZE; y++) {
+        const rod = fuelRods[x][y];
+        if (rod.state === 'transitioning' && rod.transitionStartTime) {
+          if (now - rod.transitionStartTime >= 5000) { // 5 seconds
+            // Transition complete - toggle the state
+            rod.state = rod.state === 'transitioning' ? 'engaged' : 'withdrawn';
+            delete rod.transitionStartTime;
+            
+            // Recalculate distances and base reactivity since core geometry changed
+            precalculateDistances();
+            precalculateBaseReactivities();
+            
+            // Emit state change
+            stateMachine.emit({
+              type: 'fuel_rod_state_change',
+              id: `fuel_rod_button_${x}_${y}`,
+              state: rod.state
+            });
+          }
+        }
+      }
+    }
 
     for (let x = 0; x < GRID_SIZE; x++) {
       for (let y = 0; y < GRID_SIZE; y++) {
