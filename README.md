@@ -54,25 +54,27 @@ The core idea revolves around:
 - Interface has a clear **startup sequence**, booting subsystems and initializing lights/sounds in order
 - **Shutdown sequence** ends in a slow fade or flickering power-down
 
-### Internal State Machine
+### Core System Design
 
-- User interactions mutate a **shared system state**
-- The system responds by:
-  - Activating/deactivating subsystems
-  - Lighting up different sections of the UI
-  - Gradually stabilizing (or escalating!) depending on logic
+The reactor core is simulated through a multidimensional arrangement of physical elements:
 
-#### State System Design (Planned)
+- **Fuel Rod Tensor**: Represents fuel rod presence and configuration, directly influencing power generation
+- **Control Rod Tensor**: Affects neutron absorption, regulating reaction intensity through slider controls
+- **Moderator Tensor**: Modifies reactivity in combination with fuel and control rods
+- **Secondary Tensors**: Represent thermal buildup, geometric instability, and system momentum
 
-- State Machine library options:
-  - `xstate` (ideal for visualizing and structuring complex state graphs)
-  - Custom lightweight FSM if minimal logic needed
-- State includes:
-  - Primary reactor state (idle, warming up, online, unstable, critical, offline)
-  - Subsystem states (coolant system, pressure valves, containment field, etc.)
-  - Load/Pressure/Flux values that influence visible behavior
-- Each interaction **perturbs** the system (e.g., raising pressure)
-- System attempts to **self-correct**, activating additional subsystems as needed
+The system computes a solution each tick based on these interacting tensors, affecting:
+- Core heat and pressure
+- Power output
+- Subsystem warning states
+- Potential faults or instability
+
+### State Management
+
+- **Centralized Component Registry**: Single source of truth for all component IDs and metadata
+- **State Transition Manager**: Handles all state transitions with validation and timing
+- **Event Bus System**: Facilitates communication between components and the core system
+- **Test Sequence Handler**: Manages component testing and validation
 
 ### Backend (Future Phase)
 
@@ -92,26 +94,62 @@ The core idea revolves around:
 
 ### Phase 1 – Core UI & Logic
 
-- [ ] React app scaffolded with Tailwind and TypeScript
-- [ ] Add basic components: buttons, indicators, layout grid
-- [ ] Implement startup/shutdown animation sequences
-- [ ] Define and manage shared reactor state
-- [ ] Add simple state transitions and reactions to input
+- [x] React app scaffolded with Tailwind and TypeScript
+- [x] Add basic components: buttons, indicators, layout grid
+- [x] Implement startup/shutdown animation sequences
+- [x] Define and manage shared reactor state
+- [x] Add simple state transitions and reactions to input
 
-### Phase 2 – Dynamic Behavior
+### Phase 2 – Component Refinement
 
-- [ ] Define full state machine (possibly with `xstate`)
-- [ ] Add interdependencies between subsystems
-- [ ] Display shifting load/pressure/flux visually
-- [ ] Make system visibly stabilize over time (or fail spectacularly)
+- [x] Implement self-contained component architecture
+- [x] Add test sequences for all components
+- [x] Improve state management and transitions
+- [x] Enhance visual feedback and animations
 
-### Phase 3 – Polish & Expansion
+### Phase 3 – Core System Integration
 
-- [ ] Add sounds and enhanced animation via `framer-motion`
-- [ ] Create auxiliary systems (e.g., emergency venting)
-- [ ] Add theming (retro-futuristic or brutalist industrial)
-- [ ] (Optional) Add Discord bot integration
-- [ ] (Optional) Persist historical logs via Node/PostgreSQL
+- [x] Implement tensor-based core simulation
+- [x] Add control rod and fuel rod interactions
+- [x] Develop secondary tensor effects
+- [x] Create comprehensive test sequences
+
+### Phase 4 – Polish & Expansion
+
+- [ ] Add sound effects and audio feedback
+- [ ] Implement multiplayer features
+- [ ] Add Discord integration
+- [ ] Create documentation and tutorials
+
+---
+
+## 📚 Documentation
+
+Detailed documentation can be found in the `docs` directory:
+
+- `docs/patterns/`: Component patterns and best practices
+- `docs/notes/`: Development notes and design decisions
+
+---
+
+## 🚀 Getting Started
+
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Start the development server: `npm run dev`
+4. Open `http://localhost:3000` in your browser
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please read our contributing guidelines before submitting pull requests.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ---
 
@@ -127,7 +165,7 @@ The core idea revolves around:
 
 ## 📝 Notes & Considerations
 
-- Avoid real physics simulation—it’s about the *feel*, not the realism
+- Avoid real physics simulation—it's about the *feel*, not the realism
 - Use *delay*, *lighting*, and *motion* to simulate system depth
 - Subtlety: not every interaction should have an obvious effect
 - Chaos mode is encouraged—randomization with limits
