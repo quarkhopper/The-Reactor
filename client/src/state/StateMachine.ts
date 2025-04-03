@@ -10,14 +10,17 @@ const stateMachine = {
   },
 
   setAppState(state: AppState) {
-    currentState = state;
-    console.log(`[stateMachine] State set to: ${state}`);
-    stateMachine.emit({ type: 'state_change', id: 'system', state });
+    // Only update and emit if the state is actually changing
+    if (state !== currentState) {
+      currentState = state;
+      console.log(`[stateMachine] State set to: ${state}`);
+      stateMachine.emit({ type: 'state_change', id: 'system', state });
 
-    // Notify all app state subscribers
-    for (const cb of appStateCallbacks) {
-      console.log(`[stateMachine] Notifying subscriber of state: ${state}`);
-      cb(state);
+      // Notify all app state subscribers
+      for (const cb of appStateCallbacks) {
+        console.log(`[stateMachine] Notifying subscriber of state: ${state}`);
+        cb(state);
+      }
     }
   },
 

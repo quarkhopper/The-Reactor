@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { useTestable } from '../hooks/useTestable';
+import { registry } from '../state/registry';
 
 import '../css/components/CircularGauge.css';
 
@@ -7,9 +9,6 @@ import card from '../images/gauge_card.png';
 import needle from '../images/gauge_needle.png';
 import lightOff from '../images/gauge_light_off.png';
 import lightOn from '../images/gauge_light_on.png';
-
-import initRegistry from '../state/initRegistry';
-import testRegistry from '../state/testRegistry';
 
 interface CircularGaugeProps {
   id: string;
@@ -21,37 +20,39 @@ interface CircularGaugeProps {
 
 export default function CircularGauge({ id, x, y, value, limit }: CircularGaugeProps) {
   const [displayValue, setDisplayValue] = useState(value);
+  const { isTestMode } = useTestable(id);
 
+  // Self-initialization
   useEffect(() => {
-    const handler = (e: CustomEvent) => {
-      if (e.detail.type === 'init') {
-        setDisplayValue(0);
-        initRegistry.acknowledge(id);
-      }
-
-      if (e.detail.type === 'test') {
-        let i = 0;
-        const steps = 40;
-
-        const interval = setInterval(() => {
-          const phase = i < steps ? i / steps : 2 - i / steps;
-          setDisplayValue(phase);
-          i++;
-          if (i > steps * 2) {
-            clearInterval(interval);
-            testRegistry.acknowledge(id);
-          }
-        }, 20);
-      }
-    };
-
-    window.addEventListener('ui-event', handler as EventListener);
-    return () => window.removeEventListener('ui-event', handler as EventListener);
+    registry.acknowledge(id);
   }, [id]);
 
+  // Test mode sequence
   useEffect(() => {
-    setDisplayValue(value);
-  }, [value]);
+    if (isTestMode) {
+      let i = 0;
+      const steps = 40;
+
+      const interval = setInterval(() => {
+        const phase = i < steps ? i / steps : 2 - i / steps;
+        setDisplayValue(phase);
+        i++;
+        if (i > steps * 2) {
+          clearInterval(interval);
+          registry.acknowledge(id);
+        }
+      }, 20);
+
+      return () => clearInterval(interval);
+    }
+  }, [isTestMode, id]);
+
+  // Update value when not in test mode
+  useEffect(() => {
+    if (!isTestMode) {
+      setDisplayValue(value);
+    }
+  }, [value, isTestMode]);
 
   const clampedValue = Math.min(Math.max(displayValue, 0), 1);
   const angle = clampedValue * 180 - 90; // -90° to +90°

@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useTestable } from '../hooks/useTestable';
+import { registry } from '../state/registry';
 
 import off from '../images/indicator_off.png';
 import amber from '../images/indicator_amber.png';
@@ -7,9 +9,6 @@ import red from '../images/indicator_red.png';
 import white from '../images/indicator_white.png';
 
 import '../css/components/IndicatorLight.css';
-
-import initRegistry from '../state/initRegistry';
-import testRegistry from '../state/testRegistry';
 
 export type IndicatorColor = 'amber' | 'green' | 'red' | 'white' | 'off';
 
@@ -29,33 +28,32 @@ export default function IndicatorLight({
   topLabel,
 }: IndicatorLightProps) {
   const [displayColor, setDisplayColor] = useState<IndicatorColor>('off');
+  const { isTestMode } = useTestable(id);
 
+  // Self-initialization
   useEffect(() => {
-    const handler = (e: CustomEvent) => {
-      if (e.detail.type === 'init') {
-        setDisplayColor('off');
-        initRegistry.acknowledge(id);
-      }
-
-      if (e.detail.type === 'test') {
-        const sequence: IndicatorColor[] = ['red', 'amber', 'green', 'white', 'off'];
-        let i = 0;
-
-        const interval = setInterval(() => {
-          setDisplayColor(sequence[i]);
-          i++;
-
-          if (i >= sequence.length) {
-            clearInterval(interval);
-            testRegistry.acknowledge(id);
-          }
-        }, 150);
-      }
-    };
-
-    window.addEventListener('ui-event', handler as EventListener);
-    return () => window.removeEventListener('ui-event', handler as EventListener);
+    registry.acknowledge(id);
   }, [id]);
+
+  // Test mode sequence
+  useEffect(() => {
+    if (isTestMode) {
+      const sequence: IndicatorColor[] = ['red', 'amber', 'green', 'white', 'off'];
+      let i = 0;
+
+      const interval = setInterval(() => {
+        setDisplayColor(sequence[i]);
+        i++;
+
+        if (i >= sequence.length) {
+          clearInterval(interval);
+          registry.acknowledge(id);
+        }
+      }, 150);
+
+      return () => clearInterval(interval);
+    }
+  }, [isTestMode, id]);
 
   const colorMap: Record<IndicatorColor, string> = {
     amber,

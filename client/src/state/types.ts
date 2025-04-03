@@ -1,15 +1,9 @@
-export type UIEvent =
-  | { type: 'button_press'; id: string }
-  | { type: 'button_release'; id: string }
-  | { type: 'knob_turn'; id: string; direction: 'left' | 'right' }
-  | { type: 'slider_move'; id: string; value: number };
-
 export type Command =
   | { type: 'set_button_color'; id: string; color: string }
   | { type: 'set_button_light'; id: string; on: boolean }
   | { type: 'start_blinking'; id: string }
   | { type: 'stop_blinking'; id: string }
-  | { type: 'set_indicator'; id: string; color: string }
+  | { type: 'set_indicator'; id: string; value: number }
   | {
       type: 'set_condition_color';
       id: string;
@@ -17,7 +11,18 @@ export type Command =
       color: 'red' | 'green' | 'amber' | 'white' | 'off';
     }
   | { type: 'state_change'; id: string; state: AppState }
-  | { type: 'button_press'; id: string };
+  | { type: 'button_press'; id: string }
+  | { type: 'temperature_update'; id: string; value: number }
+  | { type: 'rod_position_update'; id: string; value: number }
+  | { type: 'power_update'; id: string; value: number }
+  | { type: 'load_update'; id: string; value: number }
+  | { type: 'knob_change'; id: string; value: 'left' | 'right' }
+  | { type: 'test_sequence'; id: string }
+  | { type: 'set_loop_efficiency'; id: string; value: 'on' | 'off' }
+  | { type: 'set_rod_limit'; id: string; value: string }
+  | { type: 'set_load_bank'; id: string; value: 'on' | 'off' }
+  | { type: 'test_result'; id: string; passed: boolean }
+  | { type: 'tick'; id: string; counter: number };
 
 export type AppState = 'off' | 'init' | 'startup' | 'on' | 'shutdown';
 export type ConditionColor = 'red' | 'green' | 'amber' | 'white' | 'off';
@@ -32,9 +37,9 @@ export interface StateMachineAPI {
   log(msg: string): void;
 }
 
-
 export interface InitRegistry {
   pending: Set<string>;
+  isReady: boolean;
   acknowledge: (id: string) => void;
   reset: () => void;
   begin: (callback: () => void) => void;

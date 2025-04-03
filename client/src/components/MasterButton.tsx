@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useTestable } from '../hooks/useTestable';
+import { registry } from '../state/registry';
 import '../css/components/MasterButton.css';
 import bezel from '../images/master_button_bezel.png';
 import glowOff from '../images/master_button_off.png';
@@ -6,8 +8,6 @@ import glowOn from '../images/master_button_on.png';
 
 import stateMachine from '../state/StateMachine';
 import { handleMasterPower } from '../state/handlers/masterPower';
-import initRegistry from '../state/initRegistry';
-import testRegistry from '../state/testRegistry';
 
 interface MasterButtonProps {
   x: number;
@@ -18,6 +18,7 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
   const [lit, setLit] = useState(false);
   const [blinking, setBlinking] = useState(false);
   const [visible, setVisible] = useState(false);
+  const { isTestMode } = useTestable('master');
 
   // Watch app state and respond accordingly
   useEffect(() => {
@@ -53,25 +54,15 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
     return () => clearInterval(interval);
   }, [blinking, lit]);
 
-  // Register with init system
+  // Self-initialization
   useEffect(() => {
-    const handler = (e: CustomEvent) => {
-      if (e.detail.type === 'init') {
-        setLit(false);
-        setBlinking(false);
-        setVisible(false);
-        initRegistry.acknowledge('master');
-      }
-
-      if (e.detail.type === 'test') {
-        // No visual test yet, but must acknowledge
-        testRegistry.acknowledge('master');
-      }
-    };
-
-    window.addEventListener('ui-event', handler as EventListener);
-    return () => window.removeEventListener('ui-event', handler as EventListener);
-  }, []);
+    if (!isTestMode) {
+      setLit(false);
+      setBlinking(false);
+      setVisible(false);
+    }
+    registry.acknowledge('master');
+  }, [isTestMode]);
 
   const handlePress = () => {
     handleMasterPower();

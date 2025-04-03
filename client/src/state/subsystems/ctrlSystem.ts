@@ -1,36 +1,34 @@
 import { Subsystem } from '../types';
-import eventBus from '../eventBus';
-import { ControlInput } from '../types';
+import stateMachine from '../StateMachine';
+import type { Command } from '../types';
 
-// Example: internal system clamp ranges
-let autoScramEnabled = true;
+// Example: control rod limits
+const rodLimits: number[] = Array(8).fill(1.0); // Example 8 rods
 
 function tick() {
-  console.log('[ctrlSystem] Tick - autoScram:', autoScramEnabled);
-  // TODO: monitor system stability, issue overrides
+  console.log('[ctrlSystem] Tick - rod limits:', rodLimits);
+  // TODO: enforce rod limits
 }
 
 function getState() {
   return {
-    autoScramEnabled
+    rodLimits
   };
 }
 
-function handleCtrlInput(payload: ControlInput) {
-  if (payload.action === 'toggle_auto_scram') {
-    const { value } = payload;
-    if (typeof value === 'boolean') {
-      autoScramEnabled = value;
-      console.log(`[ctrlSystem] Auto SCRAM toggled to ${value}`);
+function handleCommand(cmd: Command) {
+  if (cmd.type === 'set_rod_limit') {
+    const { id, value } = cmd;
+    const index = parseInt(id.split('_')[2]); // Expecting id format: 'rod_limit_N'
+    if (!isNaN(index) && index >= 0 && index < rodLimits.length) {
+      rodLimits[index] = parseFloat(value);
+      console.log(`[ctrlSystem] Set rod ${index} limit to ${value}`);
     }
   }
 }
 
-eventBus.subscribe((event) => {
-  if (event.type === 'control_input' && event.payload?.target === 'ctrlSystem') {
-    handleCtrlInput(event.payload);
-  }
-});
+// Subscribe to commands
+stateMachine.subscribe(handleCommand);
 
 const ctrlSystem: Subsystem = {
   tick,

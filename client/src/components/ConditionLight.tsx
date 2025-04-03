@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { useTestable } from '../hooks/useTestable';
+import { registry } from '../state/registry';
 
 import '../css/components/ConditionLight.css';
 
@@ -8,9 +10,6 @@ import green from '../images/condition_green.png';
 import amber from '../images/condition_amber.png';
 import white from '../images/condition_white.png';
 import shine from '../images/condition_shine.png';
-
-import initRegistry from '../state/initRegistry';
-import testRegistry from '../state/testRegistry';
 
 type ConditionColor = 'off' | 'red' | 'green' | 'amber' | 'white';
 
@@ -40,32 +39,17 @@ export default function ConditionLight({
   label,
 }: ConditionLightProps) {
   const [displayColor, setDisplayColor] = useState<ConditionColor>(color);
+  const { isTestMode } = useTestable(id);
 
   useEffect(() => {
-    const handler = (e: CustomEvent) => {
-      if (e.detail.type === 'init') {
-        setDisplayColor('off');
-        initRegistry.acknowledge(id);
-      }
+    if (!isTestMode) {
+      setDisplayColor(color);
+    }
+  }, [color, isTestMode]);
 
-      if (e.detail.type === 'test') {
-        const sequence: ConditionColor[] = ['red', 'amber', 'green', 'white', 'off'];
-        let step = 0;
-
-        const interval = setInterval(() => {
-          setDisplayColor(sequence[step]);
-          step++;
-
-          if (step >= sequence.length) {
-            clearInterval(interval);
-            testRegistry.acknowledge(id);
-          }
-        }, 150); // flash every 150ms
-      }
-    };
-
-    window.addEventListener('ui-event', handler as EventListener);
-    return () => window.removeEventListener('ui-event', handler as EventListener);
+  // Self-initialization
+  useEffect(() => {
+    registry.acknowledge(id);
   }, [id]);
 
   return (

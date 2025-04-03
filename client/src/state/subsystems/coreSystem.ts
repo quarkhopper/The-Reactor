@@ -1,5 +1,6 @@
-import eventBus from '../eventBus';
 import stateMachine from '../StateMachine';
+import { useState, useEffect } from 'react';
+import type { Command } from '../types';
 
 const GRID_SIZE = 6;
 const ROD_COUNT = 8;
@@ -142,11 +143,11 @@ function tick() {
         minTemp = Math.min(minTemp, rod.temperature);
         maxTemp = Math.max(maxTemp, rod.temperature);
 
-        // Emit temperature for this coordinate (needed for UI)
-        eventBus.publish({
-          type: 'core_tick_temperature',
-          source: 'coreSystem',
-          payload: { x, y, temperature: rod.temperature },
+        // Emit temperature update command
+        stateMachine.emit({
+          type: 'temperature_update',
+          id: `fuel_rod_button_${x}_${y}`,
+          value: rod.temperature * 300 // Scale to 0-300°C range
         });
       }
     }
@@ -160,15 +161,22 @@ function tick() {
   }
 }
 
-// Store unsubscribe functions
+// Store unsubscribe function
 let stateUnsubscribe: (() => void) | null = null;
-let eventUnsubscribe: (() => void) | null = null;
 
 // Initialize subscriptions
 function initSubscriptions() {
   // Subscribe to state changes
   stateUnsubscribe = stateMachine.subscribeToAppState((newState) => {
     if (newState === 'on') {
+      // First emit init state to trigger component initialization
+      stateMachine.emit({
+        type: 'state_change',
+        id: 'system',
+        state: 'init'
+      });
+      
+      // Then initialize the core system
       assignStructuredControlRodPositions(); // Use structured positions
       precalculateDistances(); // Precompute distances after assigning positions
       precalculateBaseReactivities();
@@ -178,12 +186,26 @@ function initSubscriptions() {
     }
   });
 
-  // Subscribe to slider change events
-  eventUnsubscribe = eventBus.subscribe((event) => {
-    if (event.type === 'slider-change') {
-      const { rodIndex, value } = event.payload;
-      if (rodIndex >= 0 && rodIndex < controlRodPositions.length) {
-        controlRodPositions[rodIndex] = value;
+  // Subscribe to control rod position commands
+  stateMachine.subscribe((cmd: Command) => {
+    if (cmd.type === 'rod_position_update') {
+      // Extract grid coordinates from the ID (format: fuel_rod_button_X_Y)
+      const idParts = cmd.id.split('_');
+      if (idParts.length >= 5) {
+        const x = parseInt(idParts[3], 10);
+        const y = parseInt(idParts[4], 10);
+        
+        const rodIndex = controlRodCoords.findIndex(([rx, ry]) => rx === x && ry === y);
+        if (rodIndex >= 0 && rodIndex < controlRodPositions.length) {
+          controlRodPositions[rodIndex] = cmd.value;
+          
+          // Emit updated position back to the UI
+          stateMachine.emit({
+            type: 'rod_position_update',
+            id: cmd.id,
+            value: cmd.value
+          });
+        }
       }
     }
   });
@@ -196,19 +218,41 @@ function cleanup() {
     stateUnsubscribe();
     stateUnsubscribe = null;
   }
-  if (eventUnsubscribe) {
-    eventUnsubscribe();
-    eventUnsubscribe = null;
-  }
 }
 
-// Initialize the module
-initSubscriptions();
-console.log('[coreSystem] Module initialized');
+// React hook for components to use
+export function useCoreSystem() {
+  const [state, setState] = useState({
+    controlRodCoords,
+    controlRodPositions,
+    reactivity,
+    fuelRods
+  });
 
-export default {
-  tick,
-  startTick,
-  stopTick,
-  cleanup, // Export cleanup function
-};
+  useEffect(() => {
+    // Initialize subscriptions if not already done
+    if (!stateUnsubscribe) {
+      initSubscriptions();
+    }
+
+    // Subscribe to state updates
+    const unsubscribe = stateMachine.subscribe((cmd: Command) => {
+      if (cmd.type === 'rod_position_update') {
+        // Update local state when rod positions change
+        setState(prev => ({
+          ...prev,
+          controlRodPositions: [...prev.controlRodPositions]
+        }));
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  return state;
+}
+
+// Initialize the system
+initSubscriptions();

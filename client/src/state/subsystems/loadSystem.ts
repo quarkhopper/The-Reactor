@@ -1,36 +1,34 @@
 import { Subsystem } from '../types';
-import eventBus from '../eventBus';
-import { ControlInput } from '../types';
+import stateMachine from '../StateMachine';
+import type { Command } from '../types';
 
-// Simulated turbine control knob state
-let turbineThrottle = 0.5;
+// Example: load bank states
+const loadBanks: boolean[] = Array(4).fill(false); // Example 4 load banks
 
 function tick() {
-  console.log('[loadSystem] Tick - turbine throttle:', turbineThrottle);
-  // TODO: simulate capacitor fill/drain based on throttle
+  console.log('[loadSystem] Tick - load banks:', loadBanks);
+  // TODO: calculate power draw
 }
 
 function getState() {
   return {
-    turbineThrottle
+    loadBanks
   };
 }
 
-function handleLoadInput(payload: ControlInput) {
-  if (payload.action === 'set_turbine_throttle') {
-    const { value } = payload;
-    if (typeof value === 'number') {
-      turbineThrottle = value;
-      console.log(`[loadSystem] Set turbine throttle to ${value}`);
+function handleCommand(cmd: Command) {
+  if (cmd.type === 'set_load_bank') {
+    const { id, value } = cmd;
+    const index = parseInt(id.split('_')[2]); // Expecting id format: 'load_bank_N'
+    if (!isNaN(index) && index >= 0 && index < loadBanks.length) {
+      loadBanks[index] = value === 'on';
+      console.log(`[loadSystem] Set load bank ${index} to ${value}`);
     }
   }
 }
 
-eventBus.subscribe((event) => {
-  if (event.type === 'control_input' && event.payload?.target === 'loadSystem') {
-    handleLoadInput(event.payload);
-  }
-});
+// Subscribe to commands
+stateMachine.subscribe(handleCommand);
 
 const loadSystem: Subsystem = {
   tick,

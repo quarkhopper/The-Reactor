@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import eventBus from '../state/eventBus';
-import initRegistry from '../state/initRegistry';
-import testRegistry from '../state/testRegistry';
+import React, { useState, useEffect } from 'react';
+import stateMachine from '../state/StateMachine';
+import { registry } from '../state/registry';
+import { useTestable } from '../hooks/useTestable';
+import type { Command } from '../state/types';
 
 import glow_off from '../images/button_off.png';
 import glow_green from '../images/button_glow_green.png';
@@ -16,6 +17,10 @@ interface PanelButtonProps {
   x: number;
   y: number;
   label?: string;
+  onClick?: () => void;
+  isActive?: boolean;
+  displayColor?: string;
+  disabled?: boolean;
 }
 
 const glowMap: Record<string, string> = {
@@ -26,57 +31,45 @@ const glowMap: Record<string, string> = {
   white: glow_white,
 };
 
-const PanelButton: React.FC<PanelButtonProps> = ({ id, x, y, label }) => {
+const PanelButton: React.FC<PanelButtonProps> = ({ 
+  id, 
+  x, 
+  y, 
+  label,
+  onClick,
+  isActive = false,
+  displayColor = 'off',
+  disabled = false
+}) => {
   const [isHeld, setIsHeld] = useState(false);
-  const [displayColor, setDisplayColor] = useState('off');
-  const [disabled, setDisabled] = useState(false);
+  const { displayColor: testColor } = useTestable(id);
 
+  // Self-initialization
   useEffect(() => {
-    const handler = (e: CustomEvent) => {
-      if (e.detail.type === 'init') {
-        setDisplayColor('off');
-        initRegistry.acknowledge(id);
-      }
-
-      if (e.detail.type === 'test') {
-        // Test sequence: off -> green -> amber -> red -> white -> off
-        const colors = ['off', 'green', 'amber', 'red', 'white', 'off'];
-        let i = 0;
-        const interval = setInterval(() => {
-          setDisplayColor(colors[i]);
-          i++;
-          if (i >= colors.length) {
-            clearInterval(interval);
-            testRegistry.acknowledge(id);
-          }
-        }, 100);
-      }
-    };
-
-    window.addEventListener('ui-event', handler as EventListener);
-    return () => window.removeEventListener('ui-event', handler as EventListener);
+    // Acknowledge initialization as if this was a physical component
+    registry.acknowledge(id);
   }, [id]);
 
   const handleMouseDown = () => {
-    if (!disabled) {
-      setIsHeld(true);
-    }
+    if (!disabled) setIsHeld(true);
   };
 
   const handleMouseUp = () => {
     if (!disabled && isHeld) {
-      eventBus.publish({ 
-        type: 'button_press', 
-        source: 'PanelButton',
-        payload: { id } 
-      });
+      if (onClick) {
+        onClick();
+      } else {
+        // Emit button press command
+        stateMachine.emit({
+          type: 'button_press',
+          id
+        });
+      }
     }
     setIsHeld(false);
   };
 
-  const handleMouseLeave = () => {
-    setIsHeld(false);
-  };
+  const handleMouseLeave = () => setIsHeld(false);
 
   return (
     <div
@@ -87,8 +80,8 @@ const PanelButton: React.FC<PanelButtonProps> = ({ id, x, y, label }) => {
       onMouseLeave={handleMouseLeave}
     >
       <img
-        src={glowMap[displayColor] || glow_off}
-        className={`panel-button-img ${isHeld ? 'pressed' : ''}`}
+        src={glowMap[testColor || displayColor] || glow_off}
+        className={`panel-button-img ${isHeld || isActive ? 'pressed' : ''}`}
         draggable={false}
         alt=""
       />

@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { useTestable } from '../hooks/useTestable';
+import { registry } from '../state/registry';
 
 import '../css/components/DigitalDisplay.css';
 
@@ -24,9 +26,6 @@ import numbersRight7 from '../images/numbers_right_7.png';
 import numbersRight8 from '../images/numbers_right_8.png';
 import numbersRight9 from '../images/numbers_right_9.png';
 
-import initRegistry from '../state/initRegistry';
-import testRegistry from '../state/testRegistry';
-
 const leftDigits = [
   numbersLeft0, numbersLeft1, numbersLeft2, numbersLeft3, numbersLeft4,
   numbersLeft5, numbersLeft6, numbersLeft7, numbersLeft8, numbersLeft9,
@@ -51,35 +50,18 @@ interface DigitalDisplayProps {
 
 export default function DigitalDisplay({ id, x, y, value, label }: DigitalDisplayProps) {
   const [displayValue, setDisplayValue] = useState(value);
+  const { isTestMode } = useTestable(id);
 
   useEffect(() => {
-    const handler = (e: CustomEvent) => {
-      if (e.detail.type === 'init') {
-        setDisplayValue(0);
-        initRegistry.acknowledge(id);
-      }
+    if (!isTestMode) {
+      setDisplayValue(value);
+    }
+  }, [value, isTestMode]);
 
-      if (e.detail.type === 'test') {
-        let i = 0;
-        const interval = setInterval(() => {
-          setDisplayValue(i / 99); // 0 to 1 mapped to value
-          i++;
-          if (i > 99) {
-            clearInterval(interval);
-            setDisplayValue(0);
-            testRegistry.acknowledge(id);
-          }
-        }, 15);
-      }
-    };
-
-    window.addEventListener('ui-event', handler as EventListener);
-    return () => window.removeEventListener('ui-event', handler as EventListener);
+  // Self-initialization
+  useEffect(() => {
+    registry.acknowledge(id);
   }, [id]);
-
-  useEffect(() => {
-    setDisplayValue(value);
-  }, [value]);
 
   const clamped = Math.min(99, Math.floor(clamp(displayValue, 0, 1) * 100));
   const leftDigit = Math.floor(clamped / 10);

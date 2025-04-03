@@ -1,4 +1,5 @@
 import PanelButton from '../components/PanelButton';
+import FuelRodButton from '../components/FuelRodButton';
 
 export default function PanelButtonBlock() {
   const buttons: React.ReactElement[] = [];
@@ -17,11 +18,13 @@ export default function PanelButtonBlock() {
       const posY = gridY - (gridRows * spacingY) / 2 + spacingY * (y + 0.5);
 
       buttons.push(
-        <PanelButton
+        <FuelRodButton
           key={`fuel-${x}-${y}`}
           id={`fuel_rod_button_${x}_${y}`}
           x={posX}
           y={posY}
+          gridX={x}
+          gridY={y}
           label=""
         />
       );

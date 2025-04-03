@@ -1,6 +1,6 @@
 import { Subsystem } from '../types';
-import eventBus from '../eventBus';
-import { ControlInput } from '../types';
+import stateMachine from '../StateMachine';
+import type { Command } from '../types';
 
 // Example: cooling loop efficiency toggles
 const loopEfficiency: boolean[] = Array(4).fill(true); // Example 4 routes
@@ -16,21 +16,19 @@ function getState() {
   };
 }
 
-function handleCoolInput(payload: ControlInput) {
-  if (payload.action === 'toggle_loop_efficiency') {
-    const { index, value } = payload;
-    if (typeof index === 'number' && typeof value === 'boolean') {
-      loopEfficiency[index] = value;
+function handleCoolInput(cmd: Command) {
+  if (cmd.type === 'set_loop_efficiency') {
+    const { id, value } = cmd;
+    const index = parseInt(id.split('_')[2]); // Expecting id format: 'loop_efficiency_N'
+    if (!isNaN(index) && index >= 0 && index < loopEfficiency.length) {
+      loopEfficiency[index] = value === 'on';
       console.log(`[coolSystem] Toggled loop ${index} efficiency to ${value}`);
     }
   }
 }
 
-eventBus.subscribe((event) => {
-  if (event.type === 'control_input' && event.payload?.target === 'coolSystem') {
-    handleCoolInput(event.payload);
-  }
-});
+// Subscribe to commands
+stateMachine.subscribe(handleCoolInput);
 
 const coolSystem: Subsystem = {
   tick,
