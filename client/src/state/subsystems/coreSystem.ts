@@ -13,11 +13,13 @@ let tickCounter = 0; // Track number of ticks
 
 interface FuelRod {
   temperature: number; // Normalized temperature (0 to 1)
+  state: 'engaged' | 'withdrawn' | 'transitioning';
 }
 
 const fuelRods: FuelRod[][] = Array.from({ length: GRID_SIZE }, () =>
   Array.from({ length: GRID_SIZE }, () => ({
     temperature: 0.02, // Initial temperature normalized to 0.02
+    state: 'engaged' // All rods start engaged
   }))
 );
 
