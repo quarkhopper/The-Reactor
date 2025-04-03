@@ -22,6 +22,7 @@ interface FuelRodButtonProps {
 }
 
 type ButtonColor = 'off' | 'green' | 'amber' | 'red' | 'white';
+type FuelRodState = 'engaged' | 'withdrawn' | 'transitioning';
 
 // Helper function to map temperature to color
 function getColorFromTemperature(temp: number): ButtonColor {
@@ -49,10 +50,11 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
   label
 }) => {
   const { controlRodCoords } = useCoreSystem();
-  const [isWithdrawn, setIsWithdrawn] = useState(false);
+  const [state, setState] = useState<FuelRodState>('withdrawn');
   const [displayColor, setDisplayColor] = useState<ButtonColor>('off');
   const [isTestMode, setIsTestMode] = useState(false);
   const [isHeld, setIsHeld] = useState(false);
+  const [isBlinking, setIsBlinking] = useState(false);
 
   // Check if this button is at a control rod position
   const isControlRod = controlRodCoords.some(([rx, ry]) => rx === gridX && ry === gridY);
@@ -62,10 +64,11 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
     const handleStateChange = (state: AppState) => {
       if (state === 'init') {
         // Reset component state
-        setIsWithdrawn(false);
+        setState('withdrawn');
         setDisplayColor('off');
         setIsTestMode(false);
         setIsHeld(false);
+        setIsBlinking(false);
         // Acknowledge this component when initialization is requested
         registry.acknowledge(id);
       } else if (state === 'startup' || state === 'on') {
@@ -119,34 +122,60 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
     return () => unsubscribe();
   }, [id]);
 
-  // Handle temperature and control rod updates
+  // Handle temperature, control rod updates, and fuel rod state changes
   useEffect(() => {
     const handleCommand = (cmd: Command) => {
       // Handle temperature updates for all fuel rods
       if (cmd.type === 'temperature_update' && cmd.id === id) {
-        if (!isTestMode) {
+        if (!isTestMode && !isBlinking) {
           setDisplayColor(getColorFromTemperature(cmd.value));
         }
       }
 
       // Handle control rod position updates only for control rod buttons
       if (isControlRod && cmd.type === 'rod_position_update' && cmd.id === id) {
-        setIsWithdrawn(cmd.value > 0);
+        setState(cmd.value > 0 ? 'withdrawn' : 'engaged');
+      }
+
+      // Handle fuel rod state changes
+      if (!isControlRod && cmd.type === 'fuel_rod_state_change' && cmd.id === id) {
+        setState(cmd.state);
+        setIsBlinking(cmd.state === 'transitioning');
+        if (cmd.state === 'withdrawn') {
+          setDisplayColor('off');
+        }
       }
     };
 
     const unsubscribe = stateMachine.subscribe(handleCommand);
     return () => unsubscribe();
-  }, [id, isTestMode, isControlRod]);
+  }, [id, isTestMode, isControlRod, isBlinking]);
+
+  // Handle blinking effect
+  useEffect(() => {
+    if (!isBlinking) return;
+
+    const interval = setInterval(() => {
+      setDisplayColor(prev => prev === 'off' ? 'white' : 'off');
+    }, 500); // Blink every 500ms
+
+    return () => clearInterval(interval);
+  }, [isBlinking]);
 
   const handleClick = () => {
-    if (!isControlRod) return;
-    
-    // Emit button press command
-    stateMachine.emit({
-      type: 'button_press',
-      id
-    });
+    if (!isControlRod) {
+      // Emit fuel rod toggle command
+      stateMachine.emit({
+        type: 'fuel_rod_toggle',
+        id
+      });
+    } else {
+      // Emit button press command for control rods
+      stateMachine.emit({
+        type: 'button_press',
+        id
+      });
+    }
   };
 
   const handleMouseDown = () => {
@@ -155,9 +184,7 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
 
   const handleMouseUp = () => {
     setIsHeld(false);
-    if (isControlRod) {
-      handleClick();
-    }
+    handleClick();
   };
 
   const handleMouseLeave = () => {
@@ -175,7 +202,7 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
       >
         <img
           src={glowMap[displayColor]}
-          className={`panel-button-img ${isHeld || isWithdrawn ? 'pressed' : ''} ${isTestMode ? 'test-mode' : ''}`}
+          className={`panel-button-img ${isHeld ? 'pressed' : ''} ${isTestMode ? 'test-mode' : ''}`}
           draggable={false}
           alt=""
         />

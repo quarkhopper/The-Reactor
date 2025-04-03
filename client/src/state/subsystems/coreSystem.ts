@@ -111,9 +111,6 @@ function tick() {
     let minTemp = Infinity;
     let maxTemp = -Infinity;
 
-    // Log control rod positions at the start of each tick
-    console.log(`[coreSystem] Tick ${tickCounter} - Control rod positions: ${controlRodPositions.map(p => p.toFixed(2)).join(', ')}`);
-
     for (let x = 0; x < GRID_SIZE; x++) {
       for (let y = 0; y < GRID_SIZE; y++) {
         const rod = fuelRods[x][y];
@@ -190,7 +187,6 @@ function initSubscriptions() {
         const rodIndex = parseInt(cmd.id.split('_')[2], 10);
         if (!isNaN(rodIndex) && rodIndex >= 0 && rodIndex < controlRodPositions.length) {
           controlRodPositions[rodIndex] = cmd.value;
-          console.log(`[coreSystem] Control rod ${rodIndex} position updated to ${cmd.value}`);
         }
       }
     }

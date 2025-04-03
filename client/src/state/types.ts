@@ -22,7 +22,9 @@ export type Command =
   | { type: 'set_rod_limit'; id: string; value: string }
   | { type: 'set_load_bank'; id: string; value: 'on' | 'off' }
   | { type: 'test_result'; id: string; passed: boolean }
-  | { type: 'tick'; id: string; counter: number };
+  | { type: 'tick'; id: string; counter: number }
+  | { type: 'fuel_rod_toggle'; id: string }
+  | { type: 'fuel_rod_state_change'; id: string; state: 'engaged' | 'withdrawn' | 'transitioning' };
 
 export type AppState = 'off' | 'init' | 'test' | 'startup' | 'on' | 'shutdown';
 export type ConditionColor = 'red' | 'green' | 'amber' | 'white' | 'off';
