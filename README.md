@@ -30,7 +30,7 @@ The core idea revolves around:
 ### Frontend (Current Focus)
 
 - **Framework:** React (using TypeScript)
-- **UI Framework:** Tailwind CSS for rapid styling
+- **Styling:** Custom CSS with a focus on maintainable, component-specific styles
 - **Component Libraries:**
   - `shadcn/ui` for basic UI elements
   - `lucide-react` for icons
