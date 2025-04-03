@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { useTestable } from '../hooks/useTestable';
+import React, { useEffect, useState, useCallback } from 'react';
 import { registry } from '../state/registry';
 import stateMachine from '../state/StateMachine';
+import type { Command, AppState } from '../state/types';
 
 import '../css/components/DigitalDisplay.css';
 
@@ -51,18 +51,73 @@ interface DigitalDisplayProps {
 
 export default function DigitalDisplay({ id, x, y, value, label }: DigitalDisplayProps) {
   const [displayValue, setDisplayValue] = useState(value);
-  const { isTestMode } = useTestable(id);
-  const animationFrameRef = useRef<number | null>(null);
-  
-  // Handle test sequence completion
-  const handleTestComplete = useCallback(() => {
-    // Emit test result when test sequence is complete
-    stateMachine.emit({
-      type: 'test_result',
-      id,
-      passed: true
+  const [isTestMode, setIsTestMode] = useState(false);
+
+  // Handle state changes
+  useEffect(() => {
+    const handleStateChange = (state: AppState) => {
+      if (state === 'init') {
+        // Reset component state
+        setDisplayValue(0);
+        setIsTestMode(false);
+        // Acknowledge this component when initialization is requested
+        registry.acknowledge(id);
+      } else if (state === 'startup' || state === 'on') {
+        // Ensure components are reset when entering startup or on state
+        setIsTestMode(false);
+        setDisplayValue(value);
+      }
+    };
+    
+    const unsubscribe = stateMachine.subscribe((cmd: Command) => {
+      if (cmd.type === 'state_change') {
+        handleStateChange(cmd.state);
+      }
     });
+    
+    return () => unsubscribe();
+  }, [id, value]);
+
+  // Handle test sequence
+  useEffect(() => {
+    const handleCommand = (cmd: Command) => {
+      if (cmd.type === 'test_sequence' && cmd.id === id) {
+        setIsTestMode(true);
+        
+        // Reset to 0
+        setDisplayValue(0);
+        
+        // Super simple test: just show 88 for a second, then back to 00
+        setTimeout(() => {
+          // Set to 88 (0.88 in normalized value)
+          setDisplayValue(0.88);
+          
+          // After 1 second, set back to 00 and complete test
+          setTimeout(() => {
+            setDisplayValue(0);
+            setIsTestMode(false);
+            
+            // Emit test result when test sequence completes
+            stateMachine.emit({
+              type: 'test_result',
+              id,
+              passed: true
+            });
+          }, 1000);
+        }, 100);
+      }
+    };
+    
+    const unsubscribe = stateMachine.subscribe(handleCommand);
+    return () => unsubscribe();
   }, [id]);
+
+  // Update value when not in test mode
+  useEffect(() => {
+    if (!isTestMode) {
+      setDisplayValue(value);
+    }
+  }, [value, isTestMode]);
 
   // Function to convert a raw value to display digits
   const getDisplayDigits = (rawValue: number) => {
@@ -76,34 +131,6 @@ export default function DigitalDisplay({ id, x, y, value, label }: DigitalDispla
     
     return { leftDigit, rightDigit };
   };
-
-  useEffect(() => {
-    if (!isTestMode) {
-      setDisplayValue(value);
-    } else {
-      // Reset to 0
-      setDisplayValue(0);
-      
-      // Super simple test: just show 88 for a second, then back to 00
-      setTimeout(() => {
-        // Set to 88 (0.88 in normalized value)
-        setDisplayValue(0.88);
-        
-        // After 1 second, set back to 00 and complete test
-        setTimeout(() => {
-          setDisplayValue(0);
-          handleTestComplete();
-        }, 1000);
-      }, 100);
-      
-      return () => {};
-    }
-  }, [value, isTestMode, id, handleTestComplete]);
-
-  // Self-initialization
-  useEffect(() => {
-    registry.acknowledge(id);
-  }, [id]);
 
   // Get the display digits
   const { leftDigit, rightDigit } = getDisplayDigits(displayValue);
