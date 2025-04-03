@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useTestable } from '../hooks/useTestable';
 import { registry } from '../state/registry';
+import stateMachine from '../state/StateMachine';
+import type { Command, AppState } from '../state/types';
+import { handleMasterPower } from '../state/handlers/masterPower';
+
 import '../css/components/MasterButton.css';
 import bezel from '../images/master_button_bezel.png';
 import glowOff from '../images/master_button_off.png';
 import glowOn from '../images/master_button_on.png';
-
-import stateMachine from '../state/StateMachine';
-import { handleMasterPower } from '../state/handlers/masterPower';
 
 interface MasterButtonProps {
   x: number;
@@ -18,12 +18,20 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
   const [lit, setLit] = useState(false);
   const [blinking, setBlinking] = useState(false);
   const [visible, setVisible] = useState(false);
-  const { isTestMode } = useTestable('master');
+  const [isTestMode, setIsTestMode] = useState(false);
 
-  // Watch app state and respond accordingly
+  // Handle state changes
   useEffect(() => {
-    const unsubscribe = stateMachine.subscribeToAppState((state) => {
-      if (state === 'on') {
+    const handleStateChange = (state: AppState) => {
+      if (state === 'init') {
+        // Reset component state
+        setLit(false);
+        setBlinking(false);
+        setVisible(false);
+        setIsTestMode(false);
+        // Acknowledge this component when initialization is requested
+        registry.acknowledge('master');
+      } else if (state === 'on') {
         setLit(true);
         setBlinking(false);
         setVisible(true);
@@ -35,9 +43,39 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
         setBlinking(false);
         setVisible(false);
       }
+    };
+    
+    const unsubscribe = stateMachine.subscribe((cmd: Command) => {
+      if (cmd.type === 'state_change') {
+        handleStateChange(cmd.state);
+      }
     });
+    
+    return () => unsubscribe();
+  }, []);
 
-    return unsubscribe;
+  // Handle test sequence
+  useEffect(() => {
+    const handleCommand = (cmd: Command) => {
+      if (cmd.type === 'test_sequence' && cmd.id === 'master') {
+        setIsTestMode(true);
+        
+        // Complete the test after a short delay
+        const timer = setTimeout(() => {
+          setIsTestMode(false);
+          stateMachine.emit({
+            type: 'test_result',
+            id: 'master',
+            passed: true
+          });
+        }, 500);
+        
+        return () => clearTimeout(timer);
+      }
+    };
+    
+    const unsubscribe = stateMachine.subscribe(handleCommand);
+    return () => unsubscribe();
   }, []);
 
   // Blinking animation loop
@@ -53,28 +91,6 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
 
     return () => clearInterval(interval);
   }, [blinking, lit]);
-
-  // Self-initialization
-  useEffect(() => {
-    if (!isTestMode) {
-      setLit(false);
-      setBlinking(false);
-      setVisible(false);
-    }
-    registry.acknowledge('master');
-    
-    // If in test mode, complete the test after a short delay
-    if (isTestMode) {
-      const timer = setTimeout(() => {
-        stateMachine.emit({
-          type: 'test_result',
-          id: 'master',
-          passed: true
-        });
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [isTestMode]);
 
   const handlePress = () => {
     handleMasterPower();
