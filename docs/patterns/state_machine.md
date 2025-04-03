@@ -209,4 +209,43 @@ The base reactivity of the reactor core is fundamentally determined by its geome
    - Control rod interference calculations work on top of this base reactivity
    - Temperature calculations use the resulting reactivity
 
-This principle is critical to maintaining an accurate simulation of reactor behavior. The geometry of the core is not static - it changes as rods are inserted or withdrawn, and these changes must be reflected in the reactivity calculations. 
+This principle is critical to maintaining an accurate simulation of reactor behavior. The geometry of the core is not static - it changes as rods are inserted or withdrawn, and these changes must be reflected in the reactivity calculations.
+
+## Planned Subsystem Implementations
+
+### Load Subsystem
+- Interfaces with cooling system through heat exchanger
+- Manages turbine power generation vs demand
+- Digital displays along top show demand (driven by noisy functions)
+- Central gauge shows turbine RPM
+- Bottom switches control turbine and related systems
+
+### Cooling Subsystem
+- Controlled by upper right array of knobs
+- Controls hidden valves
+- Integrates with heat exchanger
+- Affects core temperature and power generation
+
+### Control Rod System
+- Aux buttons configure control rod positions
+- One button randomizes control rod positions
+- Bottom right meters and indicator lights provide feedback
+- Shows control system's balancing attempts
+
+### Integration Points
+1. Cooling → Load
+   - Heat exchanger transfers heat
+   - Affects turbine efficiency
+   - Impacts power generation
+
+2. Control → Core
+   - Rod positions affect reactivity
+   - Different configurations for different scenarios
+   - Feedback through indicator lights
+
+3. Load → Core
+   - Power demand affects core operation
+   - Turbine status affects cooling
+   - System balancing feedback
+
+This architecture allows for complex interactions while maintaining clear separation of concerns. 
