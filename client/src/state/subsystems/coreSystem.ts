@@ -158,10 +158,6 @@ function tick() {
       }
     }
 
-    // Log the entire temperature grid
-    console.log(`[coreSystem] Temperature Grid at Tick ${tickCounter}:`);
-    console.log(tempGrid.map(row => row.map(t => t.toFixed(6)).join(' ')).join('\n'));
-
     // Calculate and log average temperature
     const avgTemp = totalTemp / (GRID_SIZE * GRID_SIZE);
     console.log(`[coreSystem] Tick ${tickCounter}: Avg Temp: ${avgTemp.toFixed(3)}, Min: ${minTemp.toFixed(3)}, Max: ${maxTemp.toFixed(3)}`);
