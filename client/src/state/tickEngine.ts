@@ -15,7 +15,6 @@ const subsystems: { tick: () => void }[] = [];
 // Register a subsystem for ticking
 export function registerSubsystem(system: { tick: () => void }) {
   subsystems.push(system);
-  console.log('[tickEngine] Registered new subsystem');
 }
 
 // Start the tick engine
@@ -24,11 +23,9 @@ export function startTicking() {
 
   isRunning = true;
   tickCounter = 0;
-  console.log('[tickEngine] Starting tick engine');
 
   tickInterval = setInterval(() => {
     tickCounter++;
-    console.log(`[tickEngine] Tick ${tickCounter}`);
 
     // Tick all subsystems
     subsystems.forEach(system => {
@@ -52,13 +49,21 @@ export function startTicking() {
 export function stopTicking() {
   if (!isRunning) return;
 
+  isRunning = false;
   if (tickInterval) {
     clearInterval(tickInterval);
     tickInterval = null;
   }
+}
 
-  isRunning = false;
-  console.log('[tickEngine] Stopped tick engine');
+// Get the current tick counter
+export function getTickCounter(): number {
+  return tickCounter;
+}
+
+// Check if the tick engine is running
+export function isTicking(): boolean {
+  return isRunning;
 }
 
 // Initialize tick engine

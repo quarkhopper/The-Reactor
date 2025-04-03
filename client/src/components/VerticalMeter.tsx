@@ -17,13 +17,34 @@ interface VerticalMeterProps {
 
 export default function VerticalMeter({ id, x, y, value }: VerticalMeterProps) {
   const [currentValue, setCurrentValue] = useState(value);
-  const { isTestMode } = useTestable(id);
+  const { isTestMode, displayColor } = useTestable(id);
 
   useEffect(() => {
     if (!isTestMode) {
       setCurrentValue(value);
+    } else {
+      // During test mode, set the value based on the displayColor
+      switch (displayColor) {
+        case 'off':
+          setCurrentValue(0);
+          break;
+        case 'green':
+          setCurrentValue(0.25);
+          break;
+        case 'amber':
+          setCurrentValue(0.5);
+          break;
+        case 'red':
+          setCurrentValue(0.75);
+          break;
+        case 'white':
+          setCurrentValue(1);
+          break;
+        default:
+          setCurrentValue(0);
+      }
     }
-  }, [value, isTestMode]);
+  }, [value, isTestMode, displayColor]);
 
   // Self-initialization
   useEffect(() => {

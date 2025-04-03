@@ -23,7 +23,7 @@ stateMachine.subscribe((cmd: Command) => {
   }
 });
 
-// Export current state getter
+// Get the current state
 export function getCurrentState(): AppState {
   return currentState;
 }

@@ -1,6 +1,7 @@
 import stateMachine from './StateMachine';
-import { manifest } from './initManifest';
+import { getAllComponentIds } from './componentManifest';
 import type { Command, AppState } from './types';
+import { transitionToNextState } from './stateTransitionManager';
 
 class RegistryManager {
   private pending: Set<string> = new Set();
@@ -20,24 +21,16 @@ class RegistryManager {
   }
 
   private handleRegistryComplete() {
-    console.log('[registry] All components initialized');
     this.isInitializing = false;
+    console.log('[registry] All components initialized');
     
-    // Only emit startup state if we're not already in startup
-    if (stateMachine.getAppState() !== 'startup') {
-      stateMachine.emit({
-        type: 'state_change',
-        id: 'system',
-        state: 'startup' as AppState
-      });
-    }
+    // Use the state transition manager to transition to the next state
+    transitionToNextState('init');
   }
 
   private reset() {
-    this.pending = new Set(Object.keys(manifest));
+    this.pending = new Set(getAllComponentIds());
     this.isInitializing = false;
-    console.log(`[registry] Reset. Total components: ${this.pending.size}`);
-    console.log('[registry] Pending components:', Array.from(this.pending));
   }
 
   public acknowledge(componentId: string) {
@@ -48,8 +41,6 @@ class RegistryManager {
 
     if (this.pending.has(componentId)) {
       this.pending.delete(componentId);
-      console.log(`[registry] Component acknowledged: ${componentId}`);
-      console.log(`[registry] Remaining components: ${this.pending.size}`);
 
       if (this.pending.size === 0) {
         this.handleRegistryComplete();
@@ -58,17 +49,15 @@ class RegistryManager {
   }
 
   public begin(callback: () => void) {
-    console.log('[registry] Starting initialization sequence');
     this.reset();
     this.isInitializing = true;
+    console.log('[registry] Starting initialization sequence');
 
     const interval = setInterval(() => {
       if (this.pending.size === 0) {
         clearInterval(interval);
         console.log('[registry] All components ready, invoking callback');
         callback();
-      } else {
-        console.log(`[registry] Still waiting for ${this.pending.size} components:`, Array.from(this.pending));
       }
     }, 100);
   }

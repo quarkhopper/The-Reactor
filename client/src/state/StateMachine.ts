@@ -1,4 +1,6 @@
 import { AppState, Command, CommandCallback } from './types';
+import { handleTestSequence } from './handlers/testSequence';
+import { isValidTransition } from './stateTransitionManager';
 
 let currentState: AppState = 'off';
 const callbacks: CommandCallback[] = [];
@@ -12,19 +14,29 @@ const stateMachine = {
   setAppState(state: AppState) {
     // Only update and emit if the state is actually changing
     if (state !== currentState) {
-      currentState = state;
-      console.log(`[stateMachine] State set to: ${state}`);
-      stateMachine.emit({ type: 'state_change', id: 'system', state });
+      // Check if the transition is valid
+      if (isValidTransition(currentState, state)) {
+        currentState = state;
+        console.log(`[stateMachine] State set to: ${state}`);
+        stateMachine.emit({ type: 'state_change', id: 'system', state });
 
-      // Notify all app state subscribers
-      for (const cb of appStateCallbacks) {
-        console.log(`[stateMachine] Notifying subscriber of state: ${state}`);
-        cb(state);
+        // Notify all app state subscribers
+        for (const cb of appStateCallbacks) {
+          console.log(`[stateMachine] Notifying subscriber of state: ${state}`);
+          cb(state);
+        }
+      } else {
+        console.warn(`[stateMachine] Invalid state transition from ${currentState} to ${state}`);
       }
     }
   },
 
   emit(cmd: Command) {
+    // Handle test sequence results
+    if (cmd.type === 'test_result') {
+      handleTestSequence(cmd);
+    }
+    
     for (const cb of callbacks) cb(cmd);
   },
 

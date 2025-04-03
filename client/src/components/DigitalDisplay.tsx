@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useTestable } from '../hooks/useTestable';
 import { registry } from '../state/registry';
+import stateMachine from '../state/StateMachine';
 
 import '../css/components/DigitalDisplay.css';
 
@@ -51,21 +52,61 @@ interface DigitalDisplayProps {
 export default function DigitalDisplay({ id, x, y, value, label }: DigitalDisplayProps) {
   const [displayValue, setDisplayValue] = useState(value);
   const { isTestMode } = useTestable(id);
+  const animationFrameRef = useRef<number | null>(null);
+  
+  // Handle test sequence completion
+  const handleTestComplete = useCallback(() => {
+    // Emit test result when test sequence is complete
+    stateMachine.emit({
+      type: 'test_result',
+      id,
+      passed: true
+    });
+  }, [id]);
+
+  // Function to convert a raw value to display digits
+  const getDisplayDigits = (rawValue: number) => {
+    // Convert the raw value (0-1) to a two-digit number (0-99)
+    const normalizedValue = clamp(rawValue, 0, 1);
+    const twoDigitNumber = Math.min(99, Math.floor(normalizedValue * 100));
+    
+    // Split into left and right digits
+    const leftDigit = Math.floor(twoDigitNumber / 10);
+    const rightDigit = twoDigitNumber % 10;
+    
+    return { leftDigit, rightDigit };
+  };
 
   useEffect(() => {
     if (!isTestMode) {
       setDisplayValue(value);
+    } else {
+      // Reset to 0
+      setDisplayValue(0);
+      
+      // Super simple test: just show 88 for a second, then back to 00
+      setTimeout(() => {
+        // Set to 88 (0.88 in normalized value)
+        setDisplayValue(0.88);
+        
+        // After 1 second, set back to 00 and complete test
+        setTimeout(() => {
+          setDisplayValue(0);
+          handleTestComplete();
+        }, 1000);
+      }, 100);
+      
+      return () => {};
     }
-  }, [value, isTestMode]);
+  }, [value, isTestMode, id, handleTestComplete]);
 
   // Self-initialization
   useEffect(() => {
     registry.acknowledge(id);
   }, [id]);
 
-  const clamped = Math.min(99, Math.floor(clamp(displayValue, 0, 1) * 100));
-  const leftDigit = Math.floor(clamped / 10);
-  const rightDigit = clamped % 10;
+  // Get the display digits
+  const { leftDigit, rightDigit } = getDisplayDigits(displayValue);
 
   return (
     <div className="digital-display-wrapper" style={{ left: `${x}px`, top: `${y}px` }}>

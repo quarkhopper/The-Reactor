@@ -39,13 +39,16 @@ export default function ConditionLight({
   label,
 }: ConditionLightProps) {
   const [displayColor, setDisplayColor] = useState<ConditionColor>(color);
-  const { isTestMode } = useTestable(id);
+  const { isTestMode, displayColor: testColor } = useTestable(id);
 
   useEffect(() => {
     if (!isTestMode) {
       setDisplayColor(color);
+    } else {
+      // During test mode, use the color from the test sequence
+      setDisplayColor(testColor as ConditionColor);
     }
-  }, [color, isTestMode]);
+  }, [color, isTestMode, testColor]);
 
   // Self-initialization
   useEffect(() => {

@@ -24,7 +24,7 @@ export type Command =
   | { type: 'test_result'; id: string; passed: boolean }
   | { type: 'tick'; id: string; counter: number };
 
-export type AppState = 'off' | 'init' | 'startup' | 'on' | 'shutdown';
+export type AppState = 'off' | 'init' | 'test' | 'startup' | 'on' | 'shutdown';
 export type ConditionColor = 'red' | 'green' | 'amber' | 'white' | 'off';
 export type CommandCallback = (command: Command) => void;
 

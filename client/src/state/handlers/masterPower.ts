@@ -1,5 +1,7 @@
 import stateMachine from '../StateMachine';
 import { getCurrentState } from '../powerState';
+import { transitionToNextState } from '../stateTransitionManager';
+import type { AppState } from '../types';
 
 export function handleMasterPower() {
   const currentState = getCurrentState();
@@ -7,22 +9,18 @@ export function handleMasterPower() {
   switch (currentState) {
     case 'off':
       // Start the power-up sequence
-      stateMachine.setAppState('startup');
-      setTimeout(() => {
-        stateMachine.setAppState('on');
-      }, 2000);
+      transitionToNextState('off');
       break;
 
     case 'on':
       // Start the shutdown sequence
-      stateMachine.setAppState('shutdown');
-      setTimeout(() => {
-        stateMachine.setAppState('off');
-      }, 2000);
+      transitionToNextState('on');
       break;
 
     case 'startup':
     case 'shutdown':
+    case 'init':
+    case 'test':
       // Do nothing during transitions
       break;
   }
