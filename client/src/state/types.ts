@@ -13,6 +13,7 @@ export type Command =
   | { type: 'state_change'; id: string; state: AppState }
   | { type: 'button_press'; id: string }
   | { type: 'scram_button_press'; id: string }
+  | { type: 'power_button_press'; id: string }
   | { type: 'temperature_update'; id: string; value: number }
   | { type: 'rod_position_update'; id: string; value: number }
   | { type: 'power_update'; id: string; value: number }
@@ -25,7 +26,8 @@ export type Command =
   | { type: 'test_result'; id: string; passed: boolean }
   | { type: 'tick'; id: string; counter: number }
   | { type: 'fuel_rod_toggle'; id: string }
-  | { type: 'fuel_rod_state_change'; id: string; state: 'engaged' | 'withdrawn' | 'transitioning' };
+  | { type: 'fuel_rod_state_change'; id: string; state: 'engaged' | 'withdrawn' | 'transitioning' }
+  | { type: 'process_complete'; id: string; process: string };
 
 export type AppState = 'off' | 'init' | 'test' | 'startup' | 'on' | 'shutdown' | 'scram';
 export type ConditionColor = 'red' | 'green' | 'amber' | 'white' | 'off';

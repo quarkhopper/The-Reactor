@@ -427,6 +427,92 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
 export default IndicatorLight;
 ```
 
+## Process Managers
+
+Process managers are specialized components that handle specific system processes (like initialization or testing). They follow a distinct pattern from UI components:
+
+### Process Manager Structure
+
+```typescript
+// Example: initManager.ts
+import stateMachine from '../state/StateMachine';
+import { registry } from '../state/registry';
+import type { Command, AppState } from '../state/types';
+
+class ProcessManager {
+  constructor() {
+    // Subscribe to relevant state changes
+    stateMachine.subscribe((cmd: Command) => {
+      if (cmd.type === 'state_change' && cmd.state === 'init') {
+        this.handleProcess();
+      }
+    });
+  }
+
+  private handleProcess() {
+    // Run the process
+    this.runProcess();
+    
+    // When complete, emit completion message
+    stateMachine.emit({
+      type: 'process_complete',
+      id: 'init',
+      process: 'init_complete'
+    });
+  }
+
+  private runProcess() {
+    // Process-specific logic
+  }
+}
+```
+
+### Key Principles
+
+1. **Single Responsibility**:
+   - Handle one specific process
+   - Don't manage state transitions
+   - Focus on process completion
+
+2. **Message-Based Communication**:
+   - Subscribe to relevant state changes
+   - Emit completion messages
+   - Don't directly change state
+
+3. **Process Coordination**:
+   - Coordinate with registry if needed
+   - Handle process-specific timing
+   - Manage process-specific state
+
+4. **Completion Signaling**:
+   - Emit clear completion messages
+   - Include process identifier
+   - Don't assume next state
+
+### Best Practices
+
+1. **Keep It Focused**:
+   - One process per manager
+   - Clear completion criteria
+   - Simple, predictable behavior
+
+2. **Message Design**:
+   - Use clear message types
+   - Include process identifiers
+   - Follow consistent patterns
+
+3. **State Management**:
+   - Manage only process state
+   - Don't track system state
+   - Keep it minimal
+
+4. **Error Handling**:
+   - Handle process-specific errors
+   - Emit error messages if needed
+   - Don't crash the system
+
+This pattern ensures clean separation between process management and state transitions.
+
 ## Future Updates
 
 This document will be updated as we gain more experience with different component types and encounter more complex scenarios. The goal is to establish a consistent pattern that works well for all components in the application. 

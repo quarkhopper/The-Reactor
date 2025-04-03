@@ -242,3 +242,61 @@ class PhysicalControlPanel {
    - Test failure modes and recovery procedures
 
 This architecture ensures that the system can be easily adapted to work with physical components while maintaining the same core behavior and state management. 
+
+## Process Management and State Transitions
+
+### Process Completion Messages
+
+When implementing process managers (like initialization or testing):
+1. **Emit Completion Messages**: Process managers should emit clear completion messages
+   ```typescript
+   // Example: initManager emitting completion
+   stateMachine.emit({
+     type: 'process_complete',
+     id: 'init',
+     process: 'init_complete'
+   });
+   ```
+
+2. **Subscribe to Completion**: State transition manager should subscribe to these messages
+   ```typescript
+   // Example: stateTransitionManager handling completion
+   stateMachine.subscribe((cmd: Command) => {
+     if (cmd.type === 'process_complete') {
+       handleProcessCompletion(cmd.process);
+     }
+   });
+   ```
+
+3. **Centralized Transitions**: Only the state transition manager should handle state changes
+   ```typescript
+   // ❌ DON'T: Process managers should not change state directly
+   stateMachine.setAppState('test');
+   
+   // ✅ DO: Emit completion message instead
+   stateMachine.emit({
+     type: 'process_complete',
+     id: 'init',
+     process: 'init_complete'
+   });
+   ```
+
+### Process Manager Responsibilities
+
+1. **Focus on Process**:
+   - Handle only their specific process
+   - Don't worry about state transitions
+   - Emit completion when done
+
+2. **State Transition Manager**:
+   - Central coordinator for all transitions
+   - Maintains transition rules
+   - Handles timing and sequencing
+   - Ensures system integrity
+
+3. **Component Integration**:
+   - Components subscribe to state changes
+   - Process managers coordinate their process
+   - State transition manager controls flow
+
+This pattern ensures clean separation of concerns and predictable system behavior. 

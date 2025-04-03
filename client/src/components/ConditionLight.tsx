@@ -75,8 +75,22 @@ const ConditionLight: React.FC<ConditionLightProps> = ({
             setDisplayColor('green');
             break;
         }
+      } else if (id.includes('TRANS')) {
+        // Handle TRANS light colors
+        switch (state) {
+          case 'init':
+          case 'test':
+          case 'startup':
+          case 'shutdown':
+          case 'scram':
+            setDisplayColor('amber');
+            break;
+          default:
+            setDisplayColor('off');
+            break;
+        }
       } else {
-        // For non-power lights, use the color prop
+        // For other lights, use the color prop
         setDisplayColor(color);
       }
     };

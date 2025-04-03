@@ -31,6 +31,17 @@ const stateMachine = {
   },
 
   emit(cmd: Command) {
+    if (currentState === 'off') {
+      if (cmd.type === 'power_button_press') {
+        // Allow power button to work and transition to init
+        currentState = 'init';
+        for (const cb of callbacks) cb(cmd);
+        // Emit state change to init
+        for (const cb of callbacks) cb({ type: 'state_change', id: 'system', state: 'init' });
+      }
+      return; // All other commands are blocked when power is off
+    }
+    
     // Handle test sequence results
     if (cmd.type === 'test_result') {
       handleTestSequence(cmd);
@@ -40,6 +51,7 @@ const stateMachine = {
       stateMachine.setAppState('scram');
     }
     
+    // Normal operation when power is on
     for (const cb of callbacks) cb(cmd);
   },
 

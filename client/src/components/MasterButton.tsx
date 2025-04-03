@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { registry } from '../state/registry';
 import stateMachine from '../state/StateMachine';
 import type { Command, AppState } from '../state/types';
-import { handleMasterPower } from '../state/handlers/masterPower';
 
 import '../css/components/MasterButton.css';
 import bezel from '../images/master_button_bezel.png';
@@ -93,7 +92,11 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
   }, [blinking, lit]);
 
   const handlePress = () => {
-    handleMasterPower();
+    // Emit power button press directly
+    stateMachine.emit({
+      type: 'power_button_press',
+      id: 'master'
+    });
   };
 
   return (

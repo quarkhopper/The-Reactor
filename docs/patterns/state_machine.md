@@ -109,7 +109,7 @@ This pattern ensures smooth transitions while maintaining system integrity and p
 
 ## Event System
 
-The state machine uses an event-based communication system:
+The state machine uses an event-based communication system with a clear separation between process management and state transitions:
 
 ### Event Types
 
@@ -117,13 +117,44 @@ The state machine uses an event-based communication system:
 2. **test_sequence**: Triggers component testing
 3. **test_result**: Reports test completion
 4. **command**: General component commands
+5. **process_complete**: Signals completion of a specific process (e.g., 'init_complete')
 
-### Event Flow
+### Process Management
 
-1. Components subscribe to state machine events
-2. State changes trigger event emission
-3. Components respond to relevant events
-4. Test sequences coordinate component behavior
+1. **Process Managers**:
+   - Handle specific system processes (e.g., initialization, testing)
+   - Subscribe to relevant state changes
+   - Coordinate their specific process
+   - Emit completion messages when done
+
+2. **State Transition Manager**:
+   - Central coordinator for state transitions
+   - Subscribes to process completion messages
+   - Determines next state based on current state and completion messages
+   - Maintains state transition rules
+
+### Event Flow Example
+
+```
+Power Button Press
+-> State Machine -> 'init' state
+-> initManager (subscribes to state changes)
+   -> Runs initialization process
+   -> Emits 'init_complete' when done
+-> stateTransitionManager (subscribes to 'init_complete')
+   -> Transitions to 'test' state
+-> testManager (subscribes to state changes)
+   -> Runs test sequence
+   -> Emits 'test_complete' when done
+-> stateTransitionManager (subscribes to 'test_complete')
+   -> Transitions to 'startup' state
+```
+
+This pattern ensures:
+- Clear separation of concerns
+- Centralized state transition control
+- Independent process management
+- Predictable system behavior
 
 ## Component Integration
 
