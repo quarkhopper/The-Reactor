@@ -62,6 +62,18 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
       setVisible(false);
     }
     registry.acknowledge('master');
+    
+    // If in test mode, complete the test after a short delay
+    if (isTestMode) {
+      const timer = setTimeout(() => {
+        stateMachine.emit({
+          type: 'test_result',
+          id: 'master',
+          passed: true
+        });
+      }, 500);
+      return () => clearTimeout(timer);
+    }
   }, [isTestMode]);
 
   const handlePress = () => {

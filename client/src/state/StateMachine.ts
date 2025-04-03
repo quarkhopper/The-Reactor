@@ -22,7 +22,6 @@ const stateMachine = {
 
         // Notify all app state subscribers
         for (const cb of appStateCallbacks) {
-          console.log(`[stateMachine] Notifying subscriber of state: ${state}`);
           cb(state);
         }
       } else {

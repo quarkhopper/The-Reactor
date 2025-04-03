@@ -31,17 +31,17 @@ const STATE_TRANSITION_DELAYS: Record<AppState, number> = {
 // Define the state transition handlers
 const STATE_TRANSITION_HANDLERS: Record<AppState, () => void> = {
   'off': () => {
-    console.log('[stateTransitionManager] Entering off state');
+    // No logging needed
   },
   'init': () => {
-    console.log('[stateTransitionManager] Entering init state');
+    // No logging needed
   },
   'test': () => {
-    console.log('[stateTransitionManager] Entering test state');
     resetTestSequence();
     
     // Trigger test sequence for all components
     const componentIds = getAllComponentIds();
+    console.log(`[stateTransitionManager] Triggering test sequence for ${componentIds.length} components`);
     
     // Trigger test sequence for all components in parallel
     componentIds.forEach((id: string) => {
@@ -52,13 +52,13 @@ const STATE_TRANSITION_HANDLERS: Record<AppState, () => void> = {
     });
   },
   'startup': () => {
-    console.log('[stateTransitionManager] Entering startup state');
+    // No logging needed
   },
   'on': () => {
-    console.log('[stateTransitionManager] Entering on state');
+    // No logging needed
   },
   'shutdown': () => {
-    console.log('[stateTransitionManager] Entering shutdown state');
+    // No logging needed
   }
 };
 

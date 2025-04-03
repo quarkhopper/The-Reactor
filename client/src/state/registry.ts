@@ -16,7 +16,6 @@ class RegistryManager {
     if (cmd.type === 'state_change' && cmd.state === 'init') {
       this.reset();
       this.isInitializing = true;
-      console.log('[registry] Starting initialization sequence');
     }
   }
 
@@ -51,7 +50,6 @@ class RegistryManager {
   public begin(callback: () => void) {
     this.reset();
     this.isInitializing = true;
-    console.log('[registry] Starting initialization sequence');
 
     const interval = setInterval(() => {
       if (this.pending.size === 0) {

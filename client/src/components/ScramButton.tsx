@@ -30,7 +30,12 @@ export default function ScramButton({ id, x, y }: ScramButtonProps) {
       setPressed(true);
       const timer = setTimeout(() => {
         setPressed(false);
-        registry.acknowledge(id);
+        // Emit test result when test sequence is complete
+        stateMachine.emit({
+          type: 'test_result',
+          id,
+          passed: true
+        });
       }, 500);
       return () => clearTimeout(timer);
     }

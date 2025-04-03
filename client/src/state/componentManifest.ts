@@ -112,6 +112,11 @@ Object.entries(COMPONENT_IDS).forEach(([category, ids]) => {
 
 // Export a function to get all component IDs
 export function getAllComponentIds(): string[] {
+  // Log component counts by category
+  Object.entries(COMPONENT_IDS).forEach(([category, ids]) => {
+    console.log(`[componentManifest] ${category}: ${ids.length} components`);
+  });
+  
   return ALL_COMPONENT_IDS;
 }
 

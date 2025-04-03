@@ -23,6 +23,7 @@ export const useTestable = (id: string) => {
     useEffect(() => {
         const handleCommand = (cmd: Command) => {
             if (cmd.type === 'test_sequence' && cmd.id === id) {
+                console.log(`[useTestable] Component ${id} received test_sequence command`);
                 setIsTestMode(true);
                 const colors = ['off', 'green', 'amber', 'red', 'white', 'off'];
                 let i = 0;
@@ -33,6 +34,13 @@ export const useTestable = (id: string) => {
                         clearInterval(interval);
                         setIsTestMode(false);
                         setDisplayColor('off');
+                        // Emit test result when test sequence completes
+                        console.log(`[useTestable] Component ${id} emitting test_result`);
+                        stateMachine.emit({
+                            type: 'test_result',
+                            id,
+                            passed: true
+                        });
                     }
                 }, 200); // Slower interval for better visibility
             }
