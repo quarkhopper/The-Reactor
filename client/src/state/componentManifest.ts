@@ -55,8 +55,8 @@ export const COMPONENT_IDS = {
   
   // Condition lights
   [COMPONENT_CATEGORIES.CONDITION_LIGHTS]: [
-    'cond_SCRAM', 'cond_POWER', 'cond_FAULT', 'cond_TEST', 'cond_STANDBY', 'cond_RUN',
-    'cond_WARN', 'cond_LOCKED', 'cond_AUX', 'cond_COOL'
+    'cond_POWER', 'cond_TRANS', 'cond_RUN', 'cond_FAULT', 'cond_SCRAM',
+    'cond_CORE', 'cond_COOLING', 'cond_LOAD', 'cond_CTRL', 'cond_AUX'
   ],
   
   // Blink lights

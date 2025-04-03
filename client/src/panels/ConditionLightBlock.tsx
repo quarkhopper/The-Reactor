@@ -1,7 +1,6 @@
 import React from 'react';
 import ConditionLight from '../components/ConditionLight';
 import type { ConditionColor } from '../state/types';
-import initRegistry from '../state/initRegistry';
 
 export default function ConditionLightBlock() {
   const x = 750;
@@ -11,16 +10,17 @@ export default function ConditionLightBlock() {
   const rows = 2;
 
   const values: { id: string; color: ConditionColor; label: string }[] = [
-    { id: 'cond_SCRAM', color: 'off', label: 'SCRAM' },
     { id: 'cond_POWER', color: 'off', label: 'POWER' },
-    { id: 'cond_FAULT', color: 'off', label: 'FAULT' },
-    { id: 'cond_TEST', color: 'off', label: 'TEST' },
-    { id: 'cond_STANDBY', color: 'off', label: 'STANDBY' },
+    { id: 'cond_TRANS', color: 'off', label: 'TRANS' },
     { id: 'cond_RUN', color: 'off', label: 'RUN' },
-    { id: 'cond_WARN', color: 'off', label: 'WARN' },
-    { id: 'cond_LOCKED', color: 'off', label: 'LOCKED' },
+    { id: 'cond_FAULT', color: 'off', label: 'FAULT' },
+    { id: 'cond_SCRAM', color: 'off', label: 'SCRAM' },
+
+    { id: 'cond_CORE', color: 'off', label: 'RUN' },
+    { id: 'cond_COOLING', color: 'off', label: 'COOLING' },
+    { id: 'cond_LOAD', color: 'off', label: 'LOAD' },
+    { id: 'cond_CTRL', color: 'off', label: 'CTRL' },
     { id: 'cond_AUX', color: 'off', label: 'AUX' },
-    { id: 'cond_COOL', color: 'off', label: 'COOL' },
   ];
 
   const lightWidth = width / columns;

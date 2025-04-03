@@ -54,6 +54,29 @@ const ConditionLight: React.FC<ConditionLightProps> = ({
       } else if (state === 'startup' || state === 'on') {
         // Ensure components are reset when entering startup or on state
         setIsTestMode(false);
+      }
+
+      // Handle power light colors
+      if (id.includes('POWER')) {
+        switch (state) {
+          case 'off':
+            setDisplayColor('off');
+            break;
+          case 'init':
+          case 'test':
+          case 'startup':
+          case 'shutdown':
+            setDisplayColor('amber');
+            break;
+          case 'scram':
+            setDisplayColor('red');
+            break;
+          case 'on':
+            setDisplayColor('green');
+            break;
+        }
+      } else {
+        // For non-power lights, use the color prop
         setDisplayColor(color);
       }
     };
@@ -65,7 +88,7 @@ const ConditionLight: React.FC<ConditionLightProps> = ({
     });
     
     return () => unsubscribe();
-  }, [id, color]);
+  }, [id]); // Removed color from dependencies
 
   // Handle test sequence
   useEffect(() => {

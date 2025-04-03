@@ -71,6 +71,12 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
         setIsBlinking(false);
         // Acknowledge this component when initialization is requested
         registry.acknowledge(id);
+      } else if (state === 'off') {
+        // Turn off the light when system is off
+        setDisplayColor('off');
+        setIsTestMode(false);
+        setIsHeld(false);
+        setIsBlinking(false);
       } else if (state === 'startup' || state === 'on') {
         // Ensure components are reset when entering startup or on state
         setIsTestMode(false);

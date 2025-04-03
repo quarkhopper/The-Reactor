@@ -77,10 +77,10 @@ export default function ScramButton({ id, x, y }: ScramButtonProps) {
 
   const handleClick = () => {
     if (!isTestMode) {
-      const newPressed = !pressed;
-      setPressed(newPressed);
-      
-      if (newPressed) {
+      // Only allow pressing if not already pressed or in scram state
+      if (!pressed && stateMachine.getAppState() !== 'scram') {
+        setPressed(true);
+        
         // Emit SCRAM command
         stateMachine.emit({
           type: 'scram_button_press',

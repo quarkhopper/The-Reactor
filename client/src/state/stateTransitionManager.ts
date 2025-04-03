@@ -66,6 +66,11 @@ const STATE_TRANSITION_HANDLERS: Record<AppState, () => void> = {
   },
   'shutdown': () => {
     console.log('[stateTransitionManager] Shutting down...');
+    // Schedule the transition to 'off' state
+    setTimeout(() => {
+      console.log('[stateTransitionManager] Shutdown complete, transitioning to off state');
+      stateMachine.setAppState('off');
+    }, STATE_TRANSITION_DELAYS['shutdown']);
   },
   'scram': () => {
     console.log('[stateTransitionManager] SCRAM initiated');
