@@ -50,7 +50,7 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
   label
 }) => {
   const { controlRodCoords } = useCoreSystem();
-  const [state, setState] = useState<FuelRodState>('withdrawn');
+  const [state, setState] = useState<FuelRodState>('engaged');
   const [displayColor, setDisplayColor] = useState<ButtonColor>('off');
   const [isTestMode, setIsTestMode] = useState(false);
   const [isHeld, setIsHeld] = useState(false);
@@ -64,7 +64,7 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
     const handleStateChange = (state: AppState) => {
       if (state === 'init') {
         // Reset component state
-        setState('withdrawn');
+        setState('engaged');
         setDisplayColor('off');
         setIsTestMode(false);
         setIsHeld(false);
@@ -127,7 +127,7 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
     const handleCommand = (cmd: Command) => {
       // Handle temperature updates for all fuel rods
       if (cmd.type === 'temperature_update' && cmd.id === id) {
-        if (!isTestMode && !isBlinking) {
+        if (!isTestMode && !isBlinking && state !== 'withdrawn') {
           setDisplayColor(getColorFromTemperature(cmd.value));
         }
       }
@@ -149,7 +149,7 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
 
     const unsubscribe = stateMachine.subscribe(handleCommand);
     return () => unsubscribe();
-  }, [id, isTestMode, isControlRod, isBlinking]);
+  }, [id, isTestMode, isControlRod, isBlinking, state]);
 
   // Handle blinking effect
   useEffect(() => {
@@ -164,6 +164,7 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
 
   const handleClick = () => {
     if (!isControlRod) {
+      console.log(`[FuelRodButton] Emitting fuel rod toggle for ${id}`);
       // Emit fuel rod toggle command
       stateMachine.emit({
         type: 'fuel_rod_toggle',

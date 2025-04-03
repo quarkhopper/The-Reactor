@@ -15,6 +15,7 @@ interface FuelRod {
   temperature: number; // Normalized temperature (0 to 1)
   state: 'engaged' | 'withdrawn' | 'transitioning';
   transitionStartTime?: number; // Optional transition start time
+  previousState?: 'engaged' | 'withdrawn'; // Optional previous state
 }
 
 const fuelRods: FuelRod[][] = Array.from({ length: GRID_SIZE }, () =>
@@ -130,9 +131,11 @@ function tick() {
         const rod = fuelRods[x][y];
         if (rod.state === 'transitioning' && rod.transitionStartTime) {
           if (now - rod.transitionStartTime >= 5000) { // 5 seconds
-            // Transition complete - toggle the state
-            rod.state = rod.state === 'transitioning' ? 'engaged' : 'withdrawn';
+            // Transition complete - toggle between engaged and withdrawn
+            const newState = rod.previousState === 'engaged' ? 'withdrawn' : 'engaged';
+            rod.state = newState;
             delete rod.transitionStartTime;
+            delete rod.previousState;
             
             // Recalculate distances and base reactivity since core geometry changed
             precalculateDistances();
@@ -142,7 +145,7 @@ function tick() {
             stateMachine.emit({
               type: 'fuel_rod_state_change',
               id: `fuel_rod_button_${x}_${y}`,
-              state: rod.state
+              state: newState
             });
           }
         }
@@ -229,6 +232,33 @@ function initSubscriptions() {
         if (!isNaN(rodIndex) && rodIndex >= 0 && rodIndex < controlRodPositions.length) {
           controlRodPositions[rodIndex] = cmd.value;
         }
+      }
+    } else if (cmd.type === 'fuel_rod_toggle') {
+      // Handle fuel rod toggle commands (format: fuel_rod_button_X_Y)
+      const parts = cmd.id.split('_');
+      const x = parseInt(parts[3], 10);
+      const y = parseInt(parts[4], 10);
+      console.log(`[coreSystem] Received fuel rod toggle for (${x},${y})`);
+      if (!isNaN(x) && !isNaN(y) && x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
+        const rod = fuelRods[x][y];
+        // Only start transition if not already transitioning
+        if (rod.state !== 'transitioning') {
+          console.log(`[coreSystem] Starting transition for rod (${x},${y})`);
+          rod.previousState = rod.state;  // Store the current state
+          rod.state = 'transitioning';
+          rod.transitionStartTime = Date.now();
+          
+          // Emit state change to start blinking
+          stateMachine.emit({
+            type: 'fuel_rod_state_change',
+            id: `fuel_rod_button_${x}_${y}`,
+            state: 'transitioning'
+          });
+        } else {
+          console.log(`[coreSystem] Rod (${x},${y}) is already transitioning`);
+        }
+      } else {
+        console.log(`[coreSystem] Invalid coordinates for fuel rod toggle: (${x},${y})`);
       }
     }
   });

@@ -61,6 +61,52 @@ Each transition has:
 - A specific handler for state-specific behavior
 - Validation to ensure transitions are valid
 
+## State Transitions with Visual Feedback
+
+When implementing state transitions that require visual feedback (like animations or blinking), follow these principles:
+
+1. **State Tracking**
+   - Track both current and previous states
+   - Use a dedicated transition state for the duration of the animation
+   - Store transition start time for timing-based state changes
+
+2. **Event Flow**
+   - Emit state change events at both the start and end of transitions
+   - Components should subscribe to these events to update their visual state
+   - Core systems should only update their state after transitions complete
+
+3. **Example: Fuel Rod State Machine**
+   ```typescript
+   // State definition
+   type FuelRodState = 'engaged' | 'withdrawn' | 'transitioning';
+   
+   // Starting a transition
+   rod.previousState = rod.state;
+   rod.state = 'transitioning';
+   rod.transitionStartTime = Date.now();
+   emitStateChange('transitioning');
+   
+   // Completing a transition
+   if (transitionComplete) {
+     rod.state = rod.previousState === 'engaged' ? 'withdrawn' : 'engaged';
+     delete rod.transitionStartTime;
+     delete rod.previousState;
+     emitStateChange(rod.state);
+   }
+   ```
+
+4. **Visual Feedback**
+   - Use the transition state to trigger visual effects (e.g., blinking)
+   - Components should maintain their own state for visual effects
+   - Visual effects should be independent of core system state
+
+5. **Core System Updates**
+   - Only update core calculations after transitions complete
+   - Recalculate dependent values (e.g., distances, reactivity) after state changes
+   - Maintain consistency between visual and core states
+
+This pattern ensures smooth transitions while maintaining system integrity and providing clear visual feedback to users.
+
 ## Event System
 
 The state machine uses an event-based communication system:
