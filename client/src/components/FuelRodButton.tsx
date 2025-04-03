@@ -27,9 +27,9 @@ type FuelRodState = 'engaged' | 'withdrawn' | 'transitioning';
 // Helper function to map temperature to color
 function getColorFromTemperature(temp: number): ButtonColor {
   if (temp <= 0) return 'off';
-  if (temp < 100) return 'green';
-  if (temp < 200) return 'amber';
-  if (temp < 300) return 'red';
+  if (temp < 0.2) return 'green';
+  if (temp < 0.5) return 'amber';
+  if (temp < 0.8) return 'red';
   return 'white';
 }
 

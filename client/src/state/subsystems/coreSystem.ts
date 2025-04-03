@@ -111,10 +111,14 @@ function tick() {
     let minTemp = Infinity;
     let maxTemp = -Infinity;
 
+    // Create a 2D array to store temperatures for this tick
+    const tempGrid: number[][] = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(0));
+
     for (let x = 0; x < GRID_SIZE; x++) {
       for (let y = 0; y < GRID_SIZE; y++) {
         const rod = fuelRods[x][y];
         let baseReactivity = baseReactivityGrid[x][y];
+
         let controlInterference = 0;
 
         // Calculate control rod interference
@@ -138,7 +142,9 @@ function tick() {
         // Clamp temperature to [0, 1]
         rod.temperature = Math.max(0, Math.min(1, rod.temperature));
 
-        // Track min/max/total temperature
+        // Store temperature in grid
+        tempGrid[x][y] = rod.temperature;
+
         totalTemp += rod.temperature;
         minTemp = Math.min(minTemp, rod.temperature);
         maxTemp = Math.max(maxTemp, rod.temperature);
@@ -147,10 +153,14 @@ function tick() {
         stateMachine.emit({
           type: 'temperature_update',
           id: `fuel_rod_button_${x}_${y}`,
-          value: rod.temperature * 300 // Scale to 0-300°C range
+          value: rod.temperature // Emit raw normalized temperature (0-1)
         });
       }
     }
+
+    // Log the entire temperature grid
+    console.log(`[coreSystem] Temperature Grid at Tick ${tickCounter}:`);
+    console.log(tempGrid.map(row => row.map(t => t.toFixed(6)).join(' ')).join('\n'));
 
     // Calculate and log average temperature
     const avgTemp = totalTemp / (GRID_SIZE * GRID_SIZE);
