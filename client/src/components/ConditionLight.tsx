@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { useTestable } from '../hooks/useTestable';
+import React, { useState, useEffect } from 'react';
+import stateMachine from '../state/StateMachine';
 import { registry } from '../state/registry';
+import type { Command, AppState } from '../state/types';
 
 import '../css/components/ConditionLight.css';
 
@@ -30,30 +31,84 @@ const conditionImages: Record<ConditionColor, string> = {
   white,
 };
 
-export default function ConditionLight({
+const ConditionLight: React.FC<ConditionLightProps> = ({
   id,
   x,
   y,
   color = 'off',
   width = 100,
   label,
-}: ConditionLightProps) {
+}) => {
   const [displayColor, setDisplayColor] = useState<ConditionColor>(color);
-  const { isTestMode, displayColor: testColor } = useTestable(id);
+  const [isTestMode, setIsTestMode] = useState(false);
 
+  // Handle state changes
+  useEffect(() => {
+    const handleStateChange = (state: AppState) => {
+      if (state === 'init') {
+        // Reset component state
+        setDisplayColor('off');
+        setIsTestMode(false);
+        // Acknowledge this component when initialization is requested
+        registry.acknowledge(id);
+      } else if (state === 'startup' || state === 'on') {
+        // Ensure components are reset when entering startup or on state
+        setIsTestMode(false);
+        setDisplayColor(color);
+      }
+    };
+    
+    const unsubscribe = stateMachine.subscribe((cmd: Command) => {
+      if (cmd.type === 'state_change') {
+        handleStateChange(cmd.state);
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [id, color]);
+
+  // Handle test sequence
+  useEffect(() => {
+    const handleCommand = (cmd: Command) => {
+      if (cmd.type === 'test_sequence' && cmd.id === id) {
+        setIsTestMode(true);
+        
+        // Perform test sequence
+        const sequence: ConditionColor[] = ['red', 'amber', 'green', 'white', 'off'];
+        let i = 0;
+        
+        const interval = setInterval(() => {
+          setDisplayColor(sequence[i]);
+          i++;
+          
+          if (i >= sequence.length) {
+            clearInterval(interval);
+            setIsTestMode(false);
+            setDisplayColor(color);
+            
+            // Emit test result when test sequence completes
+            stateMachine.emit({
+              type: 'test_result',
+              id,
+              passed: true
+            });
+          }
+        }, 150);
+        
+        return () => clearInterval(interval);
+      }
+    };
+    
+    const unsubscribe = stateMachine.subscribe(handleCommand);
+    return () => unsubscribe();
+  }, [id, color]);
+
+  // Update display color when color prop changes (but not during test mode)
   useEffect(() => {
     if (!isTestMode) {
       setDisplayColor(color);
-    } else {
-      // During test mode, use the color from the test sequence
-      setDisplayColor(testColor as ConditionColor);
     }
-  }, [color, isTestMode, testColor]);
-
-  // Self-initialization
-  useEffect(() => {
-    registry.acknowledge(id);
-  }, [id]);
+  }, [color, isTestMode]);
 
   return (
     <div
@@ -73,4 +128,6 @@ export default function ConditionLight({
       />
     </div>
   );
-}
+};
+
+export default ConditionLight;

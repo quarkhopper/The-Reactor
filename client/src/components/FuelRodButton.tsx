@@ -2,9 +2,8 @@ import React, { useEffect, useState } from 'react';
 import PanelButton from './PanelButton';
 import stateMachine from '../state/StateMachine';
 import { useCoreSystem } from '../state/subsystems/coreSystem';
-import { useTestable } from '../hooks/useTestable';
 import { registry } from '../state/registry';
-import type { Command } from '../state/types';
+import type { Command, AppState } from '../state/types';
 
 interface FuelRodButtonProps {
   id: string;
@@ -15,8 +14,10 @@ interface FuelRodButtonProps {
   label?: string;
 }
 
+type ButtonColor = 'off' | 'green' | 'amber' | 'red' | 'white';
+
 // Helper function to map temperature to color
-function getColorFromTemperature(temp: number): string {
+function getColorFromTemperature(temp: number): ButtonColor {
   if (temp <= 0) return 'off';
   if (temp < 100) return 'green';
   if (temp < 200) return 'amber';
@@ -34,8 +35,8 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
 }) => {
   const { controlRodCoords } = useCoreSystem();
   const [isWithdrawn, setIsWithdrawn] = useState(false);
-  const [displayColor, setDisplayColor] = useState('off');
-  const { isTestMode } = useTestable(id);
+  const [displayColor, setDisplayColor] = useState<ButtonColor>('off');
+  const [isTestMode, setIsTestMode] = useState(false);
 
   // Check if this button is at a control rod position
   const isControlRod = controlRodCoords.some(([rx, ry]) => rx === gridX && ry === gridY);
@@ -46,7 +47,66 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
     registry.acknowledge(id);
   }, [id]);
 
-  // Command handling
+  // Handle state changes
+  useEffect(() => {
+    const handleStateChange = (state: AppState) => {
+      if (state === 'init') {
+        // Reset component state
+        setIsWithdrawn(false);
+        setDisplayColor('off');
+        setIsTestMode(false);
+      } else if (state === 'startup' || state === 'on') {
+        // Ensure components are reset when entering startup or on state
+        setIsTestMode(false);
+      }
+    };
+    
+    const unsubscribe = stateMachine.subscribe((cmd: Command) => {
+      if (cmd.type === 'state_change') {
+        handleStateChange(cmd.state);
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [id]);
+
+  // Handle test sequence
+  useEffect(() => {
+    const handleCommand = (cmd: Command) => {
+      if (cmd.type === 'test_sequence' && cmd.id === id) {
+        setIsTestMode(true);
+        
+        // Perform test sequence
+        const sequence: ButtonColor[] = ['red', 'amber', 'green', 'white', 'off'];
+        let i = 0;
+        
+        const interval = setInterval(() => {
+          setDisplayColor(sequence[i]);
+          i++;
+          
+          if (i >= sequence.length) {
+            clearInterval(interval);
+            setIsTestMode(false);
+            setDisplayColor('off');
+            
+            // Emit test result when test sequence completes
+            stateMachine.emit({
+              type: 'test_result',
+              id,
+              passed: true
+            });
+          }
+        }, 150);
+        
+        return () => clearInterval(interval);
+      }
+    };
+    
+    const unsubscribe = stateMachine.subscribe(handleCommand);
+    return () => unsubscribe();
+  }, [id]);
+
+  // Handle temperature and control rod updates
   useEffect(() => {
     const handleCommand = (cmd: Command) => {
       // Handle temperature updates for all fuel rods
@@ -77,16 +137,34 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
   };
 
   return (
-    <PanelButton
-      id={id}
-      x={x}
-      y={y}
-      label={label}
-      onClick={handleClick}
-      isActive={isWithdrawn}
-      displayColor={displayColor}
-      disabled={!isControlRod}
-    />
+    <div style={{ position: 'relative' }}>
+      <PanelButton
+        id={id}
+        x={x}
+        y={y}
+        label={label}
+        onClick={handleClick}
+        isActive={isWithdrawn}
+        displayColor={displayColor}
+        disabled={!isControlRod}
+      />
+      {isControlRod && (
+        <div style={{ 
+          position: 'absolute', 
+          top: '100%', 
+          left: '50%', 
+          transform: 'translateX(-50%)', 
+          marginTop: '4px',
+          fontSize: '10px',
+          fontFamily: 'monospace',
+          fontWeight: 'bold',
+          color: 'white',
+          textShadow: '1px 1px 2px black'
+        }}>
+          Control
+        </div>
+      )}
+    </div>
   );
 };
 
