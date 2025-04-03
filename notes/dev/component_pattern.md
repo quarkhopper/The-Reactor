@@ -10,6 +10,7 @@ This document outlines the ideal pattern for creating well-encapsulated, functio
 4. **Testability**: Components should be easily testable in isolation.
 5. **Reusability**: Components should be designed for reuse across the application.
 6. **Visual State Management**: Components should manage their own visual state (colors, positions, etc.) internally.
+7. **Initialization Timing**: Components should acknowledge initialization only when explicitly requested by the state machine.
 
 ## Component Structure
 
@@ -106,6 +107,143 @@ const ComponentName: React.FC<ComponentNameProps> = ({ id, initialValue = defaul
 
 export default ComponentName;
 ```
+
+## Special Cases and Considerations
+
+### Component Dependencies
+
+When a component depends on another component (like `FuelRodButton` depending on `PanelButton`), consider the following:
+
+1. **Initialization Timing**: 
+   - Always acknowledge initialization in the state change handler, not in a separate effect
+   - This ensures components initialize in the correct order
+   - Example:
+     ```typescript
+     useEffect(() => {
+       const handleStateChange = (state: AppState) => {
+         if (state === 'init') {
+           // Reset state and acknowledge
+           registry.acknowledge(id);
+         }
+       };
+       // ...
+     }, [id]);
+     ```
+
+2. **CSS Dependencies**:
+   - When reusing CSS from another component, import the CSS file directly
+   - Use the same class names to maintain consistency
+   - Example:
+     ```typescript
+     import '../css/components/PanelButton.css';
+     // ...
+     className="panel-button-wrapper"
+     ```
+
+3. **State Management**:
+   - Each component should manage its own state
+   - Parent components should not manage state for child components
+   - Example:
+     ```typescript
+     const [isHeld, setIsHeld] = useState(false);
+     const handleMouseDown = () => setIsHeld(true);
+     ```
+
+4. **Event Handling**:
+   - Components should handle their own events
+   - Use callbacks for parent-child communication
+   - Example:
+     ```typescript
+     const handleClick = () => {
+       if (isControlRod) {
+         stateMachine.emit({ type: 'button_press', id });
+       }
+     };
+     ```
+
+### Testing and Debugging
+
+1. **Component Isolation**:
+   - Test components in isolation
+   - Mock dependencies when necessary
+   - Example:
+     ```typescript
+     // Mock state machine
+     jest.mock('../state/StateMachine');
+     ```
+
+2. **State Transitions**:
+   - Test all state transitions
+   - Verify initialization sequence
+   - Example:
+     ```typescript
+     test('initializes correctly', () => {
+       // Test initialization
+     });
+     ```
+
+3. **Visual Feedback**:
+   - Test visual states (hover, active, disabled)
+   - Verify animations and transitions
+   - Example:
+     ```typescript
+     test('shows correct visual state', () => {
+       // Test visual states
+     });
+     ```
+
+## Best Practices
+
+1. **Keep Components Small**:
+   - Each component should have a single responsibility
+   - Break down complex components into smaller ones
+
+2. **Use TypeScript**:
+   - Define clear interfaces for props and state
+   - Use type checking to catch errors early
+
+3. **Document Components**:
+   - Add comments for complex logic
+   - Document component behavior and usage
+
+4. **Follow React Patterns**:
+   - Use hooks for state management
+   - Follow React's component lifecycle
+
+5. **Optimize Performance**:
+   - Use memoization when necessary
+   - Avoid unnecessary re-renders
+
+## Common Pitfalls
+
+1. **Premature Optimization**:
+   - Don't optimize before measuring
+   - Focus on readability first
+
+2. **Over-Engineering**:
+   - Keep it simple
+   - Don't add complexity without need
+
+3. **State Management**:
+   - Don't lift state unnecessarily
+   - Use local state when possible
+
+4. **Component Dependencies**:
+   - Avoid tight coupling
+   - Use props for communication
+
+5. **Initialization**:
+   - Don't acknowledge initialization too early
+   - Wait for explicit state change
+
+## Conclusion
+
+Following these patterns will help create maintainable, testable, and reusable components. Remember to:
+- Keep components focused and simple
+- Manage state appropriately
+- Handle initialization correctly
+- Test thoroughly
+- Document clearly
 
 ## Key Patterns
 
