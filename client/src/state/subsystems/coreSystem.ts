@@ -76,7 +76,13 @@ function precalculateBaseReactivities() {
       for (let fx = 0; fx < GRID_SIZE; fx++) {
         for (let fy = 0; fy < GRID_SIZE; fy++) {
           if (fx === x && fy === y) continue;
-          const distance = Math.sqrt((fx - x) ** 2 + (fy - y) ** 2);
+          
+          // If the rod is withdrawn, set distance to a very large number
+          // This effectively removes it from the reactivity calculation
+          const distance = fuelRods[fx][fy].state === 'withdrawn' 
+            ? 1000000  // Effectively infinite distance
+            : Math.sqrt((fx - x) ** 2 + (fy - y) ** 2);
+            
           baseReactivity += 1 / (1 + distance);
         }
       }
