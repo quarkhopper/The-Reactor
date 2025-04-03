@@ -1,9 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import PanelButton from './PanelButton';
 import stateMachine from '../state/StateMachine';
 import { useCoreSystem } from '../state/subsystems/coreSystem';
 import { registry } from '../state/registry';
 import type { Command, AppState } from '../state/types';
+
+import glow_off from '../images/button_off.png';
+import glow_green from '../images/button_glow_green.png';
+import glow_amber from '../images/button_glow_amber.png';
+import glow_red from '../images/button_glow_red.png';
+import glow_white from '../images/button_glow_white.png';
+
+import '../css/components/PanelButton.css';
 
 interface FuelRodButtonProps {
   id: string;
@@ -25,6 +32,14 @@ function getColorFromTemperature(temp: number): ButtonColor {
   return 'white';
 }
 
+const glowMap: Record<ButtonColor, string> = {
+  off: glow_off,
+  green: glow_green,
+  amber: glow_amber,
+  red: glow_red,
+  white: glow_white,
+};
+
 const FuelRodButton: React.FC<FuelRodButtonProps> = ({
   id,
   x,
@@ -37,15 +52,10 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
   const [isWithdrawn, setIsWithdrawn] = useState(false);
   const [displayColor, setDisplayColor] = useState<ButtonColor>('off');
   const [isTestMode, setIsTestMode] = useState(false);
+  const [isHeld, setIsHeld] = useState(false);
 
   // Check if this button is at a control rod position
   const isControlRod = controlRodCoords.some(([rx, ry]) => rx === gridX && ry === gridY);
-
-  // Self-initialization
-  useEffect(() => {
-    // Acknowledge initialization as if this was a physical component
-    registry.acknowledge(id);
-  }, [id]);
 
   // Handle state changes
   useEffect(() => {
@@ -55,6 +65,9 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
         setIsWithdrawn(false);
         setDisplayColor('off');
         setIsTestMode(false);
+        setIsHeld(false);
+        // Acknowledge this component when initialization is requested
+        registry.acknowledge(id);
       } else if (state === 'startup' || state === 'on') {
         // Ensure components are reset when entering startup or on state
         setIsTestMode(false);
@@ -136,23 +149,43 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
     });
   };
 
+  const handleMouseDown = () => {
+    setIsHeld(true);
+  };
+
+  const handleMouseUp = () => {
+    setIsHeld(false);
+    if (isControlRod) {
+      handleClick();
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsHeld(false);
+  };
+
   return (
     <div style={{ position: 'relative' }}>
-      <PanelButton
-        id={id}
-        x={x}
-        y={y}
-        label={label}
-        onClick={handleClick}
-        isActive={isWithdrawn}
-        displayColor={displayColor}
-        disabled={!isControlRod}
-      />
+      <div
+        className="panel-button-wrapper"
+        style={{ top: `${y}px`, left: `${x}px` }}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
+      >
+        <img
+          src={glowMap[displayColor]}
+          className={`panel-button-img ${isHeld || isWithdrawn ? 'pressed' : ''} ${isTestMode ? 'test-mode' : ''}`}
+          draggable={false}
+          alt=""
+        />
+        {label && <div className="panel-button-label">{label}</div>}
+      </div>
       {isControlRod && (
         <div style={{ 
           position: 'absolute', 
-          top: '100%', 
-          left: '50%', 
+          top: `${y + 24}px`, 
+          left: `${x}px`, 
           transform: 'translateX(-50%)', 
           marginTop: '4px',
           fontSize: '10px',
