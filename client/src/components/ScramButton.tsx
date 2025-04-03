@@ -32,6 +32,9 @@ export default function ScramButton({ id, x, y }: ScramButtonProps) {
         // Ensure components are reset when entering startup or on state
         setIsTestMode(false);
         setPressed(false);
+      } else if (state === 'scram') {
+        // Button stays pressed during scram
+        setPressed(true);
       }
     };
     
@@ -80,7 +83,7 @@ export default function ScramButton({ id, x, y }: ScramButtonProps) {
       if (newPressed) {
         // Emit SCRAM command
         stateMachine.emit({
-          type: 'button_press',
+          type: 'scram_button_press',
           id
         });
       }

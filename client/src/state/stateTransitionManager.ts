@@ -15,7 +15,8 @@ const STATE_TRANSITIONS: Record<AppState, AppState | null> = {
   'test': 'startup',
   'startup': 'on',
   'on': 'shutdown',
-  'shutdown': 'off'
+  'shutdown': 'off',
+  'scram': null  // Terminal state for now
 };
 
 // Define the state transition delays (in milliseconds)
@@ -25,7 +26,8 @@ const STATE_TRANSITION_DELAYS: Record<AppState, number> = {
   'test': 0,
   'startup': 2000,
   'on': 0,
-  'shutdown': 2000
+  'shutdown': 2000,
+  'scram': 0
 };
 
 // Define the state transition handlers
@@ -64,6 +66,9 @@ const STATE_TRANSITION_HANDLERS: Record<AppState, () => void> = {
   },
   'shutdown': () => {
     console.log('[stateTransitionManager] Shutting down...');
+  },
+  'scram': () => {
+    console.log('[stateTransitionManager] SCRAM initiated');
   }
 };
 
@@ -107,5 +112,9 @@ export function getStateTransitionDelay(state: AppState): number {
  * Check if a state transition is valid
  */
 export function isValidTransition(fromState: AppState, toState: AppState): boolean {
+  // Allow transition from 'on' to 'scram'
+  if (fromState === 'on' && toState === 'scram') {
+    return true;
+  }
   return STATE_TRANSITIONS[fromState] === toState;
 } 
