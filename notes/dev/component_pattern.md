@@ -1,6 +1,6 @@
 # Component Pattern Guide
 
-This document outlines the ideal pattern for creating well-encapsulated, functional components in the Reactor application. It's based on our experience refactoring components to remove the `useTestable` dependency, starting with the `KnobSelector` component and extending to the `IndicatorLight` component.
+This document outlines the ideal pattern for creating well-encapsulated, functional components in the Reactor application. It's based on our experience refactoring components to follow a self-contained pattern, starting with the `KnobSelector` component and extending to all components.
 
 ## Core Principles
 
@@ -37,24 +37,24 @@ interface ComponentNameProps {
 ### 3. Component Implementation
 
 ```typescript
-const ComponentName: React.FC<ComponentNameProps> = ({ id, initialValue = defaultValue, ...otherProps }) => {
-  // Local state
-  const [localState, setLocalState] = useState(initialValue);
+const ComponentName: React.FC<ComponentNameProps> = ({ id, ...props }) => {
+  // State management
   const [isTestMode, setIsTestMode] = useState(false);
-  
+  const [displayState, setDisplayState] = useState(initialState);
+
   // Handle state changes
   useEffect(() => {
     const handleStateChange = (state: AppState) => {
       if (state === 'init') {
         // Reset component state
-        setLocalState(initialValue);
+        setDisplayState(initialState);
         setIsTestMode(false);
         // Acknowledge this component when initialization is requested
         registry.acknowledge(id);
       } else if (state === 'startup' || state === 'on') {
         // Ensure components are reset when entering startup or on state
         setIsTestMode(false);
-        setLocalState(initialValue);
+        setDisplayState(normalState);
       }
     };
     
@@ -65,15 +65,16 @@ const ComponentName: React.FC<ComponentNameProps> = ({ id, initialValue = defaul
     });
     
     return () => unsubscribe();
-  }, [id, initialValue]);
-  
+  }, [id, dependencies]);
+
   // Handle test sequence
   useEffect(() => {
     const handleCommand = (cmd: Command) => {
       if (cmd.type === 'test_sequence' && cmd.id === id) {
         setIsTestMode(true);
+        
         // Perform test sequence
-        // ...
+        // ... test sequence logic ...
         
         // Emit test result when test sequence completes
         stateMachine.emit({
@@ -86,111 +87,38 @@ const ComponentName: React.FC<ComponentNameProps> = ({ id, initialValue = defaul
     
     const unsubscribe = stateMachine.subscribe(handleCommand);
     return () => unsubscribe();
-  }, [id]);
-  
-  // Component-specific logic
+  }, [id, dependencies]);
+
+  // Handle user interaction
   const handleInteraction = () => {
-    // Handle user interaction
-    // ...
+    if (!isTestMode) {
+      // Handle normal interaction
+    }
   };
-  
+
   // Render
   return (
-    <div 
-      className={`component-name ${isTestMode ? 'test-mode' : ''}`}
-      onClick={handleInteraction}
-    >
+    <div className="component-wrapper">
       {/* Component content */}
     </div>
   );
 };
-
-export default ComponentName;
 ```
 
-## Special Cases and Considerations
+## State Management
 
-### Component Dependencies
+Each component should manage its own state, including:
+- Test mode state
+- Visual state (colors, positions, etc.)
+- Interaction state (pressed, hovered, etc.)
 
-When a component depends on another component (like `FuelRodButton` depending on `PanelButton`), consider the following:
+## Test Sequence Implementation
 
-1. **Initialization Timing**: 
-   - Always acknowledge initialization in the state change handler, not in a separate effect
-   - This ensures components initialize in the correct order
-   - Example:
-     ```typescript
-     useEffect(() => {
-       const handleStateChange = (state: AppState) => {
-         if (state === 'init') {
-           // Reset state and acknowledge
-           registry.acknowledge(id);
-         }
-       };
-       // ...
-     }, [id]);
-     ```
-
-2. **CSS Dependencies**:
-   - When reusing CSS from another component, import the CSS file directly
-   - Use the same class names to maintain consistency
-   - Example:
-     ```typescript
-     import '../css/components/PanelButton.css';
-     // ...
-     className="panel-button-wrapper"
-     ```
-
-3. **State Management**:
-   - Each component should manage its own state
-   - Parent components should not manage state for child components
-   - Example:
-     ```typescript
-     const [isHeld, setIsHeld] = useState(false);
-     const handleMouseDown = () => setIsHeld(true);
-     ```
-
-4. **Event Handling**:
-   - Components should handle their own events
-   - Use callbacks for parent-child communication
-   - Example:
-     ```typescript
-     const handleClick = () => {
-       if (isControlRod) {
-         stateMachine.emit({ type: 'button_press', id });
-       }
-     };
-     ```
-
-### Testing and Debugging
-
-1. **Component Isolation**:
-   - Test components in isolation
-   - Mock dependencies when necessary
-   - Example:
-     ```typescript
-     // Mock state machine
-     jest.mock('../state/StateMachine');
-     ```
-
-2. **State Transitions**:
-   - Test all state transitions
-   - Verify initialization sequence
-   - Example:
-     ```typescript
-     test('initializes correctly', () => {
-       // Test initialization
-     });
-     ```
-
-3. **Visual Feedback**:
-   - Test visual states (hover, active, disabled)
-   - Verify animations and transitions
-   - Example:
-     ```typescript
-     test('shows correct visual state', () => {
-       // Test visual states
-     });
-     ```
+Components should implement their own test sequences:
+1. Listen for test sequence commands
+2. Perform component-specific test sequence
+3. Emit test result when complete
+4. Reset to normal state
 
 ## Best Practices
 
