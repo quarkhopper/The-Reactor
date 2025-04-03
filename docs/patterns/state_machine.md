@@ -53,8 +53,7 @@ The application has six primary states:
 
 The state machine follows a strict transition sequence:
 
-```
-off → init → test → startup → on → shutdown → off
+```off → init → test → startup → on → shutdown → off
 ```
 
 Each transition has:
@@ -138,4 +137,30 @@ useEffect(() => {
 1. **State Visualization**: Add tools to visualize state transitions
 2. **Error Handling**: Enhance error recovery mechanisms
 3. **Performance**: Optimize event handling for large component sets
-4. **Testing**: Add more comprehensive state machine tests 
+4. **Testing**: Add more comprehensive state machine tests
+
+## Core Geometry and Reactivity
+
+### Critical Principle: Core Geometry Determines Reactivity
+
+The base reactivity of the reactor core is fundamentally determined by its geometry - specifically, the distances between fuel rods. This is a critical principle that affects both the simulation and the real-world behavior of nuclear reactors:
+
+1. **Physical Reality**:
+   - When a fuel rod is withdrawn, it is physically removed from the reactor
+   - The distances between remaining rods change
+   - The overall neutron flux pattern changes
+   - The core's geometry is fundamentally altered
+
+2. **Simulation Implications**:
+   - Base reactivity MUST be recalculated when rod states change
+   - This is not just a UI concern - it's a fundamental change to the reactor's geometry
+   - The control rods then suppress this base reactivity based on their positions
+   - The base reactivity itself is determined by which rods are present in the core
+
+3. **Implementation Requirements**:
+   - The `precalculateBaseReactivities` function must consider only engaged rods
+   - Base reactivity must be recalculated whenever a rod's state changes
+   - Control rod interference calculations work on top of this base reactivity
+   - Temperature calculations use the resulting reactivity
+
+This principle is critical to maintaining an accurate simulation of reactor behavior. The geometry of the core is not static - it changes as rods are inserted or withdrawn, and these changes must be reflected in the reactivity calculations. 
