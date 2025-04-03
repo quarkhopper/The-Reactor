@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useTestable } from '../hooks/useTestable';
 import { registry } from '../state/registry';
+import stateMachine from '../state/StateMachine';
+import type { Command, AppState } from '../state/types';
 
 import '../css/components/VerticalMeter.css';
 
@@ -17,39 +18,96 @@ interface VerticalMeterProps {
 
 export default function VerticalMeter({ id, x, y, value }: VerticalMeterProps) {
   const [currentValue, setCurrentValue] = useState(value);
-  const { isTestMode, displayColor } = useTestable(id);
+  const [isTestMode, setIsTestMode] = useState(false);
+  const [displayColor, setDisplayColor] = useState<'off' | 'green' | 'amber' | 'red' | 'white'>('off');
 
+  // Handle state changes
+  useEffect(() => {
+    const handleStateChange = (state: AppState) => {
+      if (state === 'init') {
+        // Reset component state
+        setCurrentValue(0);
+        setIsTestMode(false);
+        setDisplayColor('off');
+        // Acknowledge this component when initialization is requested
+        registry.acknowledge(id);
+      } else if (state === 'startup' || state === 'on') {
+        // Ensure components are reset when entering startup or on state
+        setIsTestMode(false);
+        setCurrentValue(value);
+      }
+    };
+    
+    const unsubscribe = stateMachine.subscribe((cmd: Command) => {
+      if (cmd.type === 'state_change') {
+        handleStateChange(cmd.state);
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [id, value]);
+
+  // Handle test sequence
+  useEffect(() => {
+    const handleCommand = (cmd: Command) => {
+      if (cmd.type === 'test_sequence' && cmd.id === id) {
+        setIsTestMode(true);
+        
+        // Perform test sequence
+        const sequence: Array<'off' | 'green' | 'amber' | 'red' | 'white'> = ['red', 'amber', 'green', 'white', 'off'];
+        let i = 0;
+        
+        const interval = setInterval(() => {
+          setDisplayColor(sequence[i]);
+          // Set value based on color
+          switch (sequence[i]) {
+            case 'off':
+              setCurrentValue(0);
+              break;
+            case 'green':
+              setCurrentValue(0.25);
+              break;
+            case 'amber':
+              setCurrentValue(0.5);
+              break;
+            case 'red':
+              setCurrentValue(0.75);
+              break;
+            case 'white':
+              setCurrentValue(1);
+              break;
+          }
+          i++;
+          
+          if (i >= sequence.length) {
+            clearInterval(interval);
+            setIsTestMode(false);
+            setDisplayColor('off');
+            setCurrentValue(value);
+            
+            // Emit test result when test sequence completes
+            stateMachine.emit({
+              type: 'test_result',
+              id,
+              passed: true
+            });
+          }
+        }, 150);
+        
+        return () => clearInterval(interval);
+      }
+    };
+    
+    const unsubscribe = stateMachine.subscribe(handleCommand);
+    return () => unsubscribe();
+  }, [id, value]);
+
+  // Update value when not in test mode
   useEffect(() => {
     if (!isTestMode) {
       setCurrentValue(value);
-    } else {
-      // During test mode, set the value based on the displayColor
-      switch (displayColor) {
-        case 'off':
-          setCurrentValue(0);
-          break;
-        case 'green':
-          setCurrentValue(0.25);
-          break;
-        case 'amber':
-          setCurrentValue(0.5);
-          break;
-        case 'red':
-          setCurrentValue(0.75);
-          break;
-        case 'white':
-          setCurrentValue(1);
-          break;
-        default:
-          setCurrentValue(0);
-      }
     }
-  }, [value, isTestMode, displayColor]);
-
-  // Self-initialization
-  useEffect(() => {
-    registry.acknowledge(id);
-  }, [id]);
+  }, [value, isTestMode]);
 
   const clamped = Math.max(0, Math.min(1, currentValue));
 

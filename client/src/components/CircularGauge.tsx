@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useTestable } from '../hooks/useTestable';
 import { registry } from '../state/registry';
+import stateMachine from '../state/StateMachine';
+import type { Command, AppState } from '../state/types';
 
 import '../css/components/CircularGauge.css';
 
@@ -20,32 +21,69 @@ interface CircularGaugeProps {
 
 export default function CircularGauge({ id, x, y, value, limit }: CircularGaugeProps) {
   const [displayValue, setDisplayValue] = useState(value);
-  const { isTestMode } = useTestable(id);
+  const [isTestMode, setIsTestMode] = useState(false);
 
-  // Self-initialization
+  // Handle state changes
   useEffect(() => {
-    registry.acknowledge(id);
-  }, [id]);
+    const handleStateChange = (state: AppState) => {
+      if (state === 'init') {
+        // Reset component state
+        setDisplayValue(0);
+        setIsTestMode(false);
+        // Acknowledge this component when initialization is requested
+        registry.acknowledge(id);
+      } else if (state === 'startup' || state === 'on') {
+        // Ensure components are reset when entering startup or on state
+        setIsTestMode(false);
+        setDisplayValue(value);
+      }
+    };
+    
+    const unsubscribe = stateMachine.subscribe((cmd: Command) => {
+      if (cmd.type === 'state_change') {
+        handleStateChange(cmd.state);
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [id, value]);
 
-  // Test mode sequence
+  // Handle test sequence
   useEffect(() => {
-    if (isTestMode) {
-      let i = 0;
-      const steps = 40;
+    const handleCommand = (cmd: Command) => {
+      if (cmd.type === 'test_sequence' && cmd.id === id) {
+        setIsTestMode(true);
+        
+        // Perform test sequence
+        let i = 0;
+        const steps = 40;
 
-      const interval = setInterval(() => {
-        const phase = i < steps ? i / steps : 2 - i / steps;
-        setDisplayValue(phase);
-        i++;
-        if (i > steps * 2) {
-          clearInterval(interval);
-          registry.acknowledge(id);
-        }
-      }, 20);
-
-      return () => clearInterval(interval);
-    }
-  }, [isTestMode, id]);
+        const interval = setInterval(() => {
+          const phase = i < steps ? i / steps : 2 - i / steps;
+          setDisplayValue(phase);
+          i++;
+          
+          if (i > steps * 2) {
+            clearInterval(interval);
+            setIsTestMode(false);
+            setDisplayValue(value);
+            
+            // Emit test result when test sequence completes
+            stateMachine.emit({
+              type: 'test_result',
+              id,
+              passed: true
+            });
+          }
+        }, 20);
+        
+        return () => clearInterval(interval);
+      }
+    };
+    
+    const unsubscribe = stateMachine.subscribe(handleCommand);
+    return () => unsubscribe();
+  }, [id, value]);
 
   // Update value when not in test mode
   useEffect(() => {
