@@ -26,7 +26,7 @@ class ShutdownManager {
     stateMachine.subscribe((cmd: Command) => {
       if (cmd.type === 'state_change' && cmd.id === 'system' && cmd.state === 'shutdown') {
         this.handleShutdown();
-      } else if (cmd.type === 'process_complete' && cmd.process === 'component_shutdown') {
+      } else if (cmd.type === 'process_complete' && cmd.process === 'shutdown') {
         this.handleComponentShutdown(cmd.id);
       }
     });
@@ -64,6 +64,12 @@ class ShutdownManager {
     // Track component shutdown
     this.componentsShutdown.add(componentId);
     console.log(`[shutdownManager] Component ${componentId} shut down (${this.componentsShutdown.size}/${this.totalComponents})`);
+    
+    // Check if all components have completed shutdown
+    if (this.componentsShutdown.size === this.totalComponents) {
+      console.log('[shutdownManager] All components have completed shutdown');
+      this.handleShutdownComplete();
+    }
   }
 
   private handleShutdownComplete() {

@@ -58,19 +58,14 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
           // Acknowledge initialization
           registry.acknowledge('master');
         } else if (cmd.process === 'shutdown') {
-          // Set to blinking during shutdown
-          setLit(true);
-          setBlinking(true);
-          setVisible(true);
+          // Return to unpressed state during shutdown
+          setLit(false);
+          setBlinking(false);
+          setVisible(false);
           setIsTestMode(false);
           // Acknowledge shutdown
           registry.acknowledge('master');
-          // Emit completion
-          stateMachine.emit({
-            type: 'process_complete',
-            id: 'master',
-            process: 'component_shutdown'
-          });
+          // DO NOT emit process_complete - this is the manager's job
         }
       }
     };

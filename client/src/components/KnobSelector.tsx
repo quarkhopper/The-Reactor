@@ -53,17 +53,12 @@ export default function KnobSelector({ id, x, y, leftLabel, rightLabel }: KnobSe
           // Acknowledge initialization
           registry.acknowledge(id);
         } else if (cmd.process === 'shutdown') {
-          // Return to off position during shutdown
+          // Return to default position during shutdown
           setToggled(false);
           setIsTestMode(false);
           // Acknowledge shutdown
           registry.acknowledge(id);
-          // Emit completion
-          stateMachine.emit({
-            type: 'process_complete',
-            id,
-            process: 'component_shutdown'
-          });
+          // DO NOT emit process_complete - this is the manager's job
         }
       }
     };

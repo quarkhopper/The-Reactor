@@ -182,6 +182,17 @@ Components should implement their own test sequences:
    - Don't acknowledge initialization too early
    - Wait for explicit process_begin command
 
+6. **Process Phase Commands**:
+   - Components should NEVER emit process_complete events during init/test/shutdown
+   - Only managers can determine when a process phase is complete
+   - Always use registry.acknowledge() for component acknowledgments during process phases
+   - Don't confuse process phase commands with normal operation commands
+
+7. **Normal Operation Commands**:
+   - Components SHOULD emit commands directly during normal operation
+   - Don't use registry.acknowledge() for normal operation commands
+   - Keep command types and payloads consistent across components
+
 ## Conclusion
 
 Following these patterns will help create maintainable, testable, and reusable components. Remember to:
@@ -530,4 +541,79 @@ This pattern ensures clean separation between process management and state trans
 
 ## Future Updates
 
-This document will be updated as we gain more experience with different component types and encounter more complex scenarios. The goal is to establish a consistent pattern that works well for all components in the application. 
+This document will be updated as we gain more experience with different component types and encounter more complex scenarios. The goal is to establish a consistent pattern that works well for all components in the application.
+
+## Command Patterns
+
+There are two distinct types of command patterns in the system:
+
+### 1. Process Phase Commands (init, test, shutdown)
+
+During system-wide phases, components and managers have distinct responsibilities:
+
+#### Component Responsibilities:
+- Receive `process_begin` commands
+- Execute the requested process
+- Acknowledge completion via `registry.acknowledge(id)`
+- NEVER emit `process_complete` events
+
+#### Manager Responsibilities:
+- Track acknowledgments from all components
+- Determine when a process is complete
+- Emit `process_complete` events when ALL components have acknowledged
+
+Example of correct component pattern during process phases:
+```typescript
+// CORRECT Pattern for process phases
+if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'shutdown') {
+  // Reset component state
+  setDisplayState(initialState);
+  setIsTestMode(false);
+  // Acknowledge shutdown
+  registry.acknowledge(id);
+}
+
+// INCORRECT Pattern (DO NOT USE)
+if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'shutdown') {
+  // ... state reset ...
+  registry.acknowledge(id);
+  // DO NOT emit process_complete - this is the manager's job
+  stateMachine.emit({
+    type: 'process_complete',
+    id,
+    process: 'shutdown'
+  });
+}
+```
+
+### 2. Normal Operation Commands
+
+During normal operation, components freely emit commands to communicate state changes:
+
+#### Component Responsibilities:
+- Emit commands directly via `stateMachine.emit()`
+- Respond to commands from other components
+- Maintain their own state
+
+Examples of normal operation commands:
+```typescript
+// Button press
+stateMachine.emit({
+  type: 'button_press',
+  id
+});
+
+// Slider movement
+stateMachine.emit({
+  type: 'slider_move',
+  id,
+  value: newValue
+});
+
+// Temperature update
+stateMachine.emit({
+  type: 'temperature_update',
+  id,
+  value: temp
+});
+``` 

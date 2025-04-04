@@ -53,17 +53,12 @@ export default function CircularGauge({ id, x, y, value, limit }: CircularGaugeP
           // Acknowledge initialization
           registry.acknowledge(id);
         } else if (cmd.process === 'shutdown') {
-          // Turn off during shutdown
+          // Return to zero during shutdown
           setDisplayValue(0);
           setIsTestMode(false);
           // Acknowledge shutdown
           registry.acknowledge(id);
-          // Emit completion
-          stateMachine.emit({
-            type: 'process_complete',
-            id,
-            process: 'component_shutdown'
-          });
+          // DO NOT emit process_complete - this is the manager's job
         }
       }
     };

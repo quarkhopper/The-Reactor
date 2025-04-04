@@ -32,6 +32,7 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
 }) => {
   const [displayColor, setDisplayColor] = useState<IndicatorColor>(initialColor);
   const [isTestMode, setIsTestMode] = useState(false);
+  const [blinking, setBlinking] = useState(false);
   
   // Color mapping for the indicator images
   const colorMap: Record<IndicatorColor, string> = {
@@ -63,25 +64,24 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
   // Handle process_begin:init command
   useEffect(() => {
     const handleCommand = (cmd: Command) => {
-      if (cmd.type === 'process_begin' && cmd.id === id) {
+      if (cmd.type === 'process_begin' && (cmd.process === 'init' || cmd.process === 'shutdown')) {
+        // Set blinking state
+        setBlinking(true);
+        
+        // Acknowledge the command
         if (cmd.process === 'init') {
-          // Reset component state
-          setDisplayColor('off');
-          setIsTestMode(false);
-          // Acknowledge initialization
-          registry.acknowledge(id);
+          stateMachine.emit({
+            type: 'process_complete',
+            id: 'indicator_light',
+            process: cmd.process
+          });
         } else if (cmd.process === 'shutdown') {
           // Turn off during shutdown
-          setDisplayColor('off');
+          setBlinking(false);
           setIsTestMode(false);
           // Acknowledge shutdown
           registry.acknowledge(id);
-          // Emit completion
-          stateMachine.emit({
-            type: 'process_complete',
-            id,
-            process: 'component_shutdown'
-          });
+          // DO NOT emit process_complete - this is the manager's job
         }
       }
     };
