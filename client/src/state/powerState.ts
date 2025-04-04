@@ -23,17 +23,10 @@ class PowerStateManager {
       if (cmd.type === 'state_change') {
         const { state } = cmd;
         
-        // Only update and emit if the state is actually changing
+        // Only update if the state is actually changing
         if (state !== this.currentState) {
           console.log(`[PowerStateManager] State change: ${this.currentState} -> ${state}`);
           this.currentState = state;
-
-          // Emit the new state to all subscribers
-          stateMachine.emit({
-            type: 'state_change',
-            id: 'power',
-            state: this.currentState
-          });
         }
       }
     });
