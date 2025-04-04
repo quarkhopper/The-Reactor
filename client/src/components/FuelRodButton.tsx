@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import stateMachine from '../state/StateMachine';
 import { useCoreSystem } from '../state/subsystems/coreSystem';
 import { registry } from '../state/registry';
@@ -97,8 +97,7 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
           // Acknowledge initialization
           registry.acknowledge(id);
         } else if (cmd.process === 'shutdown') {
-          console.log(`[FuelRodButton] ${id} received shutdown command`);
-          // Return to engaged state during shutdown
+          // Reset state
           setState('engaged');
           setDisplayColor('off');
           setIsTestMode(false);
@@ -106,8 +105,6 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
           setIsBlinking(false);
           // Acknowledge shutdown
           registry.acknowledge(id);
-          console.log(`[FuelRodButton] ${id} acknowledged shutdown`);
-          // DO NOT emit process_complete - this is the manager's job
         }
       }
     };
@@ -194,7 +191,6 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
 
   const handleClick = () => {
     if (!isControlRod) {
-      console.log(`[FuelRodButton] Emitting fuel rod toggle for ${id}`);
       // Emit fuel rod toggle command
       stateMachine.emit({
         type: 'fuel_rod_toggle',
