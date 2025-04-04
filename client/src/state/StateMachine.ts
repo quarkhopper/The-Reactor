@@ -3,10 +3,11 @@ import { testManager } from './testManager';
 import { initManager } from './initManager';
 import { getAllComponentIds } from './componentManifest';
 import { registry } from './registry';
+import { powerManager } from './powerState';
 
 // Define the class structure
 class StateMachine {
-  private state: AppState = 'init';
+  private state: AppState = 'off';  // Start in off state
   private callbacks: CommandCallback[] = [];
   private initialized: boolean = false;
 
@@ -47,19 +48,56 @@ class StateMachine {
     console.log('[StateMachine] Initializing state machine');
     
     // Initialize managers in order - they will cascade to their dependencies
-    initManager.init();  // This will cascade to registry
+    powerManager.init();  // Initialize power manager first
+    initManager.init();   // This will cascade to registry
     testManager.init();
     
     this.initialized = true;
     console.log('[StateMachine] Initialization complete');
   }
 
-  private isValidTransition(fromState: AppState, toState: AppState): boolean {
-    // Allow transition from 'on' to 'scram'
-    if (fromState === 'on' && toState === 'scram') {
-      return true;
+  // Get current state
+  getState(): AppState {
+    return this.state;
+  }
+
+  // Update state with validation
+  private updateState(newState: AppState) {
+    if (this.state === newState) return;
+
+    // Special case for power button - allow off->init transition
+    if (this.state === 'off' && newState === 'init') {
+      console.log(`[StateMachine] Power on: ${this.state} -> ${newState}`);
+      this.state = newState;
+      this.emit({
+        type: 'state_change',
+        id: 'system',
+        state: newState
+      });
+      return;
     }
-    return StateMachine.STATE_TRANSITIONS[fromState] === toState;
+
+    // Validate state transition
+    const nextState = StateMachine.STATE_TRANSITIONS[this.state];
+    if (nextState !== newState) {
+      console.warn(`[StateMachine] Invalid state transition: ${this.state} -> ${newState}`);
+      return;
+    }
+
+    console.log(`[StateMachine] State transition: ${this.state} -> ${newState}`);
+    this.state = newState;
+
+    // Handle special cases for state transitions
+    if (newState === 'shutdown') {
+      this.handleShutdownTransition();
+    }
+
+    // Emit state change
+    this.emit({
+      type: 'state_change',
+      id: 'system',
+      state: newState
+    });
   }
 
   private handleStateTransition(nextState: AppState) {
@@ -105,46 +143,24 @@ class StateMachine {
     }, StateMachine.STATE_TRANSITION_DELAYS['shutdown']);
   }
 
-  getAppState(): AppState {
-    return this.state;
-  }
-
-  private updateState(nextState: AppState) {
-    // Don't transition if we're already in that state
-    if (nextState === this.state) {
-      return;
-    }
-
-    // Check if the transition is valid
-    if (!this.isValidTransition(this.state, nextState)) {
-      console.error(`[stateMachine] Invalid state transition from ${this.state} to ${nextState}`);
-      return;
-    }
-
-    // Update state
-    console.log(`[stateMachine] Transitioning from ${this.state} to ${nextState}`);
-    this.state = nextState;
-
-    // Emit state change command
-    this.emit({
-      type: 'state_change',
-      id: 'system',
-      state: nextState
-    });
-
-    // Handle state-specific logic
-    this.handleStateTransition(nextState);
-  }
-
   emit(cmd: Command) {
-    if (this.state === 'off') {
-      if (cmd.type === 'power_button_press') {
-        // Allow power button to work and transition to init
+    // Special case: power button works even when off
+    if (cmd.type === 'power_button_press') {
+      if (this.state === 'off') {
+        console.log('[StateMachine] Power button pressed while off - starting up');
         this.updateState('init');
-        // Forward the power button press
-        for (const cb of this.callbacks) cb(cmd);
+      } else if (this.state === 'on') {
+        console.log('[StateMachine] Power button pressed while on - shutting down');
+        this.updateState('shutdown');
       }
-      return; // All other commands are blocked when power is off
+      // Forward the power button press
+      for (const cb of this.callbacks) cb(cmd);
+      return;
+    }
+
+    // Block all other commands when power is off
+    if (this.state === 'off') {
+      return;
     }
     
     // Handle state change commands
@@ -159,7 +175,7 @@ class StateMachine {
       testManager.handleCommand(cmd);
     } else if (cmd.type === 'scram_button_press') {
       // Handle scram button press - transition to scram state
-      console.log('[stateMachine] SCRAM button pressed');
+      console.log('[StateMachine] SCRAM button pressed');
       this.updateState('scram');
     }
     
