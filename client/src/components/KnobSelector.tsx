@@ -42,15 +42,23 @@ export default function KnobSelector({ id, x, y, leftLabel, rightLabel }: KnobSe
     return () => unsubscribe();
   }, [id]);
 
-  // Handle process_begin:init command
+  // Handle initialization
   useEffect(() => {
     const handleCommand = (cmd: Command) => {
-      if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'init') {
-        // Reset component state
-        setToggled(false);
-        setIsTestMode(false);
-        // Acknowledge initialization
-        registry.acknowledge(id);
+      if (cmd.type === 'process_begin' && cmd.id === id) {
+        if (cmd.process === 'init') {
+          // Reset component state
+          setToggled(false);
+          setIsTestMode(false);
+          // Acknowledge initialization
+          registry.acknowledge(id);
+        } else if (cmd.process === 'shutdown') {
+          // Return to off position during shutdown
+          setToggled(false);
+          setIsTestMode(false);
+          // Acknowledge shutdown
+          registry.acknowledge(id);
+        }
       }
     };
     

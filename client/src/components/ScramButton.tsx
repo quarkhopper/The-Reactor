@@ -44,12 +44,20 @@ export default function ScramButton({ id, x, y }: ScramButtonProps) {
   // Handle initialization
   useEffect(() => {
     const handleCommand = (cmd: Command) => {
-      if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'init') {
-        // Reset component state
-        setPressed(false);
-        setIsTestMode(false);
-        // Acknowledge initialization
-        registry.acknowledge(id);
+      if (cmd.type === 'process_begin' && cmd.id === id) {
+        if (cmd.process === 'init') {
+          // Reset component state
+          setPressed(false);
+          setIsTestMode(false);
+          // Acknowledge initialization
+          registry.acknowledge(id);
+        } else if (cmd.process === 'shutdown') {
+          // Return to unpressed state during shutdown
+          setPressed(false);
+          setIsTestMode(false);
+          // Acknowledge shutdown
+          registry.acknowledge(id);
+        }
       }
     };
     
@@ -85,18 +93,13 @@ export default function ScramButton({ id, x, y }: ScramButtonProps) {
     return () => unsubscribe();
   }, [id]);
 
+  // Handle button press
   const handleClick = () => {
-    if (!isTestMode) {
-      // Only allow pressing if not already pressed or in scram state
-      if (!pressed && stateMachine.getAppState() !== 'scram') {
-        setPressed(true);
-        
-        // Emit SCRAM command
-        stateMachine.emit({
-          type: 'scram_button_press',
-          id
-        });
-      }
+    if (!isTestMode && stateMachine.getState() === 'on') {
+      stateMachine.emit({
+        type: 'scram_button_press',
+        id
+      });
     }
   };
 

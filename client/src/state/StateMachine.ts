@@ -4,6 +4,7 @@ import { initManager } from './initManager';
 import { getAllComponentIds } from './componentManifest';
 import { registry } from './registry';
 import { powerManager } from './powerState';
+import { shutdownManager } from './shutdownManager';
 
 // Define the class structure
 class StateMachine {
@@ -29,7 +30,7 @@ class StateMachine {
     'test': 0,
     'startup': 2000,
     'on': 0,
-    'shutdown': 2000,
+    'shutdown': 0,  // No delay needed, shutdownManager handles the process
     'scram': 0
   };
 
@@ -51,6 +52,7 @@ class StateMachine {
     powerManager.init();  // Initialize power manager first
     initManager.init();   // This will cascade to registry
     testManager.init();
+    shutdownManager.init();
     
     this.initialized = true;
     console.log('[StateMachine] Initialization complete');
@@ -87,14 +89,14 @@ class StateMachine {
     console.log(`[StateMachine] State transition: ${this.state} -> ${newState}`);
     this.state = newState;
 
-    // Handle shutdown transition
-    if (newState === 'shutdown') {
-      console.log('[StateMachine] Shutting down...');
-      // Schedule the transition to 'off' state
+    // Handle startup transition
+    if (newState === 'startup') {
+      console.log('[StateMachine] Starting up...');
+      // Schedule the transition to 'on' state
       setTimeout(() => {
-        console.log('[StateMachine] Shutdown complete, transitioning to off state');
-        this.updateState('off');
-      }, StateMachine.STATE_TRANSITION_DELAYS['shutdown']);
+        console.log('[StateMachine] Startup complete, transitioning to on state');
+        this.updateState('on');
+      }, StateMachine.STATE_TRANSITION_DELAYS['startup']);
     }
 
     // Emit state change
@@ -129,6 +131,21 @@ class StateMachine {
     if (cmd.type === 'state_change' && cmd.id === 'system') {
       // Forward the state change command
       for (const cb of this.callbacks) cb(cmd);
+      return;
+    }
+    
+    // Handle process completion
+    if (cmd.type === 'process_complete') {
+      if (cmd.process === 'shutdown_complete') {
+        console.log('[StateMachine] Shutdown complete, transitioning to off state');
+        this.updateState('off');
+      } else {
+        const nextState = StateMachine.STATE_TRANSITIONS[this.state];
+        if (nextState) {
+          console.log(`[StateMachine] Process ${cmd.process} complete, transitioning to ${nextState}`);
+          this.updateState(nextState);
+        }
+      }
       return;
     }
     

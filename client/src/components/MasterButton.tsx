@@ -48,14 +48,24 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
   // Handle initialization
   useEffect(() => {
     const handleCommand = (cmd: Command) => {
-      if (cmd.type === 'process_begin' && cmd.id === 'master' && cmd.process === 'init') {
-        // Reset component state
-        setLit(false);
-        setBlinking(false);
-        setVisible(false);
-        setIsTestMode(false);
-        // Acknowledge initialization
-        registry.acknowledge('master');
+      if (cmd.type === 'process_begin' && cmd.id === 'master') {
+        if (cmd.process === 'init') {
+          // Reset component state
+          setLit(false);
+          setBlinking(false);
+          setVisible(false);
+          setIsTestMode(false);
+          // Acknowledge initialization
+          registry.acknowledge('master');
+        } else if (cmd.process === 'shutdown') {
+          // Set to blinking during shutdown
+          setLit(true);
+          setBlinking(true);
+          setVisible(true);
+          setIsTestMode(false);
+          // Acknowledge shutdown
+          registry.acknowledge('master');
+        }
       }
     };
     
