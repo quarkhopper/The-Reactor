@@ -87,9 +87,14 @@ class StateMachine {
     console.log(`[StateMachine] State transition: ${this.state} -> ${newState}`);
     this.state = newState;
 
-    // Handle special cases for state transitions
+    // Handle shutdown transition
     if (newState === 'shutdown') {
-      this.handleShutdownTransition();
+      console.log('[StateMachine] Shutting down...');
+      // Schedule the transition to 'off' state
+      setTimeout(() => {
+        console.log('[StateMachine] Shutdown complete, transitioning to off state');
+        this.updateState('off');
+      }, StateMachine.STATE_TRANSITION_DELAYS['shutdown']);
     }
 
     // Emit state change
@@ -98,49 +103,6 @@ class StateMachine {
       id: 'system',
       state: newState
     });
-  }
-
-  private handleStateTransition(nextState: AppState) {
-    switch (nextState) {
-      case 'test':
-        this.handleTestTransition();
-        break;
-      case 'startup':
-        this.handleStartupTransition();
-        break;
-      case 'shutdown':
-        this.handleShutdownTransition();
-        break;
-      case 'scram':
-        console.log('[stateMachine] SCRAM initiated');
-        break;
-      case 'on':
-        console.log('[stateMachine] Reactor online');
-        break;
-    }
-  }
-
-  private handleTestTransition() {
-    // Test manager will handle the test process
-    console.log('[stateMachine] Entering test state');
-  }
-
-  private handleStartupTransition() {
-    console.log('[stateMachine] Starting up...');
-    // Schedule the transition to 'on' state
-    setTimeout(() => {
-      console.log('[stateMachine] Startup complete, transitioning to on state');
-      this.updateState('on');
-    }, StateMachine.STATE_TRANSITION_DELAYS['startup']);
-  }
-
-  private handleShutdownTransition() {
-    console.log('[stateMachine] Shutting down...');
-    // Schedule the transition to 'off' state
-    setTimeout(() => {
-      console.log('[stateMachine] Shutdown complete, transitioning to off state');
-      this.updateState('off');
-    }, StateMachine.STATE_TRANSITION_DELAYS['shutdown']);
   }
 
   emit(cmd: Command) {
