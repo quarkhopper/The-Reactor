@@ -42,6 +42,7 @@ class ShutdownManager {
     // Start the shutdown process
     registry.beginShutdown(() => {
       // This callback runs when all components are shut down
+      console.log('[shutdownManager] Registry shutdown callback received');
       this.handleShutdownComplete();
     });
     
@@ -50,7 +51,7 @@ class ShutdownManager {
     this.totalComponents = componentIds.length;
     
     // Emit process_begin for each component
-    console.log(`[shutdownManager] Emitting process_begin for ${componentIds.length} components`);
+    console.log(`[shutdownManager] Starting shutdown process for ${componentIds.length} components`);
     componentIds.forEach(id => {
       stateMachine.emit({
         type: 'process_begin',
@@ -63,7 +64,12 @@ class ShutdownManager {
   private handleComponentShutdown(componentId: string) {
     // Track component shutdown
     this.componentsShutdown.add(componentId);
-    console.log(`[shutdownManager] Component ${componentId} shut down (${this.componentsShutdown.size}/${this.totalComponents})`);
+    
+    // Only log progress at 25%, 50%, 75%, and 100%
+    const progress = this.componentsShutdown.size / this.totalComponents;
+    if (progress === 0.25 || progress === 0.5 || progress === 0.75 || progress === 1) {
+      console.log(`[shutdownManager] Shutdown progress: ${Math.round(progress * 100)}% (${this.componentsShutdown.size}/${this.totalComponents})`);
+    }
     
     // Check if all components have completed shutdown
     if (this.componentsShutdown.size === this.totalComponents) {
@@ -73,7 +79,7 @@ class ShutdownManager {
   }
 
   private handleShutdownComplete() {
-    console.log('[shutdownManager] All components shut down');
+    console.log('[shutdownManager] Emitting shutdown completion');
     
     // Emit completion message
     stateMachine.emit({

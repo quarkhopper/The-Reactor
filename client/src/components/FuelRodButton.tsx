@@ -88,7 +88,7 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
     const handleCommand = (cmd: Command) => {
       if (cmd.type === 'process_begin' && cmd.id === id) {
         if (cmd.process === 'init') {
-          // Reset component state
+          // Handle initialization
           setState('engaged');
           setDisplayColor('off');
           setIsTestMode(false);
@@ -97,6 +97,7 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
           // Acknowledge initialization
           registry.acknowledge(id);
         } else if (cmd.process === 'shutdown') {
+          console.log(`[FuelRodButton] ${id} received shutdown command`);
           // Return to engaged state during shutdown
           setState('engaged');
           setDisplayColor('off');
@@ -105,6 +106,7 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
           setIsBlinking(false);
           // Acknowledge shutdown
           registry.acknowledge(id);
+          console.log(`[FuelRodButton] ${id} acknowledged shutdown`);
           // DO NOT emit process_complete - this is the manager's job
         }
       }

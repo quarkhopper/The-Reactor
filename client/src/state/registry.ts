@@ -61,7 +61,7 @@ class RegistryManager {
     stateMachine.emit({
       type: 'process_complete',
       id: 'shutdown',
-      process: 'shutdown_complete'
+      process: 'shutdown'
     });
   }
 
@@ -79,6 +79,7 @@ class RegistryManager {
 
     if (this.pending.has(componentId)) {
       this.pending.delete(componentId);
+      console.log(`[registry] Component ${componentId} acknowledged. ${this.pending.size} components remaining`);
 
       if (this.pending.size === 0) {
         if (this.isInitializing) {
@@ -106,8 +107,10 @@ class RegistryManager {
   public beginShutdown(callback: () => void) {
     this.reset();
     this.isShuttingDown = true;
+    console.log(`[registry] Starting shutdown tracking for ${this.pending.size} components`);
 
     const interval = setInterval(() => {
+      console.log(`[registry] Shutdown check: ${this.pending.size} components remaining`);
       if (this.pending.size === 0) {
         clearInterval(interval);
         console.log('[registry] All components shut down, invoking callback');

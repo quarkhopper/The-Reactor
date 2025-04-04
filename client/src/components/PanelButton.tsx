@@ -68,13 +68,22 @@ const PanelButton: React.FC<PanelButtonProps> = ({
   // Handle initialization
   useEffect(() => {
     const handleCommand = (cmd: Command) => {
-      if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'init') {
-        // Reset component state
-        setIsHeld(false);
-        setCurrentColor('off');
-        setIsTestMode(false);
-        // Acknowledge initialization
-        registry.acknowledge(id);
+      if (cmd.type === 'process_begin' && cmd.id === id) {
+        if (cmd.process === 'init') {
+          // Reset component state
+          setIsHeld(false);
+          setCurrentColor('off');
+          setIsTestMode(false);
+          // Acknowledge initialization
+          registry.acknowledge(id);
+        } else if (cmd.process === 'shutdown') {
+          // Reset component state
+          setIsHeld(false);
+          setCurrentColor('off');
+          setIsTestMode(false);
+          // Acknowledge shutdown
+          registry.acknowledge(id);
+        }
       }
     };
     

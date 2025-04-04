@@ -43,13 +43,22 @@ export default function VerticalMeter({ id, x, y, value }: VerticalMeterProps) {
   // Handle initialization
   useEffect(() => {
     const handleCommand = (cmd: Command) => {
-      if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'init') {
-        // Reset component state
-        setCurrentValue(0);
-        setIsTestMode(false);
-        setDisplayColor('off');
-        // Acknowledge initialization
-        registry.acknowledge(id);
+      if (cmd.type === 'process_begin' && cmd.id === id) {
+        if (cmd.process === 'init') {
+          // Reset component state
+          setCurrentValue(0);
+          setIsTestMode(false);
+          setDisplayColor('off');
+          // Acknowledge initialization
+          registry.acknowledge(id);
+        } else if (cmd.process === 'shutdown') {
+          // Reset component state
+          setCurrentValue(0);
+          setIsTestMode(false);
+          setDisplayColor('off');
+          // Acknowledge shutdown
+          registry.acknowledge(id);
+        }
       }
     };
     

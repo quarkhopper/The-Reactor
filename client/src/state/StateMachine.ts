@@ -108,14 +108,22 @@ class StateMachine {
   }
 
   emit(cmd: Command) {
-    console.log('[StateMachine] Received command:', cmd);
+    // Only log important commands or state changes
+    if (cmd.type === 'state_change') {
+      console.log(`[StateMachine] State change: ${cmd.state}`);
+    } else if (cmd.type === 'process_complete') {
+      console.log(`[StateMachine] Process complete: ${cmd.process}`);
+    } else if (cmd.type === 'power_button_press') {
+      console.log('[StateMachine] Power button pressed');
+    } else if (cmd.type === 'scram_button_press') {
+      console.log('[StateMachine] SCRAM button pressed');
+    }
+    
     // Special case: power button works even when off
     if (cmd.type === 'power_button_press') {
       if (this.state === 'off') {
-        console.log('[StateMachine] Power button pressed while off - starting up');
         this.updateState('init');
       } else if (this.state === 'on') {
-        console.log('[StateMachine] Power button pressed while on - shutting down');
         this.updateState('shutdown');
       }
       // Forward the power button press

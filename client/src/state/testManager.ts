@@ -11,18 +11,16 @@ class TestManager {
   private initialized: boolean = false;
 
   constructor() {
-    console.log('[testManager] Constructor called');
     // First pass - just construct
   }
 
   // Second pass - initialize
   init() {
     if (this.initialized) {
-      console.log('[testManager] Already initialized');
       return;
     }
     
-    console.log('[testManager] Initializing test manager');
+    console.log('[testManager] Initializing');
     
     // Subscribe to state changes and test results
     stateMachine.subscribe((cmd: Command) => {
@@ -34,7 +32,6 @@ class TestManager {
     });
     
     this.initialized = true;
-    console.log('[testManager] Initialization complete');
   }
 
   private handleTest() {
@@ -43,7 +40,7 @@ class TestManager {
     
     // Emit process_begin for each component
     const componentIds = getAllComponentIds();
-    console.log(`[testManager] Emitting process_begin for ${componentIds.length} components`);
+    console.log(`[testManager] Starting test sequence for ${componentIds.length} components`);
     
     componentIds.forEach(id => {
       stateMachine.emit({
@@ -65,7 +62,7 @@ class TestManager {
       // Check if all components have been tested
       const allComponentIds = getAllComponentIds();
       if (this.testedComponents.size >= allComponentIds.length && !this.transitionInProgress) {
-        console.log(`[testManager] All ${this.testedComponents.size} components tested.`);
+        console.log(`[testManager] Test sequence complete: ${this.testedComponents.size}/${allComponentIds.length} components passed`);
         this.transitionInProgress = true;
         
         // Emit process completion

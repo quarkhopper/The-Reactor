@@ -7,18 +7,16 @@ class InitManager {
   private initialized: boolean = false;
 
   constructor() {
-    console.log('[initManager] Constructor called');
     // First pass - just construct
   }
 
   // Second pass - initialize
   init() {
     if (this.initialized) {
-      console.log('[initManager] Already initialized');
       return;
     }
     
-    console.log('[initManager] Initializing init manager');
+    console.log('[initManager] Initializing');
     
     // Subscribe to state changes
     stateMachine.subscribe((cmd: Command) => {
@@ -28,7 +26,6 @@ class InitManager {
     });
     
     this.initialized = true;
-    console.log('[initManager] Initialization complete');
   }
 
   private handleInit() {
@@ -40,7 +37,7 @@ class InitManager {
     
     // Emit process_begin for each component
     const componentIds = getAllComponentIds();
-    console.log(`[initManager] Emitting process_begin for ${componentIds.length} components`);
+    console.log(`[initManager] Starting initialization for ${componentIds.length} components`);
     
     componentIds.forEach(id => {
       stateMachine.emit({
@@ -66,6 +63,5 @@ export const initManager = new InitManager();
 
 // Add initialization function
 export const initInitManager = () => {
-  console.log('[initManager] Initializing init manager');
   return initManager;
 }; 
