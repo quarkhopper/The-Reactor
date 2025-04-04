@@ -123,10 +123,8 @@ class StateMachine {
     if (this.state === 'off') {
       if (cmd.type === 'power_button_press') {
         // Allow power button to work and transition to init
-        this.state = 'init';
+        this.setAppState('init');
         for (const cb of this.callbacks) cb(cmd);
-        // Emit state change to init
-        for (const cb of this.callbacks) cb({ type: 'state_change', id: 'system', state: 'init' });
       }
       return; // All other commands are blocked when power is off
     }
