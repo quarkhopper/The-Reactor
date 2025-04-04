@@ -23,16 +23,10 @@ export default function CircularGauge({ id, x, y, value, limit }: CircularGaugeP
   const [displayValue, setDisplayValue] = useState(value);
   const [isTestMode, setIsTestMode] = useState(false);
 
-  // Handle state changes
+  // Handle state changes for visual updates
   useEffect(() => {
     const handleStateChange = (state: AppState) => {
-      if (state === 'init') {
-        // Reset component state
-        setDisplayValue(0);
-        setIsTestMode(false);
-        // Acknowledge this component when initialization is requested
-        registry.acknowledge(id);
-      } else if (state === 'startup' || state === 'on') {
+      if (state === 'startup' || state === 'on') {
         // Ensure components are reset when entering startup or on state
         setIsTestMode(false);
         setDisplayValue(value);
@@ -47,6 +41,22 @@ export default function CircularGauge({ id, x, y, value, limit }: CircularGaugeP
     
     return () => unsubscribe();
   }, [id, value]);
+
+  // Handle initialization
+  useEffect(() => {
+    const handleCommand = (cmd: Command) => {
+      if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'init') {
+        // Reset component state
+        setDisplayValue(0);
+        setIsTestMode(false);
+        // Acknowledge initialization
+        registry.acknowledge(id);
+      }
+    };
+    
+    const unsubscribe = stateMachine.subscribe(handleCommand);
+    return () => unsubscribe();
+  }, [id]);
 
   // Handle test sequence
   useEffect(() => {

@@ -1,5 +1,6 @@
 import stateMachine from './StateMachine';
 import { initRegistry } from './registry';
+import { getAllComponentIds } from './componentManifest';
 import type { Command, AppState } from './types';
 
 class InitManager {
@@ -21,6 +22,18 @@ class InitManager {
     this.registry.begin(() => {
       // This callback runs when all components are registered
       this.handleInitComplete();
+    });
+    
+    // Emit process_begin for each component
+    const componentIds = getAllComponentIds();
+    console.log(`[initManager] Emitting process_begin for ${componentIds.length} components`);
+    
+    componentIds.forEach(id => {
+      stateMachine.emit({
+        type: 'process_begin',
+        id,
+        process: 'init'
+      });
     });
   }
 

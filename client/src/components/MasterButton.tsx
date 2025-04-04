@@ -19,18 +19,10 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
   const [visible, setVisible] = useState(false);
   const [isTestMode, setIsTestMode] = useState(false);
 
-  // Handle state changes
+  // Handle state changes for visual updates
   useEffect(() => {
     const handleStateChange = (state: AppState) => {
-      if (state === 'init') {
-        // Reset component state
-        setLit(false);
-        setBlinking(false);
-        setVisible(false);
-        setIsTestMode(false);
-        // Acknowledge this component when initialization is requested
-        registry.acknowledge('master');
-      } else if (state === 'on') {
+      if (state === 'on') {
         setLit(true);
         setBlinking(false);
         setVisible(true);
@@ -50,6 +42,24 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
       }
     });
     
+    return () => unsubscribe();
+  }, []);
+
+  // Handle initialization
+  useEffect(() => {
+    const handleCommand = (cmd: Command) => {
+      if (cmd.type === 'process_begin' && cmd.id === 'master' && cmd.process === 'init') {
+        // Reset component state
+        setLit(false);
+        setBlinking(false);
+        setVisible(false);
+        setIsTestMode(false);
+        // Acknowledge initialization
+        registry.acknowledge('master');
+      }
+    };
+    
+    const unsubscribe = stateMachine.subscribe(handleCommand);
     return () => unsubscribe();
   }, []);
 

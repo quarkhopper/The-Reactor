@@ -42,16 +42,10 @@ const ConditionLight: React.FC<ConditionLightProps> = ({
   const [displayColor, setDisplayColor] = useState<ConditionColor>(color);
   const [isTestMode, setIsTestMode] = useState(false);
 
-  // Handle state changes
+  // Handle state changes for visual updates
   useEffect(() => {
     const handleStateChange = (state: AppState) => {
-      if (state === 'init') {
-        // Reset component state
-        setDisplayColor('off');
-        setIsTestMode(false);
-        // Acknowledge this component when initialization is requested
-        registry.acknowledge(id);
-      } else if (state === 'startup' || state === 'on') {
+      if (state === 'startup' || state === 'on') {
         // Ensure components are reset when entering startup or on state
         setIsTestMode(false);
       }
@@ -102,7 +96,23 @@ const ConditionLight: React.FC<ConditionLightProps> = ({
     });
     
     return () => unsubscribe();
-  }, [id]); // Removed color from dependencies
+  }, [id, color]); // Keep color in dependencies for visual updates
+
+  // Handle initialization
+  useEffect(() => {
+    const handleCommand = (cmd: Command) => {
+      if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'init') {
+        // Reset component state
+        setDisplayColor('off');
+        setIsTestMode(false);
+        // Acknowledge initialization
+        registry.acknowledge(id);
+      }
+    };
+    
+    const unsubscribe = stateMachine.subscribe(handleCommand);
+    return () => unsubscribe();
+  }, [id]);
 
   // Handle test sequence
   useEffect(() => {

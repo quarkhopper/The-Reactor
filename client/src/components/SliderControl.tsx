@@ -23,16 +23,10 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, rodIndex, onCha
   const [isTestMode, setIsTestMode] = useState(false);
   const knobTravelRatio = 0.68;
 
-  // Handle state changes
+  // Handle state changes for visual updates
   useEffect(() => {
     const handleStateChange = (state: AppState) => {
-      if (state === 'init') {
-        // Reset component state
-        setValue(0);
-        setIsTestMode(false);
-        // Acknowledge this component when initialization is requested
-        registry.acknowledge(id);
-      } else if (state === 'startup' || state === 'on') {
+      if (state === 'startup' || state === 'on') {
         // Ensure components are reset when entering startup or on state
         setIsTestMode(false);
       }
@@ -49,6 +43,22 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, rodIndex, onCha
     
     return () => unsubscribe();
   }, [id, rodIndex]);
+
+  // Handle initialization
+  useEffect(() => {
+    const handleCommand = (cmd: Command) => {
+      if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'init') {
+        // Reset component state
+        setValue(0);
+        setIsTestMode(false);
+        // Acknowledge initialization
+        registry.acknowledge(id);
+      }
+    };
+    
+    const unsubscribe = stateMachine.subscribe(handleCommand);
+    return () => unsubscribe();
+  }, [id]);
 
   // Handle test sequence
   useEffect(() => {

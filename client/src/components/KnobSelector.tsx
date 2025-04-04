@@ -28,12 +28,7 @@ export default function KnobSelector({ id, x, y, leftLabel, rightLabel }: KnobSe
   // Handle state changes
   useEffect(() => {
     const handleStateChange = (state: AppState) => {
-      if (state === 'init') {
-        setToggled(false);
-        setIsTestMode(false);
-        // Re-acknowledge during init state to ensure we're counted
-        registry.acknowledge(id);
-      } else if (state === 'test') {
+      if (state === 'test') {
         setIsTestMode(true);
       } else if (state === 'startup') {
         setIsTestMode(false);
@@ -42,6 +37,22 @@ export default function KnobSelector({ id, x, y, leftLabel, rightLabel }: KnobSe
     };
 
     const unsubscribe = stateMachine.subscribeToAppState(handleStateChange);
+    return () => unsubscribe();
+  }, [id]);
+
+  // Handle process_begin:init command
+  useEffect(() => {
+    const handleCommand = (cmd: Command) => {
+      if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'init') {
+        // Reset component state
+        setToggled(false);
+        setIsTestMode(false);
+        // Acknowledge initialization
+        registry.acknowledge(id);
+      }
+    };
+    
+    const unsubscribe = stateMachine.subscribe(handleCommand);
     return () => unsubscribe();
   }, [id]);
 

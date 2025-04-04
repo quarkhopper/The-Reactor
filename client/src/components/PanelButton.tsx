@@ -46,17 +46,10 @@ const PanelButton: React.FC<PanelButtonProps> = ({
   const [currentColor, setCurrentColor] = useState<ButtonColor>(displayColor);
   const [isTestMode, setIsTestMode] = useState(false);
 
-  // Handle state changes
+  // Handle state changes for visual updates
   useEffect(() => {
     const handleStateChange = (state: AppState) => {
-      if (state === 'init') {
-        // Reset component state
-        setIsHeld(false);
-        setCurrentColor('off');
-        setIsTestMode(false);
-        // Acknowledge this component when initialization is requested
-        registry.acknowledge(id);
-      } else if (state === 'startup' || state === 'on') {
+      if (state === 'startup' || state === 'on') {
         // Ensure components are reset when entering startup or on state
         setIsTestMode(false);
         setCurrentColor(displayColor);
@@ -71,6 +64,23 @@ const PanelButton: React.FC<PanelButtonProps> = ({
     
     return () => unsubscribe();
   }, [id, displayColor]);
+
+  // Handle initialization
+  useEffect(() => {
+    const handleCommand = (cmd: Command) => {
+      if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'init') {
+        // Reset component state
+        setIsHeld(false);
+        setCurrentColor('off');
+        setIsTestMode(false);
+        // Acknowledge initialization
+        registry.acknowledge(id);
+      }
+    };
+    
+    const unsubscribe = stateMachine.subscribe(handleCommand);
+    return () => unsubscribe();
+  }, [id]);
 
   // Handle test sequence
   useEffect(() => {

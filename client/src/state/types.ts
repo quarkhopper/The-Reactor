@@ -27,6 +27,7 @@ export type Command =
   | { type: 'tick'; id: string; counter: number }
   | { type: 'fuel_rod_toggle'; id: string }
   | { type: 'fuel_rod_state_change'; id: string; state: 'engaged' | 'withdrawn' | 'transitioning' }
+  | { type: 'process_begin'; id: string; process: string }
   | { type: 'process_complete'; id: string; process: string };
 
 export type AppState = 'off' | 'init' | 'test' | 'startup' | 'on' | 'shutdown' | 'scram';

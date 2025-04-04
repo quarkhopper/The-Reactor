@@ -59,19 +59,10 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
   // Check if this button is at a control rod position
   const isControlRod = controlRodCoords.some(([rx, ry]) => rx === gridX && ry === gridY);
 
-  // Handle state changes
+  // Handle state changes for visual updates
   useEffect(() => {
     const handleStateChange = (state: AppState) => {
-      if (state === 'init') {
-        // Reset component state
-        setState('engaged');
-        setDisplayColor('off');
-        setIsTestMode(false);
-        setIsHeld(false);
-        setIsBlinking(false);
-        // Acknowledge this component when initialization is requested
-        registry.acknowledge(id);
-      } else if (state === 'off') {
+      if (state === 'off') {
         // Turn off the light when system is off
         setDisplayColor('off');
         setIsTestMode(false);
@@ -89,6 +80,25 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
       }
     });
     
+    return () => unsubscribe();
+  }, [id]);
+
+  // Handle initialization
+  useEffect(() => {
+    const handleCommand = (cmd: Command) => {
+      if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'init') {
+        // Reset component state
+        setState('engaged');
+        setDisplayColor('off');
+        setIsTestMode(false);
+        setIsHeld(false);
+        setIsBlinking(false);
+        // Acknowledge initialization
+        registry.acknowledge(id);
+      }
+    };
+    
+    const unsubscribe = stateMachine.subscribe(handleCommand);
     return () => unsubscribe();
   }, [id]);
 

@@ -21,17 +21,10 @@ export default function VerticalMeter({ id, x, y, value }: VerticalMeterProps) {
   const [isTestMode, setIsTestMode] = useState(false);
   const [displayColor, setDisplayColor] = useState<'off' | 'green' | 'amber' | 'red' | 'white'>('off');
 
-  // Handle state changes
+  // Handle state changes for visual updates
   useEffect(() => {
     const handleStateChange = (state: AppState) => {
-      if (state === 'init') {
-        // Reset component state
-        setCurrentValue(0);
-        setIsTestMode(false);
-        setDisplayColor('off');
-        // Acknowledge this component when initialization is requested
-        registry.acknowledge(id);
-      } else if (state === 'startup' || state === 'on') {
+      if (state === 'startup' || state === 'on') {
         // Ensure components are reset when entering startup or on state
         setIsTestMode(false);
         setCurrentValue(value);
@@ -46,6 +39,23 @@ export default function VerticalMeter({ id, x, y, value }: VerticalMeterProps) {
     
     return () => unsubscribe();
   }, [id, value]);
+
+  // Handle initialization
+  useEffect(() => {
+    const handleCommand = (cmd: Command) => {
+      if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'init') {
+        // Reset component state
+        setCurrentValue(0);
+        setIsTestMode(false);
+        setDisplayColor('off');
+        // Acknowledge initialization
+        registry.acknowledge(id);
+      }
+    };
+    
+    const unsubscribe = stateMachine.subscribe(handleCommand);
+    return () => unsubscribe();
+  }, [id]);
 
   // Handle test sequence
   useEffect(() => {
