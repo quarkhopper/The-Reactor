@@ -54,3 +54,48 @@ When implementing or modifying the reactor interface:
 2. Use appropriate control types (buttons for fuel rods, sliders for control rods)
 3. Ensure proper ID formatting for each component type
 4. Maintain consistent value ranges (0-1 for control rods, binary for fuel rods) 
+
+## Shutdown Behavior
+
+### Component Shutdown
+1. **Visual State**:
+   - Lights turn off
+   - Buttons become inactive
+   - Displays clear
+   - All animations stop
+
+2. **State Reset**:
+   - Components return to safe state
+   - All values reset to initial conditions
+   - No active processes or animations
+
+3. **Acknowledgment**:
+   - Components acknowledge shutdown command
+   - Registry tracks acknowledgments
+   - System waits for all components before completing shutdown
+
+### Shutdown Sequence
+1. **Trigger**:
+   - Power button pressed while system is on
+   - State machine transitions to shutdown state
+
+2. **Component Response**:
+   - All components receive shutdown command
+   - Each component resets to safe state
+   - Components acknowledge shutdown to registry
+
+3. **Registry Tracking**:
+   - Registry tracks component acknowledgments
+   - When all components acknowledge, registry calls shutdown callback
+
+4. **Shutdown Completion**:
+   - Shutdown manager emits process_complete
+   - State machine transitions to off state
+   - All components receive state change to off
+
+### Connection to Operational Principles
+The shutdown sequence follows the same principles as normal operation:
+1. **Safety First**: Components return to safe state during shutdown
+2. **Coordinated Response**: All components respond to shutdown command
+3. **State Tracking**: Registry tracks component state during shutdown
+4. **Visual Feedback**: Components provide visual feedback during shutdown 

@@ -184,9 +184,11 @@ Components should implement their own test sequences:
 
 6. **Process Phase Commands**:
    - Components should NEVER emit process_complete events during init/test/shutdown
-   - Only managers can determine when a process phase is complete
+   - Only managers can determine when a process phase is complete (see state_machine.md)
    - Always use registry.acknowledge() for component acknowledgments during process phases
    - Don't confuse process phase commands with normal operation commands
+   - Components should reset to safe state during shutdown
+   - Visual state should reflect shutdown (lights off, buttons inactive)
 
 7. **Normal Operation Commands**:
    - Components SHOULD emit commands directly during normal operation
@@ -238,6 +240,99 @@ Following these patterns will help create maintainable, testable, and reusable c
 - Handle visual state changes during test sequences
 
 ## Examples
+
+### Basic Component Structure
+```typescript
+const ComponentName: React.FC<ComponentNameProps> = ({ id, ...props }) => {
+  // State management
+  const [state, setState] = useState(initialState);
+
+  // Handle state changes
+  useEffect(() => {
+    const handleStateChange = (state: AppState) => {
+      if (state === 'startup' || state === 'on') {
+        setState(normalState);
+      }
+    };
+    
+    const unsubscribe = stateMachine.subscribe((cmd: Command) => {
+      if (cmd.type === 'state_change') {
+        handleStateChange(cmd.state);
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [id]);
+
+  // Handle initialization
+  useEffect(() => {
+    const handleCommand = (cmd: Command) => {
+      if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'init') {
+        setState(initialState);
+        registry.acknowledge(id);
+      }
+    };
+    
+    const unsubscribe = stateMachine.subscribe(handleCommand);
+    return () => unsubscribe();
+  }, [id]);
+
+  // Handle shutdown
+  useEffect(() => {
+    const handleCommand = (cmd: Command) => {
+      if (cmd.type === 'shutdown') {
+        setState(safeState);
+        registry.acknowledge(id);
+      }
+    };
+    
+    const unsubscribe = stateMachine.subscribe(handleCommand);
+    return () => unsubscribe();
+  }, [id]);
+
+  // Render
+  return (
+    <div className="component-wrapper">
+      {/* Component content */}
+    </div>
+  );
+};
+```
+
+### Command Patterns
+Components should follow these patterns for command handling:
+
+1. **Process Phase Commands**:
+   ```typescript
+   // Handle initialization
+   if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'init') {
+     setState(initialState);
+     registry.acknowledge(id);
+   }
+   
+   // Handle shutdown
+   if (cmd.type === 'shutdown') {
+     setState(safeState);
+     registry.acknowledge(id);
+   }
+   ```
+
+2. **Normal Operation Commands**:
+   ```typescript
+   // Handle user interaction
+   const handleClick = () => {
+     stateMachine.emit({
+       type: 'component_action',
+       id,
+       action: 'toggle'
+     });
+   };
+   
+   // Handle state updates
+   if (cmd.type === 'state_update' && cmd.id === id) {
+     setState(cmd.state);
+   }
+   ```
 
 ### IndicatorLight Component
 

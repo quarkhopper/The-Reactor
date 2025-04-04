@@ -192,6 +192,87 @@ const handleSpiMessage = (message: SpiMessage) => {
 
 This architecture ensures that the system can be easily adapted to work with physical components while maintaining the same core behavior and state management. 
 
+## Process Completion and State Transitions
+
+### Process Completion Flow
+1. **Component Acknowledgment**:
+   - Components acknowledge process commands (init/test/shutdown)
+   - Components NEVER emit process_complete events
+   - Use registry.acknowledge() for process acknowledgments
+
+2. **Manager Responsibility**:
+   - Only managers can emit process_complete events
+   - Managers track component acknowledgments
+   - Managers determine when a process phase is complete
+
+3. **State Machine Handling**:
+   - State machine receives process_complete events
+   - Validates current state before transitioning
+   - Emits state change events after transition
+   - Forwards state changes to all components
+
+### State Transition Sequence
+1. **Shutdown Example**:
+   ```
+   Power Button Press
+   -> State Machine: shutdown
+   -> Components: shutdown command
+   -> Components: acknowledge to registry
+   -> Registry: tracks acknowledgments
+   -> Registry: calls shutdown callback
+   -> Shutdown Manager: emits process_complete
+   -> State Machine: transitions to off
+   -> Components: receive state change
+   ```
+
+2. **Command Flow**:
+   - Commands flow through single pathway
+   - State changes are validated
+   - Process completion triggers state transitions
+   - State changes are forwarded to components
+
+### Initialization Hierarchy
+The system follows a strict initialization hierarchy:
+
+1. **State Machine**:
+   - Initializes first
+   - Sets up command pathway
+   - Initializes managers in order
+
+2. **Managers**:
+   - Power Manager: Initializes first
+   - Init Manager: Initializes second, triggers component initialization
+   - Test Manager: Initializes third
+   - Shutdown Manager: Initializes last
+
+3. **Components**:
+   - Register with registry
+   - Wait for init command
+   - Acknowledge initialization
+   - Begin normal operation
+
+### Example: Initialization Flow
+```typescript
+// State Machine initializes managers
+powerManager.init();  // First
+initManager.init();   // Second
+testManager.init();   // Third
+shutdownManager.init(); // Last
+
+// Init Manager starts component initialization
+registry.begin(() => {
+  // All components registered
+  stateMachine.emit({
+    type: 'process_complete',
+    id: 'init',
+    process: 'init'
+  });
+});
+
+// Components acknowledge initialization
+registry.acknowledge(componentId);
+```
+
 ## Process Management and State Transitions
 
 ### Process Completion Messages
