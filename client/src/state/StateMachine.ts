@@ -1,6 +1,5 @@
 import { AppState, Command, CommandCallback } from './types';
 import { handleTestSequence } from './handlers/testSequence';
-import { isValidTransition } from './stateTransitionManager';
 
 let currentState: AppState = 'off';
 const callbacks: CommandCallback[] = [];
@@ -14,7 +13,8 @@ const stateMachine = {
   setAppState(state: AppState) {
     // Only update and emit if the state is actually changing
     if (state !== currentState) {
-      // Check if the transition is valid
+      // Import and check transition validity only when needed
+      const { isValidTransition } = require('./stateTransitionManager');
       if (isValidTransition(currentState, state)) {
         currentState = state;
         console.log(`[stateMachine] State set to: ${state}`);
@@ -74,6 +74,12 @@ const stateMachine = {
   log(message: string) {
     console.log(`[state] ${message}`);
   }
+};
+
+// Add initialization function
+export const initStateMachine = () => {
+  console.log('[stateMachine] Initializing state machine');
+  return stateMachine;
 };
 
 export default stateMachine;

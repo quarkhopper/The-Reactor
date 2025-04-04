@@ -1,9 +1,13 @@
 import stateMachine from './StateMachine';
-import { registry } from './registry';
+import { initRegistry } from './registry';
 import type { Command, AppState } from './types';
+import { initStateTransitionManager } from './stateTransitionManager';
 
 class InitManager {
-  constructor() {
+  private registry: ReturnType<typeof initRegistry>;
+
+  constructor(registry: ReturnType<typeof initRegistry>) {
+    this.registry = registry;
     // Subscribe to state changes
     stateMachine.subscribe((cmd: Command) => {
       if (cmd.type === 'state_change' && cmd.state === 'init') {
@@ -14,7 +18,7 @@ class InitManager {
 
   private handleInit() {
     // Start the registration process
-    registry.begin(() => {
+    this.registry.begin(() => {
       // This callback runs when all components are registered
       this.handleInitComplete();
     });
@@ -30,5 +34,10 @@ class InitManager {
   }
 }
 
-// Create and export singleton instance
-export const initManager = new InitManager(); 
+// Add initialization function
+export const initInitManager = () => {
+  console.log('[initManager] Initializing init manager');
+  initStateTransitionManager();
+  const registry = initRegistry();
+  return new InitManager(registry);
+}; 

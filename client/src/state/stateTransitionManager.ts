@@ -7,6 +7,7 @@ import stateMachine from './StateMachine';
 import { resetTestSequence } from './handlers/testSequence';
 import { getAllComponentIds } from './componentManifest';
 import type { AppState } from './types';
+import { initInitManager } from './initManager';
 
 // Define the state transition map
 const STATE_TRANSITIONS: Record<AppState, AppState | null> = {
@@ -122,4 +123,25 @@ export function isValidTransition(fromState: AppState, toState: AppState): boole
     return true;
   }
   return STATE_TRANSITIONS[fromState] === toState;
-} 
+}
+
+// Add initialization function
+export const initStateTransitionManager = () => {
+  console.log('[stateTransitionManager] Initializing state transition manager');
+  initInitManager();
+
+  // Subscribe to process_complete messages
+  stateMachine.subscribe((cmd) => {
+    if (cmd.type === 'process_complete' && cmd.process === 'init_complete') {
+      console.log('[stateTransitionManager] Init process complete, transitioning to test state');
+      transitionToNextState('init');
+    }
+  });
+
+  return {
+    transitionToNextState,
+    getNextState,
+    getStateTransitionDelay,
+    isValidTransition
+  };
+}; 
