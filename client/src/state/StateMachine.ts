@@ -108,6 +108,7 @@ class StateMachine {
   }
 
   emit(cmd: Command) {
+    console.log('[StateMachine] Received command:', cmd);
     // Special case: power button works even when off
     if (cmd.type === 'power_button_press') {
       if (this.state === 'off') {
@@ -136,22 +137,16 @@ class StateMachine {
     
     // Handle process completion
     if (cmd.type === 'process_complete') {
-      if (cmd.process === 'shutdown_complete') {
-        console.log('[StateMachine] Shutdown complete, transitioning to off state');
+      if (cmd.process === 'init' && this.state === 'init') {
+        console.log('[StateMachine] Process init complete, transitioning to test');
+        this.updateState('test');
+      } else if (cmd.process === 'test' && this.state === 'test') {
+        console.log('[StateMachine] Process test complete, transitioning to startup');
+        this.updateState('startup');
+      } else if (cmd.process === 'shutdown' && this.state === 'shutdown') {
+        console.log('[StateMachine] Process shutdown complete, transitioning to off');
         this.updateState('off');
-      } else {
-        const nextState = StateMachine.STATE_TRANSITIONS[this.state];
-        if (nextState) {
-          console.log(`[StateMachine] Process ${cmd.process} complete, transitioning to ${nextState}`);
-          this.updateState(nextState);
-        }
       }
-      return;
-    }
-    
-    // Handle test sequence results
-    if (cmd.type === 'test_result') {
-      testManager.handleCommand(cmd);
     } else if (cmd.type === 'scram_button_press') {
       // Handle scram button press - transition to scram state
       console.log('[StateMachine] SCRAM button pressed');

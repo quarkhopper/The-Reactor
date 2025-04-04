@@ -58,6 +58,12 @@ export default function KnobSelector({ id, x, y, leftLabel, rightLabel }: KnobSe
           setIsTestMode(false);
           // Acknowledge shutdown
           registry.acknowledge(id);
+          // Emit completion
+          stateMachine.emit({
+            type: 'process_complete',
+            id,
+            process: 'component_shutdown'
+          });
         }
       }
     };

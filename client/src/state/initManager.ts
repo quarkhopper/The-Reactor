@@ -56,7 +56,7 @@ class InitManager {
     stateMachine.emit({
       type: 'process_complete',
       id: 'init',
-      process: 'init_complete'
+      process: 'init'
     });
   }
 }

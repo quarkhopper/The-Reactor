@@ -65,6 +65,12 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
           setIsTestMode(false);
           // Acknowledge shutdown
           registry.acknowledge('master');
+          // Emit completion
+          stateMachine.emit({
+            type: 'process_complete',
+            id: 'master',
+            process: 'component_shutdown'
+          });
         }
       }
     };

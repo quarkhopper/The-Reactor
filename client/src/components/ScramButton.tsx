@@ -57,6 +57,12 @@ export default function ScramButton({ id, x, y }: ScramButtonProps) {
           setIsTestMode(false);
           // Acknowledge shutdown
           registry.acknowledge(id);
+          // Emit completion
+          stateMachine.emit({
+            type: 'process_complete',
+            id,
+            process: 'component_shutdown'
+          });
         }
       }
     };

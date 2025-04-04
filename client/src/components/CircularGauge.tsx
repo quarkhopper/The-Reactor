@@ -58,6 +58,12 @@ export default function CircularGauge({ id, x, y, value, limit }: CircularGaugeP
           setIsTestMode(false);
           // Acknowledge shutdown
           registry.acknowledge(id);
+          // Emit completion
+          stateMachine.emit({
+            type: 'process_complete',
+            id,
+            process: 'component_shutdown'
+          });
         }
       }
     };

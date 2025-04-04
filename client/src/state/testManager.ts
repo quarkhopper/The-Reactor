@@ -24,10 +24,12 @@ class TestManager {
     
     console.log('[testManager] Initializing test manager');
     
-    // Subscribe to state changes
+    // Subscribe to state changes and test results
     stateMachine.subscribe((cmd: Command) => {
       if (cmd.type === 'state_change' && cmd.state === 'test') {
         this.handleTest();
+      } else if (cmd.type === 'test_result') {
+        this.handleTestResult(cmd);
       }
     });
     
@@ -79,13 +81,6 @@ class TestManager {
   private resetTestSequence() {
     this.testedComponents.clear();
     this.transitionInProgress = false;
-  }
-
-  // Public method to handle test results
-  handleCommand(cmd: Command) {
-    if (cmd.type === 'test_result') {
-      this.handleTestResult(cmd);
-    }
   }
 }
 
