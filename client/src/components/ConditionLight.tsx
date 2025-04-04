@@ -54,12 +54,12 @@ const ConditionLight: React.FC<ConditionLightProps> = ({
       if (id.includes('POWER')) {
         switch (state) {
           case 'off':
+          case 'shutdown':
             setDisplayColor('off');
             break;
           case 'init':
           case 'test':
           case 'startup':
-          case 'shutdown':
             setDisplayColor('amber');
             break;
           case 'scram':
@@ -75,9 +75,11 @@ const ConditionLight: React.FC<ConditionLightProps> = ({
           case 'init':
           case 'test':
           case 'startup':
-          case 'shutdown':
-          case 'scram':
             setDisplayColor('amber');
+            break;
+          case 'shutdown':
+          case 'off':
+            setDisplayColor('off');
             break;
           default:
             setDisplayColor('off');

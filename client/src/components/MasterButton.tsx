@@ -26,9 +26,13 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
         setLit(true);
         setBlinking(false);
         setVisible(true);
-      } else if (state === 'startup' || state === 'shutdown') {
+      } else if (state === 'startup') {
         setLit(true);
         setBlinking(true);
+      } else if (state === 'shutdown') {
+        setLit(false);
+        setBlinking(false);
+        setVisible(false);
       } else {
         setLit(false);
         setBlinking(false);

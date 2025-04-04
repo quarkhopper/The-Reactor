@@ -108,10 +108,16 @@ class StateMachine {
   }
 
   emit(cmd: Command) {
-    // Only log important commands or state changes
-    if (cmd.type === 'state_change') {
+    // Log state changes immediately
+    if (cmd.type === 'state_change' && cmd.id === 'system') {
       console.log(`[StateMachine] State change: ${cmd.state}`);
-    } else if (cmd.type === 'process_complete') {
+      // Forward state changes even when off
+      for (const cb of this.callbacks) cb(cmd);
+      return;
+    }
+
+    // Only log other important commands
+    if (cmd.type === 'process_complete') {
       console.log(`[StateMachine] Process complete: ${cmd.process}`);
     } else if (cmd.type === 'power_button_press') {
       console.log('[StateMachine] Power button pressed');
