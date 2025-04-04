@@ -1,12 +1,12 @@
 import stateMachine from './StateMachine';
 import { initRegistry } from './registry';
 import type { Command, AppState } from './types';
-import { initStateTransitionManager } from './stateTransitionManager';
 
 class InitManager {
   private registry: ReturnType<typeof initRegistry>;
 
   constructor(registry: ReturnType<typeof initRegistry>) {
+    console.log('[initManager] Constructor called');
     this.registry = registry;
     // Subscribe to state changes
     stateMachine.subscribe((cmd: Command) => {
@@ -34,10 +34,11 @@ class InitManager {
   }
 }
 
+// Create singleton instance
+export const initManager = new InitManager(initRegistry());
+
 // Add initialization function
 export const initInitManager = () => {
   console.log('[initManager] Initializing init manager');
-  initStateTransitionManager();
-  const registry = initRegistry();
-  return new InitManager(registry);
+  return initManager;
 }; 

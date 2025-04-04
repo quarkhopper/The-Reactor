@@ -12,11 +12,9 @@ export function useAppState(): AppState {
       }
     };
 
-    stateMachine.subscribe(callback);
+    const unsubscribe = stateMachine.subscribe(callback);
 
-    return () => {
-      stateMachine.unsubscribe(callback);
-    };
+    return unsubscribe;
   }, []);
 
   return state;

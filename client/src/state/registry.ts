@@ -1,13 +1,13 @@
 import stateMachine from './StateMachine';
 import { getAllComponentIds } from './componentManifest';
 import type { Command, AppState } from './types';
-import { transitionToNextState } from './stateTransitionManager';
 
 class RegistryManager {
   private pending: Set<string> = new Set();
   private isInitializing: boolean = false;
 
   constructor() {
+    console.log('[registry] Constructor called');
     // Subscribe to state changes
     stateMachine.subscribe(this.handleCommand.bind(this));
   }
@@ -23,8 +23,8 @@ class RegistryManager {
     this.isInitializing = false;
     console.log('[registry] All components initialized');
     
-    // Use the state transition manager to transition to the next state
-    transitionToNextState('init');
+    // Transition to the next state directly via stateMachine
+    stateMachine.setAppState('test');
   }
 
   private reset() {
