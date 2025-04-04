@@ -5,11 +5,27 @@ import type { Command, AppState } from './types';
 class RegistryManager {
   private pending: Set<string> = new Set();
   private isInitializing: boolean = false;
+  private initialized: boolean = false;
 
   constructor() {
     console.log('[registry] Constructor called');
+    // First pass - just construct
+  }
+
+  // Second pass - initialize
+  init() {
+    if (this.initialized) {
+      console.log('[registry] Already initialized');
+      return;
+    }
+    
+    console.log('[registry] Initializing registry');
+    
     // Subscribe to state changes
     stateMachine.subscribe(this.handleCommand.bind(this));
+    
+    this.initialized = true;
+    console.log('[registry] Initialization complete');
   }
 
   private handleCommand(cmd: Command) {
@@ -23,8 +39,12 @@ class RegistryManager {
     this.isInitializing = false;
     console.log('[registry] All components initialized');
     
-    // Transition to the next state directly via stateMachine
-    stateMachine.setAppState('test');
+    // Transition to the next state via command pathway
+    stateMachine.emit({
+      type: 'state_change',
+      id: 'system',
+      state: 'test'
+    });
   }
 
   private reset() {
@@ -64,8 +84,5 @@ class RegistryManager {
 // Create singleton instance
 export const registry = new RegistryManager();
 
-// Add initialization function
-export const initRegistry = () => {
-  console.log('[registry] Initializing registry');
-  return registry;
-}; 
+// Initialize the registry
+registry.init(); 

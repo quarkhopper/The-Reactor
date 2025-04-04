@@ -60,7 +60,7 @@ export default function ScramButton({ id, x, y }: ScramButtonProps) {
   // Handle test sequence
   useEffect(() => {
     const handleCommand = (cmd: Command) => {
-      if (cmd.type === 'test_sequence' && cmd.id === id) {
+      if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'test') {
         setIsTestMode(true);
         
         // Press the button during test

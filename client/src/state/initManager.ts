@@ -1,25 +1,39 @@
 import stateMachine from './StateMachine';
-import { initRegistry } from './registry';
+import { registry } from './registry';
 import { getAllComponentIds } from './componentManifest';
 import type { Command, AppState } from './types';
 
 class InitManager {
-  private registry: ReturnType<typeof initRegistry>;
+  private initialized: boolean = false;
 
-  constructor(registry: ReturnType<typeof initRegistry>) {
+  constructor() {
     console.log('[initManager] Constructor called');
-    this.registry = registry;
+    // First pass - just construct
+  }
+
+  // Second pass - initialize
+  init() {
+    if (this.initialized) {
+      console.log('[initManager] Already initialized');
+      return;
+    }
+    
+    console.log('[initManager] Initializing init manager');
+    
     // Subscribe to state changes
     stateMachine.subscribe((cmd: Command) => {
       if (cmd.type === 'state_change' && cmd.state === 'init') {
         this.handleInit();
       }
     });
+    
+    this.initialized = true;
+    console.log('[initManager] Initialization complete');
   }
 
   private handleInit() {
     // Start the registration process
-    this.registry.begin(() => {
+    registry.begin(() => {
       // This callback runs when all components are registered
       this.handleInitComplete();
     });
@@ -48,7 +62,7 @@ class InitManager {
 }
 
 // Create singleton instance
-export const initManager = new InitManager(initRegistry());
+export const initManager = new InitManager();
 
 // Add initialization function
 export const initInitManager = () => {

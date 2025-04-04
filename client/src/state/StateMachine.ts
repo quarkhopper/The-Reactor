@@ -1,12 +1,14 @@
 import { AppState, Command, CommandCallback } from './types';
-import { handleTestSequence, resetTestSequence } from './handlers/testSequence';
+import { testManager } from './testManager';
+import { initManager } from './initManager';
 import { getAllComponentIds } from './componentManifest';
+import { registry } from './registry';
 
 // Define the class structure
 class StateMachine {
-  private state: AppState = 'off';
+  private state: AppState = 'init';
   private callbacks: CommandCallback[] = [];
-  private appStateCallbacks: ((state: AppState) => void)[] = [];
+  private initialized: boolean = false;
 
   // Define the state transition map
   private static STATE_TRANSITIONS: Record<AppState, AppState | null> = {
@@ -29,6 +31,28 @@ class StateMachine {
     'shutdown': 2000,
     'scram': 0
   };
+
+  constructor() {
+    console.log('[StateMachine] Constructor called');
+    // First pass - just construct
+  }
+
+  // Second pass - initialize
+  init() {
+    if (this.initialized) {
+      console.log('[StateMachine] Already initialized');
+      return;
+    }
+
+    console.log('[StateMachine] Initializing state machine');
+    
+    // Initialize managers in order - they will cascade to their dependencies
+    initManager.init();  // This will cascade to registry
+    testManager.init();
+    
+    this.initialized = true;
+    console.log('[StateMachine] Initialization complete');
+  }
 
   private isValidTransition(fromState: AppState, toState: AppState): boolean {
     // Allow transition from 'on' to 'scram'
@@ -59,19 +83,8 @@ class StateMachine {
   }
 
   private handleTestTransition() {
-    resetTestSequence();
-    
-    // Trigger test sequence for all components
-    const componentIds = getAllComponentIds();
-    console.log(`[stateMachine] Triggering test sequence for ${componentIds.length} components`);
-    
-    // Trigger test sequence for all components in parallel
-    componentIds.forEach((id: string) => {
-      this.emit({
-        type: 'test_sequence',
-        id
-      });
-    });
+    // Test manager will handle the test process
+    console.log('[stateMachine] Entering test state');
   }
 
   private handleStartupTransition() {
@@ -79,7 +92,7 @@ class StateMachine {
     // Schedule the transition to 'on' state
     setTimeout(() => {
       console.log('[stateMachine] Startup complete, transitioning to on state');
-      this.setAppState('on');
+      this.updateState('on');
     }, StateMachine.STATE_TRANSITION_DELAYS['startup']);
   }
 
@@ -88,7 +101,7 @@ class StateMachine {
     // Schedule the transition to 'off' state
     setTimeout(() => {
       console.log('[stateMachine] Shutdown complete, transitioning to off state');
-      this.setAppState('off');
+      this.updateState('off');
     }, StateMachine.STATE_TRANSITION_DELAYS['shutdown']);
   }
 
@@ -96,7 +109,7 @@ class StateMachine {
     return this.state;
   }
 
-  setAppState(nextState: AppState) {
+  private updateState(nextState: AppState) {
     // Don't transition if we're already in that state
     if (nextState === this.state) {
       return;
@@ -112,8 +125,12 @@ class StateMachine {
     console.log(`[stateMachine] Transitioning from ${this.state} to ${nextState}`);
     this.state = nextState;
 
-    // Notify subscribers
-    this.appStateCallbacks.forEach(callback => callback(nextState));
+    // Emit state change command
+    this.emit({
+      type: 'state_change',
+      id: 'system',
+      state: nextState
+    });
 
     // Handle state-specific logic
     this.handleStateTransition(nextState);
@@ -123,19 +140,27 @@ class StateMachine {
     if (this.state === 'off') {
       if (cmd.type === 'power_button_press') {
         // Allow power button to work and transition to init
-        this.setAppState('init');
+        this.updateState('init');
+        // Forward the power button press
         for (const cb of this.callbacks) cb(cmd);
       }
       return; // All other commands are blocked when power is off
     }
     
+    // Handle state change commands
+    if (cmd.type === 'state_change' && cmd.id === 'system') {
+      // Forward the state change command
+      for (const cb of this.callbacks) cb(cmd);
+      return;
+    }
+    
     // Handle test sequence results
     if (cmd.type === 'test_result') {
-      handleTestSequence(cmd);
+      testManager.handleCommand(cmd);
     } else if (cmd.type === 'scram_button_press') {
       // Handle scram button press - transition to scram state
       console.log('[stateMachine] SCRAM button pressed');
-      this.setAppState('scram');
+      this.updateState('scram');
     }
     
     // Normal operation when power is on
@@ -150,14 +175,6 @@ class StateMachine {
     };
   }
 
-  subscribeToAppState(cb: (state: AppState) => void) {
-    this.appStateCallbacks.push(cb);
-    return () => {
-      const index = this.appStateCallbacks.indexOf(cb);
-      if (index !== -1) this.appStateCallbacks.splice(index, 1);
-    };
-  }
-
   log(message: string) {
     console.log(`[state] ${message}`);
   }
@@ -166,10 +183,5 @@ class StateMachine {
 // Create singleton instance
 const stateMachine = new StateMachine();
 
-// Add initialization function
-export const initStateMachine = () => {
-  console.log('[stateMachine] Initializing state machine');
-  return stateMachine;
-};
-
+// Export the singleton instance - initialization will be triggered by the app
 export default stateMachine; 

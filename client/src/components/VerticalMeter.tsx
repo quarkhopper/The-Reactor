@@ -60,7 +60,7 @@ export default function VerticalMeter({ id, x, y, value }: VerticalMeterProps) {
   // Handle test sequence
   useEffect(() => {
     const handleCommand = (cmd: Command) => {
-      if (cmd.type === 'test_sequence' && cmd.id === id) {
+      if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'test') {
         setIsTestMode(true);
         
         // Perform test sequence

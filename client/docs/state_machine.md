@@ -249,3 +249,166 @@ When implementing process managers (like initialization or testing):
    - State transition manager controls flow
 
 This pattern ensures clean separation of concerns and predictable system behavior. 
+
+## Initialization Hierarchy
+
+### Two-Pass Initialization Pattern
+
+The system uses a two-pass initialization pattern to handle dependencies and ensure proper setup:
+
+1. **First Pass - Construction Cascade**:
+   - All singletons are constructed first
+   - Construction cascades through dependencies
+   - No initialization logic in constructors
+   - Example:
+     ```typescript
+     // StateMachine.ts
+     class StateMachine {
+       constructor() {
+         console.log('[StateMachine] Constructor called');
+         // First pass - just construct
+       }
+     }
+
+     // initManager.ts
+     class InitManager {
+       constructor() {
+         console.log('[initManager] Constructor called');
+         // First pass - just construct
+       }
+     }
+
+     // registry.ts
+     class RegistryManager {
+       constructor() {
+         console.log('[registry] Constructor called');
+         // First pass - just construct
+       }
+     }
+     ```
+
+2. **Second Pass - Initialization Cascade**:
+   - Initialization is triggered from the top level
+   - Each manager initializes its dependencies before itself
+   - Initialization cascades through the dependency tree
+   - Example:
+     ```typescript
+     // StateMachine.ts
+     class StateMachine {
+       init() {
+         // Initialize managers in order - they will cascade to their dependencies
+         initManager.init();  // This will cascade to registry
+         testManager.init();
+       }
+     }
+
+     // initManager.ts
+     class InitManager {
+       init() {
+         // Initialize dependencies first
+         registry.init();
+         // Then initialize self
+         this.setupSubscriptions();
+       }
+     }
+
+     // registry.ts
+     class RegistryManager {
+       init() {
+         // Initialize self
+         this.setupSubscriptions();
+       }
+     }
+     ```
+
+### Initialization Order
+
+The initialization follows a strict hierarchy:
+
+1. **StateMachine**:
+   - Top-level coordinator
+   - Triggers initialization cascade
+   - Manages system state transitions
+
+2. **Process Managers** (initManager, testManager):
+   - Initialize their dependencies first
+   - Set up their own subscriptions
+   - Handle their specific processes
+
+3. **Support Managers** (registry):
+   - Initialize when needed by process managers
+   - Handle specific functionality
+   - Support process managers
+
+### Manager Responsibilities
+
+1. **StateMachine**:
+   - Coordinate system state
+   - Trigger initialization cascade
+   - Manage state transitions
+
+2. **Process Managers**:
+   - Handle specific processes
+   - Initialize their dependencies
+   - Emit process completion messages
+
+3. **Support Managers**:
+   - Provide specific functionality
+   - Initialize when needed
+   - Support process managers
+
+### Best Practices for Adding New Managers
+
+1. **Construction Phase**:
+   - Keep constructors minimal
+   - No initialization logic
+   - Just set up basic instance state
+
+2. **Initialization Phase**:
+   - Initialize dependencies first
+   - Then initialize self
+   - Set up subscriptions last
+
+3. **Dependency Management**:
+   - Let managers handle their own dependencies
+   - Don't initialize dependencies at higher levels
+   - Follow natural dependency flow
+
+4. **Error Handling**:
+   - Check initialization state
+   - Prevent double initialization
+   - Log initialization steps
+
+Example of adding a new manager:
+```typescript
+class NewManager {
+  private initialized: boolean = false;
+
+  constructor() {
+    // First pass - just construct
+    console.log('[NewManager] Constructor called');
+  }
+
+  init() {
+    if (this.initialized) {
+      console.log('[NewManager] Already initialized');
+      return;
+    }
+
+    // Initialize dependencies first
+    dependencyManager.init();
+
+    // Then initialize self
+    this.setupSubscriptions();
+    
+    this.initialized = true;
+    console.log('[NewManager] Initialization complete');
+  }
+}
+```
+
+This pattern ensures:
+1. Clean dependency management
+2. Predictable initialization order
+3. Proper setup of all system components
+4. Easy addition of new managers 

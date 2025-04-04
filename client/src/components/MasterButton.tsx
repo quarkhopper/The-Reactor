@@ -66,7 +66,7 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
   // Handle test sequence
   useEffect(() => {
     const handleCommand = (cmd: Command) => {
-      if (cmd.type === 'test_sequence' && cmd.id === 'master') {
+      if (cmd.type === 'process_begin' && cmd.id === 'master' && cmd.process === 'test') {
         setIsTestMode(true);
         
         // Complete the test after a short delay

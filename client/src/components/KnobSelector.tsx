@@ -27,16 +27,18 @@ export default function KnobSelector({ id, x, y, leftLabel, rightLabel }: KnobSe
 
   // Handle state changes
   useEffect(() => {
-    const handleStateChange = (state: AppState) => {
-      if (state === 'test') {
-        setIsTestMode(true);
-      } else if (state === 'startup') {
-        setIsTestMode(false);
-        setToggled(false);
+    const handleCommand = (cmd: Command) => {
+      if (cmd.type === 'state_change' && cmd.id === 'system') {
+        if (cmd.state === 'test') {
+          setIsTestMode(true);
+        } else if (cmd.state === 'startup') {
+          setIsTestMode(false);
+          setToggled(false);
+        }
       }
     };
 
-    const unsubscribe = stateMachine.subscribeToAppState(handleStateChange);
+    const unsubscribe = stateMachine.subscribe(handleCommand);
     return () => unsubscribe();
   }, [id]);
 
@@ -59,7 +61,7 @@ export default function KnobSelector({ id, x, y, leftLabel, rightLabel }: KnobSe
   // Handle test sequence
   useEffect(() => {
     const handleCommand = (cmd: Command) => {
-      if (cmd.type === 'test_sequence' && cmd.id === id) {
+      if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'test') {
         setIsTestMode(true);
         
         // Simple test - just acknowledge
