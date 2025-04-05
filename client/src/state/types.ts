@@ -25,8 +25,8 @@ export type Command =
   | { type: 'set_load_bank'; id: string; value: 'on' | 'off' }
   | { type: 'test_result'; id: string; passed: boolean }
   | { type: 'tick'; id: string; counter: number }
-  | { type: 'fuel_rod_state_toggle'; id: string }
-  | { type: 'fuel_rod_state_update'; id: string; state: 'engaged' | 'withdrawn' | 'transitioning' }
+  | { type: 'fuel_rod_state_toggle'; id: string; x: number; y: number }
+  | { type: 'fuel_rod_state_update'; id: string; state: 'engaged' | 'withdrawn' | 'transitioning'; x: number; y: number }
   | { type: 'process_begin'; id: string; process: string }
   | { type: 'process_complete'; id: string; process: string };
 

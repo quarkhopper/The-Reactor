@@ -145,7 +145,9 @@ function tick() {
             stateMachine.emit({
               type: 'fuel_rod_state_update',
               id: `fuel_rod_button_${x}_${y}`,
-              state: newState
+              state: newState,
+              x,
+              y
             });
           }
         }
@@ -250,26 +252,23 @@ function initSubscriptions() {
 
     // Handle fuel rod toggle commands
     if (cmd.type === 'fuel_rod_state_toggle') {
-      // Parse coordinates from button ID (format: fuel_rod_button_X_Y)
-      const parts = cmd.id.split('_');
-      if (parts.length === 5) {
-        const x = parseInt(parts[3], 10);
-        const y = parseInt(parts[4], 10);
-        if (!isNaN(x) && !isNaN(y) && x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
-          const rod = fuelRods[x][y];
-          if (rod.state !== 'transitioning') {
-            // Start transition
-            rod.previousState = rod.state;
-            rod.state = 'transitioning';
-            rod.transitionStartTime = Date.now();
-            
-            // Emit state update
-            stateMachine.emit({
-              type: 'fuel_rod_state_update',
-              id: cmd.id,
-              state: 'transitioning'
-            });
-          }
+      const { x, y } = cmd;
+      if (x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
+        const rod = fuelRods[x][y];
+        if (rod.state !== 'transitioning') {
+          // Start transition
+          rod.previousState = rod.state;
+          rod.state = 'transitioning';
+          rod.transitionStartTime = Date.now();
+          
+          // Emit state update
+          stateMachine.emit({
+            type: 'fuel_rod_state_update',
+            id: cmd.id,
+            state: 'transitioning',
+            x: cmd.x,
+            y: cmd.y
+          });
         }
       }
     }

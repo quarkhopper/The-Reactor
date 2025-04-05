@@ -188,7 +188,9 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
     // Fuel rods use fuel_rod_state_toggle
     stateMachine.emit({
       type: 'fuel_rod_state_toggle',
-      id
+      id,
+      x: gridX,
+      y: gridY
     });
   };
 
