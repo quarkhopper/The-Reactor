@@ -143,7 +143,7 @@ function tick() {
             
             // Emit state change
             stateMachine.emit({
-              type: 'fuel_rod_state_change',
+              type: 'fuel_rod_state_update',
               id: `fuel_rod_button_${x}_${y}`,
               state: newState
             });
@@ -237,20 +237,24 @@ function initSubscriptions() {
     }
   });
 
-  // Subscribe to control rod position commands
+  // Subscribe to control rod position commands and fuel rod toggle commands
   stateMachine.subscribe((cmd: Command) => {
+    // Handle control rod position updates
     if (cmd.type === 'position_update' && cmd.id.startsWith('rod_')) {
       // Handle control rod position updates (format: rod_X)
       const rodIndex = parseInt(cmd.id.split('_')[1], 10);
       if (!isNaN(rodIndex) && rodIndex >= 0 && rodIndex < controlRodPositions.length) {
         controlRodPositions[rodIndex] = cmd.value;
       }
-    } else if (cmd.type === 'fuel_rod_toggle') {
-      // Handle fuel rod toggle commands (format: fuel_rod_button_X_Y)
+    }
+
+    // Handle fuel rod toggle commands
+    if (cmd.type === 'fuel_rod_state_toggle') {
+      // Parse coordinates from button ID (format: fuel_rod_button_X_Y)
       const parts = cmd.id.split('_');
-      if (parts.length === 4) {
-        const x = parseInt(parts[2], 10);
-        const y = parseInt(parts[3], 10);
+      if (parts.length === 5) {
+        const x = parseInt(parts[3], 10);
+        const y = parseInt(parts[4], 10);
         if (!isNaN(x) && !isNaN(y) && x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
           const rod = fuelRods[x][y];
           if (rod.state !== 'transitioning') {
@@ -259,13 +263,29 @@ function initSubscriptions() {
             rod.state = 'transitioning';
             rod.transitionStartTime = Date.now();
             
-            // Emit state change
+            // Emit state update
             stateMachine.emit({
-              type: 'fuel_rod_state_change',
+              type: 'fuel_rod_state_update',
               id: cmd.id,
               state: 'transitioning'
             });
           }
+        }
+      }
+    }
+
+    // Handle fuel rod state changes
+    if (cmd.type === 'fuel_rod_state_update') {
+      const parts = cmd.id.split('_');
+      if (parts.length === 4) {
+        const x = parseInt(parts[2], 10);
+        const y = parseInt(parts[3], 10);
+        if (!isNaN(x) && !isNaN(y) && x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
+          const rod = fuelRods[x][y];
+          rod.state = cmd.state;
+          // Recalculate distances and base reactivities when core geometry changes
+          precalculateDistances();
+          precalculateBaseReactivities();
         }
       }
     }

@@ -15,7 +15,6 @@ export type Command =
   | { type: 'scram_button_press'; id: string }
   | { type: 'power_button_press'; id: string }
   | { type: 'temperature_update'; id: string; value: number }
-  | { type: 'rod_position_update'; id: string; value: number }
   | { type: 'position_update'; id: string; value: number }
   | { type: 'power_update'; id: string; value: number }
   | { type: 'load_update'; id: string; value: number }
@@ -26,8 +25,8 @@ export type Command =
   | { type: 'set_load_bank'; id: string; value: 'on' | 'off' }
   | { type: 'test_result'; id: string; passed: boolean }
   | { type: 'tick'; id: string; counter: number }
-  | { type: 'fuel_rod_toggle'; id: string }
-  | { type: 'fuel_rod_state_change'; id: string; state: 'engaged' | 'withdrawn' | 'transitioning' }
+  | { type: 'fuel_rod_state_toggle'; id: string }
+  | { type: 'fuel_rod_state_update'; id: string; state: 'engaged' | 'withdrawn' | 'transitioning' }
   | { type: 'process_begin'; id: string; process: string }
   | { type: 'process_complete'; id: string; process: string };
 
@@ -62,4 +61,4 @@ export interface ControlInput {
   action: string;       // e.g., 'set_control_rod_limit'
   index?: number;       // e.g., which slider or button
   value?: number | boolean; // e.g., 0.75 or true/false
-}
+} 

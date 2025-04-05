@@ -159,13 +159,8 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
         }
       }
 
-      // Handle control rod position updates only for control rod buttons
-      if (isControlRod && cmd.type === 'rod_position_update' && cmd.id === id) {
-        setState(cmd.value > 0 ? 'withdrawn' : 'engaged');
-      }
-
-      // Handle fuel rod state changes
-      if (!isControlRod && cmd.type === 'fuel_rod_state_change' && cmd.id === id) {
+      // Handle fuel rod state updates
+      if (cmd.type === 'fuel_rod_state_update' && cmd.id === id) {
         setState(cmd.state);
         setIsBlinking(cmd.state === 'transitioning');
         if (cmd.state === 'withdrawn') {
@@ -176,7 +171,7 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
 
     const unsubscribe = stateMachine.subscribe(handleCommand);
     return () => unsubscribe();
-  }, [id, isTestMode, isControlRod, isBlinking, state]);
+  }, [id, isTestMode, isBlinking, state]);
 
   // Handle blinking effect
   useEffect(() => {
@@ -190,19 +185,11 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
   }, [isBlinking]);
 
   const handleClick = () => {
-    if (!isControlRod) {
-      // Emit fuel rod toggle command
-      stateMachine.emit({
-        type: 'fuel_rod_toggle',
-        id
-      });
-    } else {
-      // Emit button press command for control rods
-      stateMachine.emit({
-        type: 'button_press',
-        id
-      });
-    }
+    // Fuel rods use fuel_rod_state_toggle
+    stateMachine.emit({
+      type: 'fuel_rod_state_toggle',
+      id
+    });
   };
 
   const handleMouseDown = () => {
@@ -235,22 +222,6 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
         />
         {label && <div className="panel-button-label">{label}</div>}
       </div>
-      {isControlRod && (
-        <div style={{ 
-          position: 'absolute', 
-          top: `${y + 24}px`, 
-          left: `${x}px`, 
-          transform: 'translateX(-50%)', 
-          marginTop: '4px',
-          fontSize: '10px',
-          fontFamily: 'monospace',
-          fontWeight: 'bold',
-          color: 'white',
-          textShadow: '1px 1px 2px black'
-        }}>
-          Control
-        </div>
-      )}
     </div>
   );
 };
