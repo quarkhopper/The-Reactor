@@ -1,4 +1,3 @@
-import KnobSelectorBlock from './KnobSelectorBlock';
 import ConditionLightBlock from './ConditionLightBlock';
 import DigitalDisplayBlock from './DigitalDisplayBlock';
 import SliderBlock from './SliderBlock';
@@ -12,7 +11,6 @@ import CoolantPumpBlock from './CoolantPumpBlock';
 export default function MainPanel() {
   return (
     <>
-      <KnobSelectorBlock />
       <ConditionLightBlock />
       <DigitalDisplayBlock />
       <SliderBlock />

@@ -31,12 +31,8 @@ export const COMPONENT_IDS = {
   
   // Indicators
   [COMPONENT_CATEGORIES.INDICATORS]: [
-    'circular_gauge',
-    'meter_0',
-    'meter_1',
-    'meter_2',
-    'meter_3',
-    'meter_4',
+    'core_temp_gauge',
+    'turbine_rpm_gauge',
     'pump_temp_meter_primary',
     'pump_temp_meter_secondary',
     'pump_pres_meter_primary',
@@ -51,9 +47,9 @@ export const COMPONENT_IDS = {
   
   // Controls
   [COMPONENT_CATEGORIES.CONTROLS]: [
-    'knob_ind_0', 'knob_ind_1',
-    'slider_0', 'slider_1', 'slider_2', 'slider_3', 'slider_4', 'slider_5', 'slider_6', 'slider_7',
-    'primary_speed', 'secondary_speed'
+    'primary_speed',
+    'secondary_speed',
+    'slider_0', 'slider_1', 'slider_2', 'slider_3', 'slider_4', 'slider_5', 'slider_6', 'slider_7'
   ],
   
   // Condition lights

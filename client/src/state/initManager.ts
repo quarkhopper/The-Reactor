@@ -25,6 +25,8 @@ class InitManager {
       }
     });
     
+    registry.init();
+    
     this.initialized = true;
   }
 

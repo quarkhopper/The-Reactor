@@ -207,4 +207,116 @@ const STATE_TRANSITIONS = {
 1. **State Visualization**: Add tools to visualize state transitions
 2. **Error Handling**: Enhance error recovery mechanisms
 3. **Performance**: Optimize event handling for large component sets
-4. **Testing**: Add more comprehensive state machine tests 
+4. **Testing**: Add more comprehensive state machine tests
+
+## Two-Pass Pattern and Hierarchical Initialization
+
+The two-pass pattern is a fundamental design principle in this codebase that separates object construction from initialization to avoid circular dependencies and ensure proper initialization order.
+
+### Core Principles
+
+1. **First Pass: Construction Only**
+   - Objects are constructed without accessing dependencies
+   - No initialization logic in constructors
+   - No accessing other objects' methods or properties
+
+2. **Second Pass: Hierarchical Initialization**
+   - Initialization happens in a specific order from parent to child
+   - Parent components initialize their children, not the other way around
+   - Children NEVER call their own init() method directly
+   - Children NEVER initialize their parents
+
+### Initialization Hierarchy
+
+```
+StateMachine
+  ├── initManager
+  │     ├── registry
+  │     └── other dependencies
+  ├── testManager
+  │     └── dependencies
+  └── shutdownManager
+        └── dependencies
+```
+
+### Common Pitfalls to Avoid
+
+❌ **INCORRECT**: A component calling its own init() method
+```typescript
+// registry.ts
+export const registry = new RegistryManager();
+registry.init(); // WRONG! Never call your own init() method
+```
+
+✅ **CORRECT**: Parent component initializing its children
+```typescript
+// initManager.ts
+export function init() {
+  // Initialize children first
+  registry.init();
+  
+  // Then perform own initialization
+  // ...
+}
+```
+
+### Initialization Rules
+
+1. **Never Call Your Own Init**: Components should never call their own init() method. This is the responsibility of their parent.
+
+2. **Parent-Child Relationship**: Initialization flows from parent to child, never the reverse.
+
+3. **Dependency Access**: During initialization, components can safely access their dependencies, but only after both the component and its dependencies have been constructed.
+
+4. **Initialization Order**: Parents must initialize their children before performing their own initialization that depends on those children.
+
+### Example: Correct Initialization Flow
+
+```typescript
+// StateMachine.ts
+class StateMachine {
+  constructor() {
+    // First pass: just construct
+    this.initManager = new InitManager();
+    this.testManager = new TestManager();
+    this.shutdownManager = new ShutdownManager();
+  }
+  
+  init() {
+    // Second pass: initialize in hierarchical order
+    this.initManager.init(); // This will initialize registry and other dependencies
+    this.testManager.init();
+    this.shutdownManager.init();
+  }
+}
+
+// initManager.ts
+class InitManager {
+  constructor() {
+    // First pass: just construct
+  }
+  
+  init() {
+    // Second pass: initialize children first
+    registry.init(); // Initialize registry before using it
+    
+    // Then perform own initialization
+    // ...
+  }
+}
+
+// registry.ts
+class RegistryManager {
+  constructor() {
+    // First pass: just construct
+  }
+  
+  init() {
+    // Second pass: initialize
+    // Do NOT call init() on any parent components
+    // Do NOT call init() on itself
+  }
+}
+```
+
+By following these rules, we ensure a clean, predictable initialization flow that avoids circular dependencies and initialization order issues. 

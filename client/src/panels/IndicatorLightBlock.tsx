@@ -4,10 +4,10 @@ export default function IndicatorLightBlock() {
   const lights: React.ReactElement[] = [];
 
   // Individual OPR lights
-  lights.push(
+  /* lights.push(
     <IndicatorLight key="opr-left" id="blink_opr_left" x={630} y={750} label="OPR" />,
     <IndicatorLight key="opr-right" id="blink_opr_right" x={870} y={750} label="OPR" />
-  );
+  ); */
 
   // Light grid (formerly LightPanel)
   const baseX = 1075;

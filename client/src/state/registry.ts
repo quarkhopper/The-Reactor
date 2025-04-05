@@ -111,5 +111,3 @@ class RegistryManager {
 // Create singleton instance
 export const registry = new RegistryManager();
 
-// Initialize the registry
-registry.init(); 

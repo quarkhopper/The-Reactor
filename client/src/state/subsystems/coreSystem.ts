@@ -204,7 +204,7 @@ function tick() {
     // Emit average temperature to update the circular gauge
     stateMachine.emit({
       type: 'set_indicator',
-      id: 'circular_gauge',
+      id: 'core_temp_gauge',
       value: avgTemp
     });
 

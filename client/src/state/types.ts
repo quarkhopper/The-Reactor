@@ -18,6 +18,7 @@ export type Command =
   | { type: 'position_update'; id: string; value: number }
   | { type: 'power_update'; id: string; value: number }
   | { type: 'load_update'; id: string; value: number }
+  | { type: 'turbine_rpm_update'; id: string; value: number }
   | { type: 'knob_change'; id: string; value: 'left' | 'right' }
   | { type: 'test_sequence'; id: string }
   | { type: 'set_loop_efficiency'; id: string; value: 'on' | 'off' }

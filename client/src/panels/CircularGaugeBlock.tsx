@@ -6,14 +6,14 @@ export default function CircularGaugeBlock() {
     <CircularGauge
       id="turbine_rpm_gauge"
       x={750}
-      y={460}
+      y={480}
       value={0}
       limit={0.8}
     />
     <CircularGauge
       id="core_temp_gauge"
       x={750}
-      y={690}
+      y={830}
       value={0}
       limit={0.8}
     />
