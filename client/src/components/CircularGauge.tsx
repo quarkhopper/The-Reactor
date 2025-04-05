@@ -36,6 +36,9 @@ export default function CircularGauge({ id, x, y, value, limit }: CircularGaugeP
     const unsubscribe = stateMachine.subscribe((cmd: Command) => {
       if (cmd.type === 'state_change') {
         handleStateChange(cmd.state);
+      } else if (cmd.type === 'set_indicator' && cmd.id === id) {
+        // Update value when receiving indicator update
+        setDisplayValue(cmd.value);
       }
     });
     

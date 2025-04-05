@@ -7,7 +7,7 @@ export default function CircularGaugeBlock() {
       x={750}
       y={690}
       value={0}
-      limit={0}
+      limit={0.8}
     />
   );
 }

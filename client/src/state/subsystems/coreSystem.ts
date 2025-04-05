@@ -200,7 +200,13 @@ function tick() {
 
     // Calculate and log average temperature
     const avgTemp = totalTemp / (GRID_SIZE * GRID_SIZE);
-    console.log(`[coreSystem] Tick ${tickCounter}: Avg Temp: ${avgTemp.toFixed(3)}, Min: ${minTemp.toFixed(3)}, Max: ${maxTemp.toFixed(3)}`);
+    
+    // Emit average temperature to update the circular gauge
+    stateMachine.emit({
+      type: 'set_indicator',
+      id: 'circular_gauge',
+      value: avgTemp
+    });
 
   } catch (error) {
     console.error('[coreSystem] Error in tick:', error);
