@@ -36,7 +36,11 @@ export const COMPONENT_IDS = {
     'meter_1',
     'meter_2',
     'meter_3',
-    'meter_4'
+    'meter_4',
+    'pump_temp_meter_primary',
+    'pump_temp_meter_secondary',
+    'pump_pres_meter_primary',
+    'pump_pres_meter_secondary'
   ],
   
   // Displays
@@ -49,8 +53,7 @@ export const COMPONENT_IDS = {
   [COMPONENT_CATEGORIES.CONTROLS]: [
     'knob_ind_0', 'knob_ind_1',
     'slider_0', 'slider_1', 'slider_2', 'slider_3', 'slider_4', 'slider_5', 'slider_6', 'slider_7',
-    'primary_temp', 'primary_pressure', 'primary_speed', 'primary_status', 'primary_control',
-    'secondary_temp', 'secondary_pressure', 'secondary_speed', 'secondary_status', 'secondary_control'
+    'primary_speed', 'secondary_speed'
   ],
   
   // Condition lights

@@ -3,6 +3,7 @@ import KnobSelector from '../components/KnobSelector';
 import SliderControl from '../components/SliderControl';
 import DigitalDisplay from '../components/DigitalDisplay';
 import IndicatorLight from '../components/IndicatorLight';
+import VerticalMeter from '../components/VerticalMeter';
 
 interface CoolantPumpBlockProps {
   idPrefix: string;  // 'primary' or 'secondary'
@@ -13,22 +14,25 @@ interface CoolantPumpBlockProps {
 export default function CoolantPumpBlock({ idPrefix, x, y }: CoolantPumpBlockProps) {
   return (
     <div style={{ position: 'absolute', top: y, left: x }}>
-      {/* Pump Temperature Display */}
-      <DigitalDisplay id={`${idPrefix}_temp`} x={0} y={0} value={88} />
-      {/* Pump Pressure Display */}
-      <DigitalDisplay id={`${idPrefix}_pressure`} x={0} y={50} value={88} />
-      {/* Pump Speed Control (Slider) */}
       <SliderControl 
         id={`${idPrefix}_speed`} 
-        x={100} 
-        y={25} 
+        x={0} 
+        y={90} 
         target="cooling" 
         index={idPrefix === 'primary' ? 0 : 1} 
       />
-      {/* Status Indicator Light */}
-      <IndicatorLight id={`${idPrefix}_status`} x={200} y={0} />
-      {/* Pump On/Off Control (Knob) */}
-      <KnobSelector id={`${idPrefix}_control`} x={200} y={50} leftLabel="Off" rightLabel="On" />
+      <VerticalMeter
+            key={`pump-temp-meter-${idPrefix}`}
+            id={`pump_temp_meter_${idPrefix}`}
+            x={60}
+            y={105}
+          />
+      <VerticalMeter
+            key={`pump-pres-meter-${idPrefix}`}
+            id={`pump_pres_meter_${idPrefix}`}
+            x={120}
+            y={105}
+          />
     </div>
   );
 } 

@@ -23,8 +23,8 @@ export default function MainPanel() {
       <CircularGaugeBlock />
       <MasterButtonBlock />
       <ScramButtonBlock />
-      <CoolantPumpBlock idPrefix="primary" x={990} y={460} />
-      <CoolantPumpBlock idPrefix="secondary" x={1290} y={460} />
+      <CoolantPumpBlock idPrefix="primary" x={990} y={410} />
+      <CoolantPumpBlock idPrefix="secondary" x={1290} y={410} />
     </>
   );
 }

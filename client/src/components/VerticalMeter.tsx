@@ -13,11 +13,10 @@ interface VerticalMeterProps {
   id: string;
   x: number;
   y: number;
-  value: number; // 0 to 1
 }
 
-export default function VerticalMeter({ id, x, y, value }: VerticalMeterProps) {
-  const [currentValue, setCurrentValue] = useState(value);
+export default function VerticalMeter({ id, x, y }: VerticalMeterProps) {
+  const [currentValue, setCurrentValue] = useState(0);
   const [isTestMode, setIsTestMode] = useState(false);
   const [displayColor, setDisplayColor] = useState<'off' | 'green' | 'amber' | 'red' | 'white'>('off');
 
@@ -27,18 +26,20 @@ export default function VerticalMeter({ id, x, y, value }: VerticalMeterProps) {
       if (state === 'startup' || state === 'on') {
         // Ensure components are reset when entering startup or on state
         setIsTestMode(false);
-        setCurrentValue(value);
       }
     };
     
     const unsubscribe = stateMachine.subscribe((cmd: Command) => {
       if (cmd.type === 'state_change') {
         handleStateChange(cmd.state);
+      } else if (cmd.type === 'set_indicator' && cmd.id === id) {
+        // Update value when receiving indicator update
+        setCurrentValue(cmd.value);
       }
     });
     
     return () => unsubscribe();
-  }, [id, value]);
+  }, [id]);
 
   // Handle initialization
   useEffect(() => {
@@ -102,7 +103,7 @@ export default function VerticalMeter({ id, x, y, value }: VerticalMeterProps) {
             clearInterval(interval);
             setIsTestMode(false);
             setDisplayColor('off');
-            setCurrentValue(value);
+            setCurrentValue(0);
             
             // Emit test result when test sequence completes
             stateMachine.emit({
@@ -119,14 +120,7 @@ export default function VerticalMeter({ id, x, y, value }: VerticalMeterProps) {
     
     const unsubscribe = stateMachine.subscribe(handleCommand);
     return () => unsubscribe();
-  }, [id, value]);
-
-  // Update value when not in test mode
-  useEffect(() => {
-    if (!isTestMode) {
-      setCurrentValue(value);
-    }
-  }, [value, isTestMode]);
+  }, [id]);
 
   const clamped = Math.max(0, Math.min(1, currentValue));
 
