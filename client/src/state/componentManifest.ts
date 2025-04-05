@@ -47,10 +47,10 @@ export const COMPONENT_IDS = {
   
   // Controls
   [COMPONENT_CATEGORIES.CONTROLS]: [
-    'knob_grid_0', 'knob_grid_1', 'knob_grid_2', 'knob_grid_3', 'knob_grid_4', 'knob_grid_5',
-    'knob_grid_6', 'knob_grid_7', 'knob_grid_8', 'knob_grid_9', 'knob_grid_10', 'knob_grid_11',
-    'knob_grid_12', 'knob_grid_13', 'knob_grid_14', 'knob_ind_0', 'knob_ind_1',
-    'slider_0', 'slider_1', 'slider_2', 'slider_3', 'slider_4', 'slider_5', 'slider_6', 'slider_7'
+    'knob_ind_0', 'knob_ind_1',
+    'slider_0', 'slider_1', 'slider_2', 'slider_3', 'slider_4', 'slider_5', 'slider_6', 'slider_7',
+    'primary_temp', 'primary_pressure', 'primary_speed', 'primary_status', 'primary_control',
+    'secondary_temp', 'secondary_pressure', 'secondary_speed', 'secondary_status', 'secondary_control'
   ],
   
   // Condition lights

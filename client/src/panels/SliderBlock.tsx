@@ -13,7 +13,8 @@ export default function SliderBlock() {
         id={`slider_${i}`}
         x={baseX + i * spacingX}
         y={baseY}
-        rodIndex={i} // Pass the control rod index
+        target="rod"
+        index={i}
       />
     );
   }

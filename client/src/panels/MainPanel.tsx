@@ -8,6 +8,7 @@ import MeterBlock from './MeterBlock';
 import CircularGaugeBlock from './CircularGaugeBlock';
 import MasterButtonBlock from './MasterButtonBlock';
 import ScramButtonBlock from './ScramButtonBlock';
+import CoolantPumpBlock from './CoolantPumpBlock';
 
 export default function MainPanel() {
   return (
@@ -22,6 +23,8 @@ export default function MainPanel() {
       <CircularGaugeBlock />
       <MasterButtonBlock />
       <ScramButtonBlock />
+      <CoolantPumpBlock idPrefix="primary" x={990} y={460} />
+      <CoolantPumpBlock idPrefix="secondary" x={1290} y={460} />
     </>
   );
 }

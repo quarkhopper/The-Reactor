@@ -18,7 +18,7 @@ export default function KnobSelectorBlock() {
     knobValues.push({ leftLabel: '', rightLabel: '' });
   }
 
-  const gridKnobs = knobValues.map((val, index) => {
+/*   const gridKnobs = knobValues.map((val, index) => {
     const row = Math.floor(index / columns);
     const col = index % columns;
     const x = originX + col * spacingX;
@@ -33,8 +33,9 @@ export default function KnobSelectorBlock() {
         rightLabel={val.rightLabel}
       />
     );
-  });
+  }); */
 
+  // Turbine controls
   const individualKnobs = [
     <KnobSelector
       key="knob_ind_0"
@@ -54,5 +55,5 @@ export default function KnobSelectorBlock() {
     />,
   ];
 
-  return <>{[...gridKnobs, ...individualKnobs]}</>;
+  return <>{[...individualKnobs]}</>;
 }

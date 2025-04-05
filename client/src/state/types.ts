@@ -16,6 +16,7 @@ export type Command =
   | { type: 'power_button_press'; id: string }
   | { type: 'temperature_update'; id: string; value: number }
   | { type: 'rod_position_update'; id: string; value: number }
+  | { type: 'position_update'; id: string; value: number }
   | { type: 'power_update'; id: string; value: number }
   | { type: 'load_update'; id: string; value: number }
   | { type: 'knob_change'; id: string; value: 'left' | 'right' }

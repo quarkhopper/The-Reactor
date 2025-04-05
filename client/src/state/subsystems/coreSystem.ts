@@ -228,8 +228,8 @@ function initSubscriptions() {
           controlRodPositions[i] = 0;
           // Emit position update for slider
           stateMachine.emit({
-            type: 'rod_position_update',
-            id: `control_rod_${i}`,
+            type: 'position_update',
+            id: `rod_${i}`,
             value: 0
           });
         }
@@ -239,13 +239,11 @@ function initSubscriptions() {
 
   // Subscribe to control rod position commands
   stateMachine.subscribe((cmd: Command) => {
-    if (cmd.type === 'rod_position_update') {
-      // Handle control rod position updates (format: control_rod_X)
-      if (cmd.id.startsWith('control_rod_')) {
-        const rodIndex = parseInt(cmd.id.split('_')[2], 10);
-        if (!isNaN(rodIndex) && rodIndex >= 0 && rodIndex < controlRodPositions.length) {
-          controlRodPositions[rodIndex] = cmd.value;
-        }
+    if (cmd.type === 'position_update' && cmd.id.startsWith('rod_')) {
+      // Handle control rod position updates (format: rod_X)
+      const rodIndex = parseInt(cmd.id.split('_')[1], 10);
+      if (!isNaN(rodIndex) && rodIndex >= 0 && rodIndex < controlRodPositions.length) {
+        controlRodPositions[rodIndex] = cmd.value;
       }
     } else if (cmd.type === 'fuel_rod_toggle') {
       // Handle fuel rod toggle commands (format: fuel_rod_button_X_Y)
@@ -300,7 +298,7 @@ export function useCoreSystem() {
 
     // Subscribe to state updates
     const unsubscribe = stateMachine.subscribe((cmd: Command) => {
-      if (cmd.type === 'rod_position_update') {
+      if (cmd.type === 'position_update') {
         // Update local state when rod positions change
         setState(prev => ({
           ...prev,

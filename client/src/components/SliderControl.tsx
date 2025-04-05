@@ -12,11 +12,12 @@ interface SliderControlProps {
   id: string;
   x: number;
   y: number;
-  rodIndex: number;
-  onChange?: (value: number, rodIndex: number) => void;
+  target: string;  // e.g., 'cooling', 'rod'
+  index: number;   // meaningful index within the target system
+  onChange?: (value: number, target: string, index: number) => void;
 }
 
-const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, rodIndex, onChange }) => {
+const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, target, index, onChange }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
   const [value, setValue] = useState(0);
@@ -35,14 +36,14 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, rodIndex, onCha
     const unsubscribe = stateMachine.subscribe((cmd: Command) => {
       if (cmd.type === 'state_change') {
         handleStateChange(cmd.state);
-      } else if (cmd.type === 'rod_position_update' && cmd.id === `control_rod_${rodIndex}`) {
+      } else if (cmd.type === 'position_update' && cmd.id === `${target}_${index}`) {
         // Update slider position when receiving position update
         setValue(cmd.value);
       }
     });
     
     return () => unsubscribe();
-  }, [id, rodIndex]);
+  }, [id, target, index]);
 
   // Handle initialization
   useEffect(() => {
@@ -91,8 +92,8 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, rodIndex, onCha
             // Animation complete - ensure fully inserted
             setValue(0);
             stateMachine.emit({
-              type: 'rod_position_update',
-              id: `control_rod_${rodIndex}`,
+              type: 'position_update',
+              id: `${target}_${index}`,
               value: 0
             });
             setIsTestMode(false);
@@ -121,8 +122,8 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, rodIndex, onCha
           // Update value and emit
           setValue(currentValue);
           stateMachine.emit({
-            type: 'rod_position_update',
-            id: `control_rod_${rodIndex}`,
+            type: 'position_update',
+            id: `${target}_${index}`,
             value: currentValue
           });
           
@@ -141,7 +142,7 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, rodIndex, onCha
     
     const unsubscribe = stateMachine.subscribe(handleCommand);
     return () => unsubscribe();
-  }, [id, rodIndex]);
+  }, [id, target, index]);
 
   const updateValue = (clientY: number) => {
     if (!containerRef.current || isTestMode) return;
@@ -154,13 +155,13 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, rodIndex, onCha
     setValue(newValue);
 
     if (onChange) {
-      onChange(newValue, rodIndex);
+      onChange(newValue, target, index);
     }
 
-    // Emit control rod position update with correct ID format
+    // Emit position update with new target-based ID format
     stateMachine.emit({
-      type: 'rod_position_update',
-      id: `control_rod_${rodIndex}`,
+      type: 'position_update',
+      id: `${target}_${index}`,
       value: newValue
     });
   };
