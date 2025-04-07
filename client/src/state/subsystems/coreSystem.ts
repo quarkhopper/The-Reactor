@@ -138,8 +138,8 @@ function tick() {
             delete rod.previousState;
             
             // Recalculate distances and base reactivity since core geometry changed
-            precalculateDistances();
-            precalculateBaseReactivities();
+            // precalculateDistances();
+            // precalculateBaseReactivities();
             
             // Emit state change
             stateMachine.emit({
@@ -330,7 +330,7 @@ function initSubscriptions() {
     }
 
     // Handle fuel rod state changes
-    if (cmd.type === 'fuel_rod_state_update') {
+    if (cmd.type === 'fuel_rod_state_update' && (cmd.state === 'engaged' || cmd.state === 'withdrawn')) {
       const parts = cmd.id.split('_');
       if (parts.length === 4) {
         const x = parseInt(parts[2], 10);
