@@ -96,7 +96,7 @@ export default function ScramButton({ id, x, y }: ScramButtonProps) {
 
   // Handle button press
   const handleClick = () => {
-    if (!isTestMode && stateMachine.getState() === 'on') {
+    if (!isTestMode && (stateMachine.getState() === 'on' || stateMachine.getState() === 'scram')) {
       stateMachine.emit({
         type: 'scram_button_press',
         id

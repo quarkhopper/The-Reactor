@@ -175,9 +175,20 @@ class StateMachine {
       for (const cb of this.callbacks) cb(cmd);
       return;
     } else if (cmd.type === 'scram_button_press') {
-      // Handle scram button press - transition to scram state
-      console.log('[StateMachine] SCRAM button pressed');
-      this.updateState('scram');
+      // Handle scram button press
+      if (this.state === 'scram') {
+        // If already in SCRAM state, transition back to 'on' state
+        console.log('[StateMachine] SCRAM button pressed while in SCRAM state - transitioning to ON state');
+        this.state = 'on'; // Direct assignment to bypass validation
+        this.emit({
+          type: 'state_change',
+          id: 'system',
+          state: 'on'
+        });
+      } else {
+        // Normal SCRAM behavior - transition to scram state
+        this.updateState('scram');
+      }
     }
     
     // Normal operation when power is on

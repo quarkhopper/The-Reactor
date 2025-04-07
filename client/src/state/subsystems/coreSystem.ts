@@ -227,6 +227,31 @@ function initSubscriptions() {
         precalculateDistances(); // Precompute distances after assigning positions
         precalculateBaseReactivities();
         startTick();
+        
+        // Re-engage withdrawn fuel rods (handle transition from SCRAM to ON)
+        console.log('[coreSystem] Transitioning to ON state - re-engaging withdrawn fuel rods');
+        for (let x = 0; x < GRID_SIZE; x++) {
+          for (let y = 0; y < GRID_SIZE; y++) {
+            const rod = fuelRods[x][y];
+            
+            // Only transition rods that are withdrawn
+            if (rod.state === 'withdrawn') {
+              // Start transition
+              rod.previousState = rod.state;
+              rod.state = 'transitioning';
+              rod.transitionStartTime = Date.now();
+              
+              // Emit state update
+              stateMachine.emit({
+                type: 'fuel_rod_state_update',
+                id: `fuel_rod_button_${x}_${y}`,
+                state: 'transitioning',
+                x,
+                y
+              });
+            }
+          }
+        }
       } else if (cmd.state === 'off' || cmd.state === 'shutdown') {
         stopTick();
       } else if (cmd.state === 'scram') {
