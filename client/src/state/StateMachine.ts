@@ -79,6 +79,18 @@ class StateMachine {
       return;
     }
 
+    // Special case for SCRAM - allow transitioning to scram from any powered state
+    if (newState === 'scram' && this.state !== 'off') {
+      console.log(`[StateMachine] EMERGENCY SCRAM: ${this.state} -> ${newState}`);
+      this.state = newState;
+      this.emit({
+        type: 'state_change',
+        id: 'system',
+        state: newState
+      });
+      return;
+    }
+
     // Validate state transition
     const nextState = StateMachine.STATE_TRANSITIONS[this.state];
     if (nextState !== newState) {
