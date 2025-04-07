@@ -219,6 +219,7 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
   };
 
   const handleMouseUp = () => {
+    if (!isHeld) return;
     setIsHeld(false);
     handleClick();
   };
