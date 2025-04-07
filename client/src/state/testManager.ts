@@ -49,6 +49,15 @@ class TestManager {
         process: 'test'
       });
     });
+
+    // Add debug timeout to check for non-responding components
+    setTimeout(() => {
+      const missingComponents = componentIds.filter(id => !this.testedComponents.has(id));
+      if (missingComponents.length > 0) {
+        console.log('[testManager] After 10s, still waiting for test results from:', missingComponents);
+        console.log(`[testManager] ${this.testedComponents.size}/${componentIds.length} components have responded`);
+      }
+    }, 10000);
   }
 
   private handleTestResult(cmd: Command) {

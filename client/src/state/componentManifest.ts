@@ -60,7 +60,7 @@ export const COMPONENT_IDS = {
   
   // Blink lights
   [COMPONENT_CATEGORIES.BLINK_LIGHTS]: [
-    'blink_opr_left', 'blink_opr_right', 'blink_grid_0', 'blink_grid_1', 'blink_grid_2', 'blink_grid_3',
+    'blink_grid_0', 'blink_grid_1', 'blink_grid_2', 'blink_grid_3',
     'blink_grid_4', 'blink_grid_5', 'blink_grid_6', 'blink_grid_7', 'blink_grid_8', 'blink_grid_9',
     'blink_grid_10', 'blink_grid_11', 'blink_grid_12', 'blink_grid_13', 'blink_grid_14', 'blink_grid_15',
     'blink_grid_16', 'blink_grid_17'
