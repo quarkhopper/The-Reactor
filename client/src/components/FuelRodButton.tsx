@@ -23,6 +23,7 @@ interface FuelRodButtonProps {
 
 type ButtonColor = 'off' | 'green' | 'amber' | 'red' | 'white';
 type FuelRodState = 'engaged' | 'withdrawn' | 'transitioning';
+type DisplayState = 'on' | 'off';
 
 // Helper function to map temperature to color
 function getColorFromTemperature(temp: number): ButtonColor {
@@ -51,10 +52,17 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
 }) => {
   const { controlRodCoords } = useCoreSystem();
   const [state, setState] = useState<FuelRodState>('engaged');
-  const [displayColor, setDisplayColor] = useState<ButtonColor>('off');
+  
+  // Split display state and color state
+  const [displayState, setDisplayState] = useState<DisplayState>('off'); // On/off toggle for blinking
+  const [activeColor, setActiveColor] = useState<ButtonColor>('green'); // Color to use when "on"
+  
   const [isTestMode, setIsTestMode] = useState(false);
   const [isHeld, setIsHeld] = useState(false);
   const [isBlinking, setIsBlinking] = useState(false);
+
+  // Calculate the actual color to display based on current state
+  const displayColor: ButtonColor = displayState === 'off' ? 'off' : activeColor;
 
   // Check if this button is at a control rod position
   const isControlRod = controlRodCoords.some(([rx, ry]) => rx === gridX && ry === gridY);
@@ -64,13 +72,18 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
     const handleStateChange = (state: AppState) => {
       if (state === 'off') {
         // Turn off the light when system is off
-        setDisplayColor('off');
+        setDisplayState('off');
         setIsTestMode(false);
         setIsHeld(false);
         setIsBlinking(false);
+      } else if (state === 'init') {
+        // Initialize to default state when system initializes
       } else if (state === 'startup' || state === 'on') {
+        setDisplayState('on');
         // Ensure components are reset when entering startup or on state
         setIsTestMode(false);
+      } else if (state === 'shutdown') {
+        setDisplayState('off');
       }
     };
     
@@ -90,7 +103,7 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
         if (cmd.process === 'init') {
           // Handle initialization
           setState('engaged');
-          setDisplayColor('off');
+          setDisplayState('on'); // Initialize to on
           setIsTestMode(false);
           setIsHeld(false);
           setIsBlinking(false);
@@ -99,7 +112,7 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
         } else if (cmd.process === 'shutdown') {
           // Reset state
           setState('engaged');
-          setDisplayColor('off');
+          setDisplayState('off'); // Turn off during shutdown
           setIsTestMode(false);
           setIsHeld(false);
           setIsBlinking(false);
@@ -124,13 +137,15 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
         let i = 0;
         
         const interval = setInterval(() => {
-          setDisplayColor(sequence[i]);
+          // During test, set both the display state and active color
+          setActiveColor(sequence[i]);
+          setDisplayState(sequence[i] === 'off' ? 'off' : 'on');
           i++;
           
           if (i >= sequence.length) {
             clearInterval(interval);
             setIsTestMode(false);
-            setDisplayColor('off');
+            setDisplayState('off');
             
             // Emit test result when test sequence completes
             stateMachine.emit({
@@ -154,8 +169,9 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
     const handleCommand = (cmd: Command) => {
       // Handle temperature updates for all fuel rods
       if (cmd.type === 'temperature_update' && cmd.id === id) {
-        if (!isTestMode && !isBlinking && state !== 'withdrawn') {
-          setDisplayColor(getColorFromTemperature(cmd.value));
+        if (!isTestMode && state !== 'withdrawn') {
+          // Only update the active color, not the display state
+          setActiveColor(getColorFromTemperature(cmd.value));
         }
       }
 
@@ -163,8 +179,11 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
       if (cmd.type === 'fuel_rod_state_update' && cmd.id === id) {
         setState(cmd.state);
         setIsBlinking(cmd.state === 'transitioning');
+        
         if (cmd.state === 'withdrawn') {
-          setDisplayColor('off');
+          setDisplayState('off');
+        } else if (cmd.state === 'engaged' && !isBlinking) {
+          setDisplayState('on');
         }
       }
     };
@@ -178,7 +197,8 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
     if (!isBlinking) return;
 
     const interval = setInterval(() => {
-      setDisplayColor(prev => prev === 'off' ? 'white' : 'off');
+      // Toggle only the display state, not the color itself
+      setDisplayState(prev => prev === 'off' ? 'on' : 'off');
     }, 500); // Blink every 500ms
 
     return () => clearInterval(interval);
