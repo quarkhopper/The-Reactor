@@ -241,6 +241,31 @@ function initSubscriptions() {
             value: 0
           });
         }
+        
+        // Start withdrawing all engaged fuel rods
+        console.log('[coreSystem] SCRAM initiated - withdrawing all engaged fuel rods');
+        for (let x = 0; x < GRID_SIZE; x++) {
+          for (let y = 0; y < GRID_SIZE; y++) {
+            const rod = fuelRods[x][y];
+            
+            // Only withdraw rods that are currently engaged (not already withdrawn or transitioning)
+            if (rod.state === 'engaged') {
+              // Start transition
+              rod.previousState = rod.state;
+              rod.state = 'transitioning';
+              rod.transitionStartTime = Date.now();
+              
+              // Emit state update
+              stateMachine.emit({
+                type: 'fuel_rod_state_update',
+                id: `fuel_rod_button_${x}_${y}`,
+                state: 'transitioning',
+                x,
+                y
+              });
+            }
+          }
+        }
       }
     }
   });
