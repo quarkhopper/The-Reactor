@@ -22,7 +22,7 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
   // Handle state changes for visual updates
   useEffect(() => {
     const handleStateChange = (state: AppState) => {
-      if (state === 'on') {
+      if (state === 'on' || state === 'scram') {
         setLit(true);
         setBlinking(false);
         setVisible(true);

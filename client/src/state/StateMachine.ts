@@ -20,7 +20,7 @@ class StateMachine {
     'startup': ['on'],
     'on': ['shutdown', 'scram'],
     'shutdown': ['off'],
-    'scram': ['on', 'off']  // Can recover to on or shutdown completely
+    'scram': ['on', 'shutdown']  // Can recover to on or shutdown completely
   };
 
   // Define the state transition delays (in milliseconds)
