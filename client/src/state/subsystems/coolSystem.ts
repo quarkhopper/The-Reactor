@@ -11,6 +11,12 @@ const pumpSpeeds = {
   secondary: 0
 };
 
+// Temperature values (0-1 range)
+const temperatures = {
+  primary: 0,
+  secondary: 0
+};
+
 function tick() {
   // TODO: react to current loop configuration
 }
@@ -18,7 +24,8 @@ function tick() {
 function getState() {
   return {
     loopEfficiency,
-    pumpSpeeds
+    pumpSpeeds,
+    temperatures
   };
 }
 
@@ -42,6 +49,18 @@ function handleCoolInput(cmd: Command) {
       pumpSpeeds.secondary = cmd.value;
       console.log(`[coolSystem] Secondary pump speed set to ${cmd.value}`);
     }
+  }
+  else if (cmd.type === 'core_temp_update') {
+    // Update primary loop temperature based on core temperature
+    temperatures.primary = cmd.value;
+    console.log(`[coolSystem] Primary loop temperature updated to ${cmd.value}`);
+
+    // Update the temperature meter display
+    stateMachine.emit({
+      type: 'set_indicator',
+      id: 'pump_temp_meter_primary',
+      value: cmd.value
+    });
   }
 }
 

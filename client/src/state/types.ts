@@ -18,7 +18,7 @@ export type Command =
   | { type: 'position_update'; id: string; value: number }
   | { type: 'power_update'; id: string; value: number }
   | { type: 'load_update'; id: string; value: number }
-  | { type: 'turbine_rpm_update'; id: string; value: number }
+  | { type: 'turbine_rpm_update'; value: number }
   | { type: 'knob_change'; id: string; value: 'left' | 'right' }
   | { type: 'test_sequence'; id: string }
   | { type: 'set_loop_efficiency'; id: string; value: 'on' | 'off' }
@@ -29,7 +29,8 @@ export type Command =
   | { type: 'fuel_rod_state_toggle'; id: string; x: number; y: number }
   | { type: 'fuel_rod_state_update'; id: string; state: 'engaged' | 'withdrawn' | 'transitioning'; x: number; y: number }
   | { type: 'process_begin'; id: string; process: string }
-  | { type: 'process_complete'; id: string; process: string };
+  | { type: 'process_complete'; id: string; process: string }
+  | { type: 'core_temp_update'; value: number };
 
 export type AppState = 'off' | 'init' | 'test' | 'startup' | 'on' | 'shutdown' | 'scram';
 export type ConditionColor = 'red' | 'green' | 'amber' | 'white' | 'off';

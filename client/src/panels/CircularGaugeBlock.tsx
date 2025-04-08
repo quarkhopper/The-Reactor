@@ -9,6 +9,7 @@ export default function CircularGaugeBlock() {
       y={480}
       value={0}
       limit={0.8}
+      eventType="turbine_rpm_update"
     />
     <CircularGauge
       id="core_temp_gauge"
@@ -16,6 +17,7 @@ export default function CircularGaugeBlock() {
       y={830}
       value={0}
       limit={0.8}
+      eventType="core_temp_update"
     />
     </div>
   );

@@ -17,9 +17,10 @@ interface CircularGaugeProps {
   y: number;
   value: number; // 0–1
   limit: number; // Light turns on above this
+  eventType: 'core_temp_update' | 'turbine_rpm_update'; // Specify which event to listen for
 }
 
-export default function CircularGauge({ id, x, y, value, limit }: CircularGaugeProps) {
+export default function CircularGauge({ id, x, y, value, limit, eventType }: CircularGaugeProps) {
   const [displayValue, setDisplayValue] = useState(value);
   const [isTestMode, setIsTestMode] = useState(false);
 
@@ -36,14 +37,14 @@ export default function CircularGauge({ id, x, y, value, limit }: CircularGaugeP
     const unsubscribe = stateMachine.subscribe((cmd: Command) => {
       if (cmd.type === 'state_change') {
         handleStateChange(cmd.state);
-      } else if (cmd.type === 'set_indicator' && cmd.id === id) {
-        // Update value when receiving indicator update
+      } else if (cmd.type === eventType) {
+        // Update value when receiving the specified event type
         setDisplayValue(cmd.value);
       }
     });
     
     return () => unsubscribe();
-  }, [id, value]);
+  }, [id, value, eventType]);
 
   // Handle initialization
   useEffect(() => {
