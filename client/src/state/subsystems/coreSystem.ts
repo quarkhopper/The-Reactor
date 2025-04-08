@@ -373,18 +373,14 @@ function initSubscriptions() {
 
     // Handle fuel rod state changes
     if (cmd.type === 'fuel_rod_state_update' && (cmd.state === 'engaged' || cmd.state === 'withdrawn')) {
-      const parts = cmd.id.split('_');
-      if (parts.length === 5) {
-        const x = parseInt(parts[3], 10);
-        const y = parseInt(parts[4], 10);
-        if (!isNaN(x) && !isNaN(y) && x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
-          const rod = fuelRods[x][y];
-          console.log(`[coreSystem] State update for rod ${x},${y}: ${rod.state} -> ${cmd.state}`);
-          rod.state = cmd.state;
-          
-          // Schedule recalculation instead of immediate recalculation
-          scheduleRecalculation();
-        }
+      const { x, y } = cmd;
+      if (x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
+        const rod = fuelRods[x][y];
+        console.log(`[coreSystem] State update for rod ${x},${y}: ${rod.state} -> ${cmd.state}`);
+        rod.state = cmd.state;
+        
+        // Schedule recalculation instead of immediate recalculation
+        scheduleRecalculation();
       }
     }
   });

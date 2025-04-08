@@ -53,7 +53,7 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
   
   // Split display state and color state
   const [displayState, setDisplayState] = useState<DisplayState>('off'); // On/off toggle for blinking
-  const [activeColor, setActiveColor] = useState<ButtonColor>('green'); // Color to use when "on"
+  const [activeColor, setActiveColor] = useState<ButtonColor>('off'); // Initialize with 'off' color
   
   const [isTestMode, setIsTestMode] = useState(false);
   const [isHeld, setIsHeld] = useState(false);
@@ -68,6 +68,7 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
       if (state === 'off') {
         // Turn off the light when system is off
         setDisplayState('off');
+        setActiveColor('off'); // Ensure color is set to off
         setIsTestMode(false);
         setIsHeld(false);
         setIsBlinking(false);
@@ -80,6 +81,7 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
         setIsTestMode(false);
       } else if (state === 'shutdown') {
         setDisplayState('off');
+        setActiveColor('off'); // Ensure color is set to off during shutdown
         setIsBlinking(false);
         setIsPulsing(false);
       }
