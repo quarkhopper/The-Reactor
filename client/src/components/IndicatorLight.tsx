@@ -61,34 +61,25 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
     return () => unsubscribe();
   }, [id]);
   
-  // Handle process_begin:init command
+  // Handle process_begin:init and process_begin:shutdown commands
   useEffect(() => {
     const handleCommand = (cmd: Command) => {
-      if (cmd.type === 'process_begin' && (cmd.process === 'init' || cmd.process === 'shutdown')) {
-        // Set blinking state
+      if (cmd.type === 'process_begin' && cmd.process === 'init') {
+        // Set blinking state for initialization
         setBlinking(true);
-        
-        // Acknowledge the command
-        if (cmd.process === 'init') {
-          stateMachine.emit({
-            type: 'process_complete',
-            id: 'indicator_light',
-            process: cmd.process
-          });
-        } else if (cmd.process === 'shutdown') {
-          // Turn off during shutdown
-          setBlinking(false);
-          setIsTestMode(false);
-          // Acknowledge shutdown
-          registry.acknowledge(id);
-          // DO NOT emit process_complete - this is the manager's job
-        }
+        registry.acknowledge(id, () => {
+          console.log(`[IndicatorLight] Initialization acknowledged for ${id}`);
+        });
+      } else if (cmd.type === 'process_begin' && cmd.process === 'shutdown') {
+        // Turn off during shutdown
+        setBlinking(false);
+        setIsTestMode(false);
       }
     };
-    
+
     const unsubscribe = stateMachine.subscribe(handleCommand);
     return () => unsubscribe();
-  }, [id]);
+  }, []);
   
   // Handle test sequence
   useEffect(() => {

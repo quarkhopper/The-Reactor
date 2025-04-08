@@ -1,7 +1,6 @@
 import stateMachine from './StateMachine';
 import { registry } from './registry';
-import { getAllComponentIds } from './componentManifest';
-import type { Command, AppState } from './types';
+import type { Command } from './types';
 
 class InitManager {
   private initialized: boolean = false;
@@ -36,17 +35,13 @@ class InitManager {
       // This callback runs when all components are registered
       this.handleInitComplete();
     });
-    
-    // Emit process_begin for each component
-    const componentIds = getAllComponentIds();
-    console.log(`[initManager] Starting initialization for ${componentIds.length} components`);
-    
-    componentIds.forEach(id => {
-      stateMachine.emit({
-        type: 'process_begin',
-        id,
-        process: 'init'
-      });
+
+    // Emit a single process_begin message for all components
+    console.log('[initManager] Emitting single process_begin for all components');
+    stateMachine.emit({
+      type: 'process_begin',
+      id: 'system',
+      process: 'init'
     });
   }
 
@@ -57,6 +52,7 @@ class InitManager {
       id: 'init',
       process: 'init'
     });
+    console.log('[initManager] Initialization complete');
   }
 }
 
@@ -66,4 +62,4 @@ export const initManager = new InitManager();
 // Add initialization function
 export const initInitManager = () => {
   return initManager;
-}; 
+};

@@ -1,14 +1,12 @@
 import { AppState, Command, CommandCallback } from './types';
 import { testManager } from './testManager';
 import { initManager } from './initManager';
-import { getAllComponentIds } from './componentManifest';
-import { registry } from './registry';
-import { powerManager } from './powerState';
 import { shutdownManager } from './shutdownManager';
 
 // Define the class structure
 class StateMachine {
   private state: AppState = 'off';  // Start in off state
+  private currentState: AppState = 'off'; // Moved from PowerStateManager
   private callbacks: CommandCallback[] = [];
   private initialized: boolean = false;
 
@@ -49,7 +47,6 @@ class StateMachine {
     console.log('[StateMachine] Initializing state machine');
     
     // Initialize managers in order - they will cascade to their dependencies
-    powerManager.init();  // Initialize power manager first
     initManager.init();   // This will cascade to registry
     testManager.init();
     shutdownManager.init();
@@ -63,41 +60,41 @@ class StateMachine {
     return this.state;
   }
 
-  // Update state with validation
-  private updateState(newState: AppState) {
-    if (this.state === newState) return;
+  // Get the current state
+  getCurrentState(): AppState {
+    return this.currentState;
+  }
 
-    // Special case for power button - allow off->init transition
-    if (this.state === 'off' && newState === 'init') {
-      console.log(`[StateMachine] Power on: ${this.state} -> ${newState}`);
-      this.state = newState;
+  // Set state (used by other managers)
+  setState(newState: AppState) {
+    // Only emit if the state is actually changing
+    if (newState !== this.currentState) {
+      console.log(`[StateMachine] State change: ${this.currentState} -> ${newState}`);
+      this.currentState = newState;
       this.emit({
         type: 'state_change',
-        id: 'system',
+        id: 'power',
         state: newState
       });
+    }
+  }
+
+  // Update state with validation
+  private updateState(newState: AppState) {
+    if (this.currentState === newState) {
+      console.log(`[StateMachine] No state change: ${this.currentState}`);
       return;
     }
 
     // Validate state transition
-    const validNextStates = StateMachine.STATE_TRANSITIONS[this.state];
+    const validNextStates = StateMachine.STATE_TRANSITIONS[this.currentState];
     if (!validNextStates.includes(newState)) {
-      console.warn(`[StateMachine] Invalid state transition: ${this.state} -> ${newState}`);
+      console.warn(`[StateMachine] Invalid state transition: ${this.currentState} -> ${newState}`);
       return;
     }
 
-    console.log(`[StateMachine] State transition: ${this.state} -> ${newState}`);
-    this.state = newState;
-
-    // Handle startup transition
-    if (newState === 'startup') {
-      console.log('[StateMachine] Starting up...');
-      // Schedule the transition to 'on' state
-      setTimeout(() => {
-        console.log('[StateMachine] Startup complete, transitioning to on state');
-        this.updateState('on');
-      }, StateMachine.STATE_TRANSITION_DELAYS['startup']);
-    }
+    console.log(`[StateMachine] State transition: ${this.currentState} -> ${newState}`);
+    this.currentState = newState;
 
     // Emit state change
     this.emit({
@@ -149,13 +146,14 @@ class StateMachine {
     
     // Handle process completion
     if (cmd.type === 'process_complete') {
-      if (cmd.process === 'init' && this.state === 'init') {
+      console.log(`[StateMachine] Received process_complete command: process=${cmd.process}, currentState=${this.state}`);
+      if (cmd.process === 'init' && this.currentState === 'init') {
         console.log('[StateMachine] Process init complete, transitioning to test');
         this.updateState('test');
-      } else if (cmd.process === 'test' && this.state === 'test') {
+      } else if (cmd.process === 'test' && this.currentState === 'test') {
         console.log('[StateMachine] Process test complete, transitioning to startup');
         this.updateState('startup');
-      } else if (cmd.process === 'shutdown' && this.state === 'shutdown') {
+      } else if (cmd.process === 'shutdown' && this.currentState === 'shutdown') {
         console.log('[StateMachine] Process shutdown complete, transitioning to off');
         this.updateState('off');
       }
@@ -195,4 +193,4 @@ class StateMachine {
 const stateMachine = new StateMachine();
 
 // Export the singleton instance - initialization will be triggered by the app
-export default stateMachine; 
+export default stateMachine;

@@ -1,6 +1,6 @@
 import stateMachine from './StateMachine';
 import { getAllComponentIds } from './componentManifest';
-import type { Command, AppState } from './types';
+import type { Command } from './types';
 
 class RegistryManager {
   private pending: Set<string> = new Set();
@@ -36,26 +36,14 @@ class RegistryManager {
     }
   }
 
-  private handleRegistryComplete() {
+  private handleRegistryComplete(callback: () => void) {
     this.isInitializing = false;
-    
-    // Transition to the next state via command pathway
-    stateMachine.emit({
-      type: 'state_change',
-      id: 'system',
-      state: 'test'
-    });
+    callback(); // Notify initManager that initialization is complete
   }
 
-  private handleShutdownComplete() {
+  private handleShutdownComplete(callback: () => void) {
     this.isShuttingDown = false;
-    
-    // Transition to the next state via command pathway
-    stateMachine.emit({
-      type: 'process_complete',
-      id: 'shutdown',
-      process: 'shutdown'
-    });
+    callback(); // Notify initManager that shutdown is complete
   }
 
   private reset() {
@@ -64,7 +52,7 @@ class RegistryManager {
     this.isShuttingDown = false;
   }
 
-  public acknowledge(componentId: string) {
+  public acknowledge(componentId: string, callback: () => void) {
     // Process acknowledgments during initialization or shutdown
     if (!this.isInitializing && !this.isShuttingDown) {
       return;
@@ -75,9 +63,9 @@ class RegistryManager {
 
       if (this.pending.size === 0) {
         if (this.isInitializing) {
-          this.handleRegistryComplete();
+          this.handleRegistryComplete(callback);
         } else if (this.isShuttingDown) {
-          this.handleShutdownComplete();
+          this.handleShutdownComplete(callback);
         }
       }
     }

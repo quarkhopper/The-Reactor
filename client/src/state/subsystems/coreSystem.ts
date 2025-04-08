@@ -5,9 +5,6 @@ import type { Command } from '../types';
 const GRID_SIZE = 6;
 const ROD_COUNT = 8;
 
-const MOVE_DURATION = 10000; // Time for control rod movement (not currently used)
-const BLINK_INTERVAL = 200; // Blink interval for UI (not currently used)
-
 let tickInterval: NodeJS.Timeout | null = null; // Store the interval ID
 let tickCounter = 0; // Track number of ticks
 

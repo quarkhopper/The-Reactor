@@ -131,7 +131,6 @@ function handleCoolInput(cmd: Command) {
     if (index === 0) {
       pumpSpeeds.primary = cmd.value;
       COOLANT_PROPERTIES.flowRate = cmd.value; // Update flow rate with pump speed
-      console.log(`[coolSystem] Primary pump speed set to ${cmd.value}`);
 
       // Emit flow rate update
       stateMachine.emit({
@@ -141,13 +140,11 @@ function handleCoolInput(cmd: Command) {
     }
     else if (index === 1) {
       pumpSpeeds.secondary = cmd.value;
-      console.log(`[coolSystem] Secondary pump speed set to ${cmd.value}`);
     }
   }
   else if (cmd.type === 'core_temp_update') {
     // Store the core temperature for use in our tick calculations
     currentCoreTemp = cmd.value;
-    console.log(`[coolSystem] Received core temperature update: ${cmd.value}`);
   }
   else if (cmd.type === 'state_change') {
     if (cmd.state === 'startup') {
