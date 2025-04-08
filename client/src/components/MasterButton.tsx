@@ -49,31 +49,27 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
     return () => unsubscribe();
   }, []);
 
-  // Handle initialization
+  // Handle initialization and shutdown
   useEffect(() => {
     const handleCommand = (cmd: Command) => {
-      if (cmd.type === 'process_begin' && cmd.id === 'master') {
-        if (cmd.process === 'init') {
-          // Reset component state
-          setLit(false);
-          setBlinking(false);
-          setVisible(false);
-          setIsTestMode(false);
-          // Acknowledge initialization
-          registry.acknowledge('master');
-        } else if (cmd.process === 'shutdown') {
-          // Return to unpressed state during shutdown
-          setLit(false);
-          setBlinking(false);
-          setVisible(false);
-          setIsTestMode(false);
-          // Acknowledge shutdown
-          registry.acknowledge('master');
-          // DO NOT emit process_complete - this is the manager's job
-        }
+      if (cmd.type === 'process_begin' && cmd.process === 'init') {
+        // Reset component state for initialization
+        setLit(false);
+        setBlinking(false);
+        setVisible(false);
+        setIsTestMode(false);
+        registry.acknowledge('master', () => {
+          console.log(`[MasterButton] Initialization acknowledged for master`);
+        });
+      } else if (cmd.type === 'process_begin' && cmd.process === 'shutdown') {
+        // Reset state during shutdown
+        setLit(false);
+        setBlinking(false);
+        setVisible(false);
+        setIsTestMode(false);
       }
     };
-    
+
     const unsubscribe = stateMachine.subscribe(handleCommand);
     return () => unsubscribe();
   }, []);

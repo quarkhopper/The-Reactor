@@ -41,30 +41,26 @@ export default function ScramButton({ id, x, y }: ScramButtonProps) {
     return () => unsubscribe();
   }, [id]);
 
-  // Handle initialization
+  // Handle initialization and shutdown
   useEffect(() => {
     const handleCommand = (cmd: Command) => {
-      if (cmd.type === 'process_begin' && cmd.id === id) {
-        if (cmd.process === 'init') {
-          // Reset component state
-          setPressed(false);
-          setIsTestMode(false);
-          // Acknowledge initialization
-          registry.acknowledge(id);
-        } else if (cmd.process === 'shutdown') {
-          // Return to unpressed state during shutdown
-          setPressed(false);
-          setIsTestMode(false);
-          // Acknowledge shutdown
-          registry.acknowledge(id);
-          // DO NOT emit process_complete - this is the manager's job
-        }
+      if (cmd.type === 'process_begin' && cmd.process === 'init') {
+        // Reset component state for initialization
+        setPressed(false);
+        setIsTestMode(false);
+        registry.acknowledge(id, () => {
+          console.log(`[ScramButton] Initialization acknowledged for ${id}`);
+        });
+      } else if (cmd.type === 'process_begin' && cmd.process === 'shutdown') {
+        // Reset state during shutdown
+        setPressed(false);
+        setIsTestMode(false);
       }
     };
-    
+
     const unsubscribe = stateMachine.subscribe(handleCommand);
     return () => unsubscribe();
-  }, [id]);
+  }, []);
 
   // Handle test sequence
   useEffect(() => {
