@@ -12,7 +12,7 @@
   width: 100%;
   height: auto;
   cursor: pointer;
-  transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out, opacity 0.75s ease-in-out;
   box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.8);
 }
 
@@ -45,4 +45,15 @@
   font-weight: bold;
   color: black;
   pointer-events: none;
+}
+
+/* Add pulse animation for withdrawn state */
+@keyframes pulse {
+  0% { opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { opacity: 0.3; }
+}
+
+.panel-button-img.pulse {
+  animation: pulse 1.5s infinite ease-in-out;
 }

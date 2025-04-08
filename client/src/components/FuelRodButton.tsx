@@ -1,6 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import stateMachine from '../state/StateMachine';
-import { useCoreSystem } from '../state/subsystems/coreSystem';
 import { registry } from '../state/registry';
 import type { Command, AppState } from '../state/types';
 
@@ -50,7 +49,6 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
   gridY,
   label
 }) => {
-  const { controlRodCoords } = useCoreSystem();
   const [state, setState] = useState<FuelRodState>('engaged');
   
   // Split display state and color state
@@ -60,13 +58,10 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
   const [isTestMode, setIsTestMode] = useState(false);
   const [isHeld, setIsHeld] = useState(false);
   const [isBlinking, setIsBlinking] = useState(false);
+  const [isPulsing, setIsPulsing] = useState(false);
+  const [showOverlay, setShowOverlay] = useState(false); // For transitioning state overlay
 
   // Calculate the actual color to display based on current state
-  const displayColor: ButtonColor = displayState === 'off' ? 'off' : activeColor;
-
-  // Check if this button is at a control rod position
-  const isControlRod = controlRodCoords.some(([rx, ry]) => rx === gridX && ry === gridY);
-
   // Handle state changes for visual updates
   useEffect(() => {
     const handleStateChange = (state: AppState) => {
@@ -76,6 +71,7 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
         setIsTestMode(false);
         setIsHeld(false);
         setIsBlinking(false);
+        setIsPulsing(false);
       } else if (state === 'init') {
         // Initialize to default state when system initializes
       } else if (state === 'startup' || state === 'on') {
@@ -84,6 +80,8 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
         setIsTestMode(false);
       } else if (state === 'shutdown') {
         setDisplayState('off');
+        setIsBlinking(false);
+        setIsPulsing(false);
       }
     };
     
@@ -107,6 +105,7 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
           setIsTestMode(false);
           setIsHeld(false);
           setIsBlinking(false);
+          setIsPulsing(false);
           // Acknowledge initialization
           registry.acknowledge(id);
         } else if (cmd.process === 'shutdown') {
@@ -116,6 +115,7 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
           setIsTestMode(false);
           setIsHeld(false);
           setIsBlinking(false);
+          setIsPulsing(false);
           // Acknowledge shutdown
           registry.acknowledge(id);
         }
@@ -177,12 +177,22 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
 
       // Handle fuel rod state updates
       if (cmd.type === 'fuel_rod_state_update' && cmd.id === id) {
-        setState(cmd.state);
-        setIsBlinking(cmd.state === 'transitioning');
+        const newState = cmd.state;
+        setState(newState);
         
-        if (cmd.state === 'withdrawn') {
-          setDisplayState('off');
-        } else if (cmd.state === 'engaged' && !isBlinking) {
+        // Set visual effects based on state
+        if (newState === 'transitioning') {
+          setIsBlinking(true);
+          setIsPulsing(false);
+          setDisplayState('on'); // Keep display on for overlay blinking
+        } else if (newState === 'withdrawn') {
+          setIsBlinking(false);
+          setIsPulsing(true);
+          setDisplayState('on'); // Keep display on for overlay
+        } else {
+          // Engaged state
+          setIsBlinking(false);
+          setIsPulsing(false);
           setDisplayState('on');
         }
       }
@@ -190,16 +200,15 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
 
     const unsubscribe = stateMachine.subscribe(handleCommand);
     return () => unsubscribe();
-  }, [id, isTestMode, isBlinking, state]);
+  }, [id, isTestMode]);
 
-  // Handle blinking effect
+  // Handle blinking effect for transitioning state - using overlay
   useEffect(() => {
     if (!isBlinking) return;
-
+    
     const interval = setInterval(() => {
-      // Toggle only the display state, not the color itself
-      setDisplayState(prev => prev === 'off' ? 'on' : 'off');
-    }, 500); // Blink every 500ms
+      setShowOverlay(prev => !prev);
+    }, 200); // 200ms for fast blinking during transition
 
     return () => clearInterval(interval);
   }, [isBlinking]);
@@ -237,12 +246,29 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
       >
+        {/* Base colored button always visible */}
         <img
-          src={glowMap[displayColor]}
+          src={glowMap[activeColor]}
           className={`panel-button-img ${isHeld ? 'pressed' : ''} ${isTestMode ? 'test-mode' : ''}`}
           draggable={false}
           alt=""
+          style={{ position: 'absolute' }}
         />
+        
+        {/* Overlay the off image with 50% opacity for withdrawn or transitioning states */}
+        {(isPulsing || (isBlinking && showOverlay)) && (
+          <img
+            src={glow_off}
+            className={`panel-button-img ${isHeld ? 'pressed' : ''} ${isTestMode ? 'test-mode' : ''}`}
+            draggable={false}
+            alt=""
+            style={{ 
+              position: 'absolute', 
+              opacity: 0.7
+            }}
+          />
+        )}
+        
         {label && <div className="panel-button-label">{label}</div>}
       </div>
     </div>

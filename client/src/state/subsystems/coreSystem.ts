@@ -11,6 +11,10 @@ const BLINK_INTERVAL = 200; // Blink interval for UI (not currently used)
 let tickInterval: NodeJS.Timeout | null = null; // Store the interval ID
 let tickCounter = 0; // Track number of ticks
 
+// Add a debounce timer for recalculations
+let recalculationTimer: NodeJS.Timeout | null = null;
+const RECALCULATION_DELAY = 1000; // 1 second delay
+
 interface FuelRod {
   temperature: number; // Normalized temperature (0 to 1)
   state: 'engaged' | 'withdrawn' | 'transitioning';
@@ -39,6 +43,13 @@ let distanceGrid: number[][][] = Array.from({ length: GRID_SIZE }, () =>
   Array.from({ length: GRID_SIZE }, () => Array(ROD_COUNT).fill(0))
 );
 
+// Add a new grid for fuel rod distances
+let fuelRodDistanceGrid: number[][][] = Array.from({ length: GRID_SIZE }, () =>
+  Array.from({ length: GRID_SIZE }, () => 
+    Array.from({ length: GRID_SIZE * GRID_SIZE }, () => 0)
+  )
+);
+
 // Variables for tuning (locked values)
 const HEAT_GAIN_SCALING_FACTOR = 0.018; // Keep increased value for critical temperatures
 const HEAT_LOSS_SCALING_FACTOR = 0.1; // Keep original for stability
@@ -58,6 +69,8 @@ function assignStructuredControlRodPositions() {
 }
 
 function precalculateDistances() {
+  // Calculate distances between fuel rods and control rods ONLY
+  // This is used for control rod interference calculations
   for (let x = 0; x < GRID_SIZE; x++) {
     for (let y = 0; y < GRID_SIZE; y++) {
       for (let i = 0; i < ROD_COUNT; i++) {
@@ -69,23 +82,55 @@ function precalculateDistances() {
   }
 }
 
+// New function for fuel rod distance calculations
+function precalculateFuelRodDistances() {
+  // Calculate distances between each fuel rod position and every other fuel rod
+  // IMPORTANT: This is where withdrawn fuel rods are handled
+  for (let x = 0; x < GRID_SIZE; x++) {
+    for (let y = 0; y < GRID_SIZE; y++) {
+      // Calculate distance to every other fuel rod position
+      let idx = 0;
+      for (let fx = 0; fx < GRID_SIZE; fx++) {
+        for (let fy = 0; fy < GRID_SIZE; fy++) {
+          if (fx === x && fy === y) {
+            // Distance to self is infinite (no self-contribution)
+            fuelRodDistanceGrid[x][y][idx] = 1000000;
+          } else {
+            // CRITICAL: If the rod is withdrawn, set distance to effectively infinity
+            // This completely removes its contribution to the reactivity calculation
+            fuelRodDistanceGrid[x][y][idx] = fuelRods[fx][fy].state === 'withdrawn'
+              ? 1000000  // Effectively infinite distance
+              : Math.sqrt((fx - x) ** 2 + (fy - y) ** 2);
+          }
+          idx++;
+        }
+      }
+    }
+  }
+}
+
 function precalculateBaseReactivities() {
+  // First calculate distances between fuel rods (this is where withdrawn rods are handled)
+  precalculateFuelRodDistances();
+  
+  // Then calculate base reactivity using those distances
   for (let x = 0; x < GRID_SIZE; x++) {
     for (let y = 0; y < GRID_SIZE; y++) {
       let baseReactivity = 0;
 
-      // Calculate base reactivity from all other fuel rods
+      // Calculate base reactivity from all other fuel rods using pre-calculated distances
+      let idx = 0;
       for (let fx = 0; fx < GRID_SIZE; fx++) {
         for (let fy = 0; fy < GRID_SIZE; fy++) {
-          if (fx === x && fy === y) continue;
+          // Skip self (already handled with infinite distance)
+          if (fx === x && fy === y) {
+            idx++;
+            continue;
+          }
           
-          // If the rod is withdrawn, set distance to a very large number
-          // This effectively removes it from the reactivity calculation
-          const distance = fuelRods[fx][fy].state === 'withdrawn' 
-            ? 1000000  // Effectively infinite distance
-            : Math.sqrt((fx - x) ** 2 + (fy - y) ** 2);
-            
+          const distance = fuelRodDistanceGrid[x][y][idx];
           baseReactivity += 1 / (1 + distance);
+          idx++;
         }
       }
 
@@ -137,9 +182,6 @@ function tick() {
             delete rod.transitionStartTime;
             delete rod.previousState;
             
-            // Recalculate distances and base reactivity since core geometry changed
-            // precalculateDistances();
-            // precalculateBaseReactivities();
             
             // Emit state change
             stateMachine.emit({
@@ -332,15 +374,16 @@ function initSubscriptions() {
     // Handle fuel rod state changes
     if (cmd.type === 'fuel_rod_state_update' && (cmd.state === 'engaged' || cmd.state === 'withdrawn')) {
       const parts = cmd.id.split('_');
-      if (parts.length === 4) {
-        const x = parseInt(parts[2], 10);
-        const y = parseInt(parts[3], 10);
+      if (parts.length === 5) {
+        const x = parseInt(parts[3], 10);
+        const y = parseInt(parts[4], 10);
         if (!isNaN(x) && !isNaN(y) && x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
           const rod = fuelRods[x][y];
+          console.log(`[coreSystem] State update for rod ${x},${y}: ${rod.state} -> ${cmd.state}`);
           rod.state = cmd.state;
-          // Recalculate distances and base reactivities when core geometry changes
-          precalculateDistances();
-          precalculateBaseReactivities();
+          
+          // Schedule recalculation instead of immediate recalculation
+          scheduleRecalculation();
         }
       }
     }
@@ -405,3 +448,32 @@ const coreSystem = {
 };
 
 export default coreSystem;
+
+// Debounced function to schedule recalculations
+function scheduleRecalculation() {
+  console.log('[coreSystem] Scheduling recalculation...');
+  
+  // Clear existing timer if there is one
+  if (recalculationTimer) {
+    clearTimeout(recalculationTimer);
+  }
+  
+  // Set a new timer
+  recalculationTimer = setTimeout(() => {
+    // Count withdrawn rods for debugging
+    let withdrawnCount = 0;
+    for (let x = 0; x < GRID_SIZE; x++) {
+      for (let y = 0; y < GRID_SIZE; y++) {
+        if (fuelRods[x][y].state === 'withdrawn') {
+          withdrawnCount++;
+        }
+      }
+    }
+    
+    console.log(`[coreSystem] Performing delayed recalculation. Withdrawn rods: ${withdrawnCount}/${GRID_SIZE * GRID_SIZE}`);
+    
+    precalculateDistances();
+    precalculateBaseReactivities();
+    recalculationTimer = null;
+  }, RECALCULATION_DELAY);
+}
