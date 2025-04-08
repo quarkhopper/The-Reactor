@@ -25,13 +25,13 @@ export default function CoolantPumpBlock({ idPrefix, x, y }: CoolantPumpBlockPro
             key={`pump-temp-meter-${idPrefix}`}
             id={`pump_temp_meter_${idPrefix}`}
             x={60}
-            y={105}
+            y={90}
           />
       <VerticalMeter
             key={`pump-pres-meter-${idPrefix}`}
             id={`pump_pres_meter_${idPrefix}`}
             x={120}
-            y={105}
+            y={90}
           />
     </div>
   );
