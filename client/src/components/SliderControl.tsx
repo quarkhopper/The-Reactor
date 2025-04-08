@@ -45,30 +45,26 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, target, index, 
     return () => unsubscribe();
   }, [id, target, index]);
 
-  // Handle initialization
+  // Handle initialization and shutdown
   useEffect(() => {
     const handleCommand = (cmd: Command) => {
-      if (cmd.type === 'process_begin' && cmd.id === id) {
-        if (cmd.process === 'init') {
-          // Reset component state
-          setValue(0);
-          setIsTestMode(false);
-          // Acknowledge initialization
-          registry.acknowledge(id);
-        } else if (cmd.process === 'shutdown') {
-          // Return to zero during shutdown
-          setValue(0);
-          setIsTestMode(false);
-          // Acknowledge shutdown
-          registry.acknowledge(id);
-          // DO NOT emit process_complete - this is the manager's job
-        }
+      if (cmd.type === 'process_begin' && cmd.process === 'init') {
+        // Reset component state for initialization
+        setValue(0);
+        setIsTestMode(false);
+        registry.acknowledge(id, () => {
+          console.log(`[SliderControl] Initialization acknowledged for ${id}`);
+        });
+      } else if (cmd.type === 'process_begin' && cmd.process === 'shutdown') {
+        // Reset state during shutdown
+        setValue(0);
+        setIsTestMode(false);
       }
     };
-    
+
     const unsubscribe = stateMachine.subscribe(handleCommand);
     return () => unsubscribe();
-  }, [id]);
+  }, []);
 
   // Handle test sequence
   useEffect(() => {

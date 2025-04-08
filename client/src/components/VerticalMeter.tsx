@@ -41,31 +41,28 @@ export default function VerticalMeter({ id, x, y }: VerticalMeterProps) {
     return () => unsubscribe();
   }, [id]);
 
-  // Handle initialization
+  // Handle initialization and shutdown
   useEffect(() => {
     const handleCommand = (cmd: Command) => {
-      if (cmd.type === 'process_begin' && cmd.id === id) {
-        if (cmd.process === 'init') {
-          // Reset component state
-          setCurrentValue(0);
-          setIsTestMode(false);
-          setDisplayColor('off');
-          // Acknowledge initialization
-          registry.acknowledge(id);
-        } else if (cmd.process === 'shutdown') {
-          // Reset component state
-          setCurrentValue(0);
-          setIsTestMode(false);
-          setDisplayColor('off');
-          // Acknowledge shutdown
-          registry.acknowledge(id);
-        }
+      if (cmd.type === 'process_begin' && cmd.process === 'init') {
+        // Reset component state for initialization
+        setCurrentValue(0);
+        setIsTestMode(false);
+        setDisplayColor('off');
+        registry.acknowledge(id, () => {
+          console.log(`[VerticalMeter] Initialization acknowledged for ${id}`);
+        });
+      } else if (cmd.type === 'process_begin' && cmd.process === 'shutdown') {
+        // Reset state during shutdown
+        setCurrentValue(0);
+        setIsTestMode(false);
+        setDisplayColor('off');
       }
     };
-    
+
     const unsubscribe = stateMachine.subscribe(handleCommand);
     return () => unsubscribe();
-  }, [id]);
+  }, []);
 
   // Handle test sequence
   useEffect(() => {
