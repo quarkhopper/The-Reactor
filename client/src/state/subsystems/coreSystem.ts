@@ -382,15 +382,6 @@ function initSubscriptions() {
   });
 }
 
-// Cleanup function
-function cleanup() {
-  stopTick();
-  if (stateUnsubscribe) {
-    stateUnsubscribe();
-    stateUnsubscribe = null;
-  }
-}
-
 // React hook for components to use
 export function useCoreSystem() {
   const [state, setState] = useState({

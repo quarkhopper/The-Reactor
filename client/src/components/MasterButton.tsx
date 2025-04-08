@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { registry } from '../state/registry';
 import stateMachine from '../state/StateMachine';
 import type { Command, AppState } from '../state/types';
@@ -17,7 +17,6 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
   const [lit, setLit] = useState(false);
   const [blinking, setBlinking] = useState(false);
   const [visible, setVisible] = useState(false);
-  const [isTestMode, setIsTestMode] = useState(false);
 
   // Handle state changes for visual updates
   useEffect(() => {
@@ -57,7 +56,6 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
         setLit(false);
         setBlinking(false);
         setVisible(false);
-        setIsTestMode(false);
         registry.acknowledge('master', () => {
           console.log(`[MasterButton] Initialization acknowledged for master`);
         });
@@ -66,7 +64,6 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
         setLit(false);
         setBlinking(false);
         setVisible(false);
-        setIsTestMode(false);
       }
     };
 
@@ -78,11 +75,8 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
   useEffect(() => {
     const handleCommand = (cmd: Command) => {
       if (cmd.type === 'process_begin' && cmd.id === 'master' && cmd.process === 'test') {
-        setIsTestMode(true);
-        
         // Complete the test after a short delay
         const timer = setTimeout(() => {
-          setIsTestMode(false);
           stateMachine.emit({
             type: 'test_result',
             id: 'master',

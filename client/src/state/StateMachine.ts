@@ -21,17 +21,6 @@ class StateMachine {
     'scram': ['on', 'shutdown']  // Can recover to on or shutdown completely
   };
 
-  // Define the state transition delays (in milliseconds)
-  private static STATE_TRANSITION_DELAYS: Record<AppState, number> = {
-    'off': 0,
-    'init': 0,
-    'test': 0,
-    'startup': 2000,
-    'on': 0,
-    'shutdown': 0,  // No delay needed, shutdownManager handles the process
-    'scram': 0
-  };
-
   constructor() {
     console.log('[StateMachine] Constructor called');
     // First pass - just construct

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import stateMachine from '../state/StateMachine';
 import { registry } from '../state/registry';
 import type { Command, AppState } from '../state/types';

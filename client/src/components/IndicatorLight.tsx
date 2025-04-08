@@ -31,8 +31,6 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
   initialColor = 'off'
 }) => {
   const [displayColor, setDisplayColor] = useState<IndicatorColor>(initialColor);
-  const [isTestMode, setIsTestMode] = useState(false);
-  const [blinking, setBlinking] = useState(false);
   
   // Color mapping for the indicator images
   const colorMap: Record<IndicatorColor, string> = {
@@ -48,7 +46,6 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
     const handleStateChange = (state: AppState) => {
       if (state === 'startup' || state === 'on') {
         // Ensure components are reset when entering startup or on state
-        setIsTestMode(false);
       }
     };
     
@@ -65,15 +62,11 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
   useEffect(() => {
     const handleCommand = (cmd: Command) => {
       if (cmd.type === 'process_begin' && cmd.process === 'init') {
-        // Set blinking state for initialization
-        setBlinking(true);
         registry.acknowledge(id, () => {
           console.log(`[IndicatorLight] Initialization acknowledged for ${id}`);
         });
       } else if (cmd.type === 'process_begin' && cmd.process === 'shutdown') {
         // Turn off during shutdown
-        setBlinking(false);
-        setIsTestMode(false);
       }
     };
 
@@ -85,7 +78,6 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
   useEffect(() => {
     const handleCommand = (cmd: Command) => {
       if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'test') {
-        setIsTestMode(true);
         
         // Perform test sequence
         const sequence: IndicatorColor[] = ['red', 'amber', 'green', 'white', 'off'];
@@ -97,7 +89,6 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
           
           if (i >= sequence.length) {
             clearInterval(interval);
-            setIsTestMode(false);
             
             // Emit test result when test sequence completes
             stateMachine.emit({

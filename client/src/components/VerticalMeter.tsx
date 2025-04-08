@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { registry } from '../state/registry';
 import stateMachine from '../state/StateMachine';
 import type { Command, AppState } from '../state/types';
@@ -17,15 +17,12 @@ interface VerticalMeterProps {
 
 export default function VerticalMeter({ id, x, y }: VerticalMeterProps) {
   const [currentValue, setCurrentValue] = useState(0);
-  const [isTestMode, setIsTestMode] = useState(false);
-  const [displayColor, setDisplayColor] = useState<'off' | 'green' | 'amber' | 'red' | 'white'>('off');
 
   // Handle state changes for visual updates
   useEffect(() => {
     const handleStateChange = (state: AppState) => {
       if (state === 'startup' || state === 'on') {
         // Ensure components are reset when entering startup or on state
-        setIsTestMode(false);
       }
     };
     
@@ -47,16 +44,12 @@ export default function VerticalMeter({ id, x, y }: VerticalMeterProps) {
       if (cmd.type === 'process_begin' && cmd.process === 'init') {
         // Reset component state for initialization
         setCurrentValue(0);
-        setIsTestMode(false);
-        setDisplayColor('off');
         registry.acknowledge(id, () => {
           console.log(`[VerticalMeter] Initialization acknowledged for ${id}`);
         });
       } else if (cmd.type === 'process_begin' && cmd.process === 'shutdown') {
         // Reset state during shutdown
         setCurrentValue(0);
-        setIsTestMode(false);
-        setDisplayColor('off');
       }
     };
 
@@ -68,14 +61,11 @@ export default function VerticalMeter({ id, x, y }: VerticalMeterProps) {
   useEffect(() => {
     const handleCommand = (cmd: Command) => {
       if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'test') {
-        setIsTestMode(true);
-        
         // Perform test sequence
         const sequence: Array<'off' | 'green' | 'amber' | 'red' | 'white'> = ['red', 'amber', 'green', 'white', 'off'];
         let i = 0;
         
         const interval = setInterval(() => {
-          setDisplayColor(sequence[i]);
           // Set value based on color
           switch (sequence[i]) {
             case 'off':
@@ -98,8 +88,6 @@ export default function VerticalMeter({ id, x, y }: VerticalMeterProps) {
           
           if (i >= sequence.length) {
             clearInterval(interval);
-            setIsTestMode(false);
-            setDisplayColor('off');
             setCurrentValue(0);
             
             // Emit test result when test sequence completes

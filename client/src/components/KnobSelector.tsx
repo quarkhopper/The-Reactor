@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { registry } from '../state/registry';
 import stateMachine from '../state/StateMachine';
-import type { Command, AppState } from '../state/types';
+import type { Command } from '../state/types';
 
 import knobImg from '../images/knob_selector.png';
 import '../css/components/KnobSelector.css';
