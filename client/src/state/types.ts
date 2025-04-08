@@ -30,7 +30,9 @@ export type Command =
   | { type: 'fuel_rod_state_update'; id: string; state: 'engaged' | 'withdrawn' | 'transitioning'; x: number; y: number }
   | { type: 'process_begin'; id: string; process: string }
   | { type: 'process_complete'; id: string; process: string }
-  | { type: 'core_temp_update'; value: number };
+  | { type: 'core_temp_update'; value: number }
+  | { type: 'coolant_temp_update'; value: number }
+  | { type: 'flow_rate_update'; value: number };
 
 export type AppState = 'off' | 'init' | 'test' | 'startup' | 'on' | 'shutdown' | 'scram';
 export type ConditionColor = 'red' | 'green' | 'amber' | 'white' | 'off';

@@ -19,6 +19,11 @@ const COOLANT_PROPERTIES: CoolantProperties = {
   heatTransfer: 0.6       // How efficiently heat moves between core and coolant
 };
 
+// Pressure calculation constants
+const TEMP_PRESSURE_FACTOR = 0.6;    // How much temperature affects pressure
+const PUMP_PRESSURE_FACTOR = 0.4;    // How much pump speed affects pressure
+const TURBULENCE_MAGNITUDE = 0.05;   // Size of pressure oscillations
+
 // State variables
 const temperatures = {
   primary: 0,             // Primary loop temperature (0-1)
@@ -28,6 +33,11 @@ const temperatures = {
 const pumpSpeeds = {
   primary: 0.5,           // Initial pump speed 50%
   secondary: 0
+};
+
+const pressures = {
+  primary: 0,             // Primary loop pressure (0-1)
+  secondary: 0            // Secondary loop pressure (0-1)
 };
 
 let lastUpdateTime = Date.now();
@@ -55,6 +65,20 @@ function calculateTemperatureChange(coreTemp: number, deltaTime: number): number
   return deltaTemp;
 }
 
+function calculatePressure(): number {
+  // Base pressure from temperature
+  const tempPressure = temperatures.primary * TEMP_PRESSURE_FACTOR;
+  
+  // Additional pressure from pump speed
+  const pumpPressure = pumpSpeeds.primary * PUMP_PRESSURE_FACTOR;
+  
+  // Add some oscillation for visual interest
+  const turbulence = Math.sin(Date.now() / 1000) * TURBULENCE_MAGNITUDE;
+  
+  // Combine and normalize
+  return Math.max(0, Math.min(1, tempPressure + pumpPressure + turbulence));
+}
+
 function tick() {
   const now = Date.now();
   const deltaTime = (now - lastUpdateTime) / 1000; // Convert to seconds
@@ -66,10 +90,26 @@ function tick() {
     const deltaTemp = calculateTemperatureChange(currentCoreTemp, deltaTime);
     temperatures.primary = Math.max(0, Math.min(1, temperatures.primary + deltaTemp));
     
-    // Emit the new temperature
+    // Calculate new pressure
+    pressures.primary = calculatePressure();
+    
+    // Emit the new temperature for UI update
     stateMachine.emit({
       type: 'set_indicator',
       id: 'pump_temp_meter_primary',
+      value: temperatures.primary
+    });
+
+    // Emit the new pressure for UI update
+    stateMachine.emit({
+      type: 'set_indicator',
+      id: 'pump_pres_meter_primary',
+      value: pressures.primary
+    });
+
+    // Emit coolant temperature update for core cooling calculations
+    stateMachine.emit({
+      type: 'coolant_temp_update',
       value: temperatures.primary
     });
   }
@@ -79,6 +119,7 @@ function getState() {
   return {
     temperatures,
     pumpSpeeds,
+    pressures,
     coolantProperties: COOLANT_PROPERTIES
   };
 }
@@ -91,6 +132,12 @@ function handleCoolInput(cmd: Command) {
       pumpSpeeds.primary = cmd.value;
       COOLANT_PROPERTIES.flowRate = cmd.value; // Update flow rate with pump speed
       console.log(`[coolSystem] Primary pump speed set to ${cmd.value}`);
+
+      // Emit flow rate update
+      stateMachine.emit({
+        type: 'flow_rate_update',
+        value: cmd.value
+      });
     }
     else if (index === 1) {
       pumpSpeeds.secondary = cmd.value;
@@ -115,6 +162,12 @@ function handleCoolInput(cmd: Command) {
         id: 'cooling_0',
         value: 0.5
       });
+
+      // Emit flow rate update
+      stateMachine.emit({
+        type: 'flow_rate_update',
+        value: 0.5
+      });
     }
     else if (cmd.state === 'scram') {
       // Set primary pump to 100% during SCRAM
@@ -126,6 +179,12 @@ function handleCoolInput(cmd: Command) {
       stateMachine.emit({
         type: 'position_update',
         id: 'cooling_0',
+        value: 1.0
+      });
+
+      // Emit flow rate update
+      stateMachine.emit({
+        type: 'flow_rate_update',
         value: 1.0
       });
     }

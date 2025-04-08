@@ -56,6 +56,15 @@ const HEAT_LOSS_SCALING_FACTOR = 0.1; // Keep original for stability
 const INTERFERENCE_SCALING_FACTOR = 3.5; // Increased to better suppress reactivity
 const NORMALIZATION_FACTOR = 1.3; // Keep current value
 
+// Add coolant-related constants
+const COOLANT_COOLING_FACTOR = 0.5; // Increased from 0.015 to make cooling effect very obvious
+
+// Add coolant state
+let coolantState = {
+  temperature: 0,
+  flowRate: 0.5 // Default to 50% flow
+};
+
 function assignStructuredControlRodPositions() {
   controlRodCoords = [
     // Main diagonal
@@ -163,11 +172,11 @@ function tick() {
     tickCounter++;
 
     let totalTemp = 0;
-    let minTemp = Infinity;
-    let maxTemp = -Infinity;
+    let minTemp = 1;
+    let maxTemp = 0;
 
     // Create a 2D array to store temperatures for this tick
-    const tempGrid: number[][] = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(0));
+    const tempGrid = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
 
     // Check for completed transitions
     const now = Date.now();
@@ -199,11 +208,16 @@ function tick() {
     for (let x = 0; x < GRID_SIZE; x++) {
       for (let y = 0; y < GRID_SIZE; y++) {
         const rod = fuelRods[x][y];
+
+        // Skip temperature updates for withdrawn rods
+        if (rod.state !== 'engaged') {
+          continue;
+        }
+
         let baseReactivity = baseReactivityGrid[x][y];
 
-        let controlInterference = 0;
-
         // Calculate control rod interference
+        let controlInterference = 0;
         for (let i = 0; i < ROD_COUNT; i++) {
           const distance = distanceGrid[x][y][i];
           const influence = 1 / (1 + distance);
@@ -221,6 +235,11 @@ function tick() {
         // Apply proportional heat loss (natural cooling)
         rod.temperature -= HEAT_LOSS_SCALING_FACTOR * rod.temperature;
 
+        // Apply coolant-based cooling
+        const tempDiff = rod.temperature - coolantState.temperature;
+        const coolantEffect = COOLANT_COOLING_FACTOR * coolantState.flowRate * tempDiff;
+        rod.temperature -= coolantEffect;
+
         // Clamp temperature to [0, 1]
         rod.temperature = Math.max(0, Math.min(1, rod.temperature));
 
@@ -235,7 +254,7 @@ function tick() {
         stateMachine.emit({
           type: 'temperature_update',
           id: `fuel_rod_button_${x}_${y}`,
-          value: rod.temperature // Emit raw normalized temperature (0-1)
+          value: rod.temperature
         });
       }
     }
@@ -307,32 +326,13 @@ function initSubscriptions() {
             value: 0
           });
         }
-        
-        // Start withdrawing all engaged fuel rods
-        console.log('[coreSystem] SCRAM initiated - withdrawing all engaged fuel rods');
-        for (let x = 0; x < GRID_SIZE; x++) {
-          for (let y = 0; y < GRID_SIZE; y++) {
-            const rod = fuelRods[x][y];
-            
-            // Only withdraw rods that are currently engaged (not already withdrawn or transitioning)
-            if (rod.state === 'engaged') {
-              // Start transition
-              rod.previousState = rod.state;
-              rod.state = 'transitioning';
-              rod.transitionStartTime = Date.now();
-              
-              // Emit state update
-              stateMachine.emit({
-                type: 'fuel_rod_state_update',
-                id: `fuel_rod_button_${x}_${y}`,
-                state: 'transitioning',
-                x,
-                y
-              });
-            }
-          }
-        }
       }
+    }
+    else if (cmd.type === 'coolant_temp_update') {
+      coolantState.temperature = cmd.value;
+    }
+    else if (cmd.type === 'flow_rate_update') {
+      coolantState.flowRate = cmd.value;
     }
   });
 
