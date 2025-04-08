@@ -71,10 +71,13 @@ The state machine is the central nervous system of the Reactor application. It m
    - Registry tracking completion
 
 7. **Scram State**:
-   - Emergency shutdown
-   - Immediate transition
-   - All safety systems active
-   - Terminal state
+   - Emergency shutdown state
+   - Immediate transition from any state
+   - Safety actions:
+     - All control rods fully insert
+     - Coolant pump speed set to maximum
+     - Maximum cooling effect applied
+   - Terminal state - requires manual restart
 
 ### State Transition Map
 
@@ -126,6 +129,27 @@ const STATE_TRANSITIONS = {
      type: 'test_result',
      id: string,
      passed: boolean
+   }
+   ```
+
+4. **Temperature and Cooling Commands**:
+   ```typescript
+   // Core temperature updates
+   {
+     type: 'core_temp_update',
+     value: number  // Normalized 0-1
+   }
+
+   // Coolant temperature updates
+   {
+     type: 'coolant_temp_update',
+     value: number  // Normalized 0-1
+   }
+
+   // Flow rate updates
+   {
+     type: 'flow_rate_update',
+     value: number  // Normalized 0-1
    }
    ```
 

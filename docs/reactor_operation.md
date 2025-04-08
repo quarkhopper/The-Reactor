@@ -16,6 +16,18 @@
   - When fully withdrawn (value = 1): Minimum neutron absorption, maximum reactivity
 - **Identification**: Referenced as `control_rod_X` where X is the rod index
 
+### Coolant System
+- **Purpose**: Remove heat from the reactor core and maintain safe operating temperatures
+- **Control**: Primary pump speed controlled via slider (0-1 range)
+- **Properties**:
+  - Temperature: Affected by core temperature and heat transfer
+  - Pressure: Influenced by temperature (60%), pump speed (40%), and system dynamics
+  - Flow Rate: Directly controlled by pump speed
+- **Identification**: 
+  - Pump control: `cooling_0` for primary loop
+  - Temperature meter: `pump_temp_meter_primary`
+  - Pressure meter: `pump_pres_meter_primary`
+
 ## Operational Principles
 
 ### 1. Heat Generation
@@ -24,14 +36,20 @@
 - Control rod interference reduces the effective reactivity
 
 ### 2. Temperature Control
-- Control rods are the primary means of temperature regulation
+- Primary control through control rod positions
+- Active cooling through the coolant system:
+  - Heat transfer rate depends on temperature difference
+  - Cooling effectiveness scales with pump speed
+  - Higher flow rates provide more cooling
 - Natural heat loss occurs proportionally to current temperature
-- Cooling systems provide additional temperature management
 
 ### 3. Safety Considerations
-- Control rods must be properly positioned to maintain safe operation
-- Fuel rod activation should be coordinated with control rod positions
-- Temperature monitoring is critical for safe operation
+- Control rods are the primary safety mechanism
+- Coolant system provides secondary safety through heat removal
+- SCRAM response:
+  - All control rods fully insert
+  - Coolant pump automatically set to 100% speed
+  - Maximum cooling effect applied
 
 ## Core Geometry and Reactivity
 
@@ -40,22 +58,19 @@
 The base reactivity of the reactor core is fundamentally determined by its geometry - specifically, the distances between fuel rods. This is a critical principle that affects both the simulation and the real-world behavior of nuclear reactors:
 
 1. **Physical Reality**:
-   - When a fuel rod is withdrawn, it is physically removed from the reactor
-   - The distances between remaining rods change
-   - The overall neutron flux pattern changes
-   - The core's geometry is fundamentally altered
+   - Fuel rods remain in place during normal operation and SCRAM
+   - Control rods modify neutron flux by insertion/withdrawal
+   - The coolant system affects temperature but not reactivity directly
 
 2. **Simulation Implications**:
-   - Base reactivity MUST be recalculated when rod states change
-   - This is not just a UI concern - it's a fundamental change to the reactor's geometry
-   - The control rods then suppress this base reactivity based on their positions
-   - The base reactivity itself is determined by which rods are present in the core
+   - Base reactivity depends on engaged fuel rod configuration
+   - Control rods suppress this base reactivity based on their positions
+   - Coolant system provides active temperature management
 
 3. **Implementation Requirements**:
-   - The `precalculateBaseReactivities` function must consider only engaged rods
-   - Base reactivity must be recalculated whenever a rod's state changes
-   - Control rod interference calculations work on top of this base reactivity
-   - Temperature calculations use the resulting reactivity
+   - The `precalculateBaseReactivities` function considers engaged rods
+   - Control rod interference calculations work on top of base reactivity
+   - Temperature calculations include both heat generation and cooling effects
 
 ## Interface Guidelines
 
@@ -84,10 +99,14 @@ The base reactivity of the reactor core is fundamentally determined by its geome
 - Components powering up
 - Initial checks running
 - Safety systems verifying
+- Coolant pump set to 50% speed
 
 ### 2. Normal Operation
 - All systems active
-- Temperature controlled
+- Temperature controlled through:
+  - Control rod positions
+  - Coolant flow rate
+  - Natural cooling
 - Reactivity balanced
 - Safety systems monitoring
 
@@ -97,10 +116,11 @@ The base reactivity of the reactor core is fundamentally determined by its geome
 - Safety systems active
 - Final checks running
 
-### 4. Emergency State
-- Emergency systems active
-- Safety protocols engaged
-- Emergency shutdown active
+### 4. Emergency State (SCRAM)
+- Control rods fully inserted
+- Coolant pump at 100% speed
+- Maximum cooling effect
+- Safety systems monitoring
 - Recovery procedures ready
 
 ## Key Distinctions
