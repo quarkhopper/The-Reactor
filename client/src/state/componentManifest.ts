@@ -21,12 +21,6 @@ export const COMPONENT_IDS = {
   [COMPONENT_CATEGORIES.BUTTONS]: [
     'master',
     'scram',
-    'aux_button_0',
-    'aux_button_1',
-    'aux_button_2',
-    'aux_button_3',
-    'aux_button_4',
-    'aux_button_5'
   ],
   
   // Indicators
@@ -34,21 +28,18 @@ export const COMPONENT_IDS = {
     'core_temp_gauge',
     'turbine_rpm_gauge',
     'pump_temp_meter_primary',
-    'pump_temp_meter_secondary',
-    'pump_pres_meter_primary',
-    'pump_pres_meter_secondary'
+    'pump_pres_meter_primary'
   ],
   
   // Displays
   [COMPONENT_CATEGORIES.DISPLAYS]: [
     'digi_0', 'digi_1', 'digi_2', 'digi_3', 'digi_4', 'digi_5', 'digi_6', 'digi_7', 'digi_8',
-    'digi_9', 'digi_10', 'digi_11', 'digi_12', 'digi_13', 'digi_14'
+    'digi_9', 'digi_10', 'digi_11' 
   ],
   
   // Controls
   [COMPONENT_CATEGORIES.CONTROLS]: [
     'primary_speed',
-    'secondary_speed',
     'slider_0', 'slider_1', 'slider_2', 'slider_3', 'slider_4', 'slider_5', 'slider_6', 'slider_7'
   ],
   
@@ -60,10 +51,6 @@ export const COMPONENT_IDS = {
   
   // Blink lights
   [COMPONENT_CATEGORIES.BLINK_LIGHTS]: [
-    'blink_grid_0', 'blink_grid_1', 'blink_grid_2', 'blink_grid_3',
-    'blink_grid_4', 'blink_grid_5', 'blink_grid_6', 'blink_grid_7', 'blink_grid_8', 'blink_grid_9',
-    'blink_grid_10', 'blink_grid_11', 'blink_grid_12', 'blink_grid_13', 'blink_grid_14', 'blink_grid_15',
-    'blink_grid_16', 'blink_grid_17'
   ],
   
   // Fuel rods

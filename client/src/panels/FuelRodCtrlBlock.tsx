@@ -1,4 +1,3 @@
-import PanelButton from '../components/PanelButton';
 import FuelRodButton from '../components/FuelRodButton';
 
 export default function PanelButtonBlock() {
@@ -30,27 +29,5 @@ export default function PanelButtonBlock() {
       );
     }
   }
-
-  // 1x6 Horizontal Aux Strip
-  const stripX = 1205;
-  const stripY = 670;
-  const stripCols = 6;
-  const stripSpacing = 87;
-
-  for (let i = 0; i < stripCols; i++) {
-    const x = stripX - (stripCols * stripSpacing) / 2 + stripSpacing * (i + 0.5);
-    const y = stripY;
-
-    buttons.push(
-      <PanelButton
-        key={`aux-${i}`}
-        id={`aux_button_${i}`}
-        x={x}
-        y={y}
-        label=""
-      />
-    );
-  }
-
   return <>{buttons}</>;
 }

@@ -1,8 +1,7 @@
 import ConditionLightBlock from './ConditionLightBlock';
-import DigitalDisplayBlock from './DigitalDisplayBlock';
+import DigitalDisplayBlock from './PowerDemandBlock';
 import SliderBlock from './SliderBlock';
-import PanelButtonBlock from './PanelButtonBlock';
-import IndicatorLightBlock from './IndicatorLightBlock';
+import PanelButtonBlock from './FuelRodCtrlBlock';
 import CircularGaugeBlock from './CircularGaugeBlock';
 import MasterButtonBlock from './MasterButtonBlock';
 import ScramButtonBlock from './ScramButtonBlock';
@@ -15,12 +14,10 @@ export default function MainPanel() {
       <DigitalDisplayBlock />
       <SliderBlock />
       <PanelButtonBlock />
-      <IndicatorLightBlock />
       <CircularGaugeBlock />
       <MasterButtonBlock />
       <ScramButtonBlock />
       <CoolantPumpBlock idPrefix="primary" x={990} y={410} />
-      <CoolantPumpBlock idPrefix="secondary" x={1290} y={410} />
     </>
   );
 }
