@@ -13,14 +13,14 @@ class StateMachine {
   private initialized: boolean = false;
 
   // Define the state transition map
-  private static STATE_TRANSITIONS: Record<AppState, AppState | null> = {
-    'off': 'init',
-    'init': 'test',
-    'test': 'startup',
-    'startup': 'on',
-    'on': 'shutdown',
-    'shutdown': 'off',
-    'scram': null  // Terminal state for now
+  private static STATE_TRANSITIONS: Record<AppState, AppState[]> = {
+    'off': ['init'],
+    'init': ['test'],
+    'test': ['startup'],
+    'startup': ['on'],
+    'on': ['shutdown', 'scram'],
+    'shutdown': ['off'],
+    'scram': ['on', 'off']  // Can recover to on or shutdown completely
   };
 
   // Define the state transition delays (in milliseconds)
@@ -79,21 +79,9 @@ class StateMachine {
       return;
     }
 
-    // Special case for SCRAM - allow transitioning to scram from any powered state
-    if (newState === 'scram' && this.state !== 'off') {
-      console.log(`[StateMachine] EMERGENCY SCRAM: ${this.state} -> ${newState}`);
-      this.state = newState;
-      this.emit({
-        type: 'state_change',
-        id: 'system',
-        state: newState
-      });
-      return;
-    }
-
     // Validate state transition
-    const nextState = StateMachine.STATE_TRANSITIONS[this.state];
-    if (nextState !== newState) {
+    const validNextStates = StateMachine.STATE_TRANSITIONS[this.state];
+    if (!validNextStates.includes(newState)) {
       console.warn(`[StateMachine] Invalid state transition: ${this.state} -> ${newState}`);
       return;
     }
@@ -179,12 +167,7 @@ class StateMachine {
       if (this.state === 'scram') {
         // If already in SCRAM state, transition back to 'on' state
         console.log('[StateMachine] SCRAM button pressed while in SCRAM state - transitioning to ON state');
-        this.state = 'on'; // Direct assignment to bypass validation
-        this.emit({
-          type: 'state_change',
-          id: 'system',
-          state: 'on'
-        });
+        this.updateState('on');
       } else {
         // Normal SCRAM behavior - transition to scram state
         this.updateState('scram');
