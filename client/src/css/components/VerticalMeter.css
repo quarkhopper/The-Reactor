@@ -23,17 +23,18 @@
     top: 0;
     left: 0;
     width: 100%;
-    height: 100%;
     overflow: hidden;
     pointer-events: none;
     transition: height 0.3s ease-out;
   }
   
-  /* 💡 This part is key — keeps image full size */
+  /* Container for the off state image - must maintain full height */
   .vertical-meter-off-container {
-    position: relative;
+    position: absolute;
     width: 100%;
-    height: 100%;
+    height: 200px; /* Match wrapper height exactly */
+    top: 0;
+    left: 0;
   }
 
   .vertical-meter-img-off {
@@ -41,7 +42,7 @@
     top: 0;
     left: 0;
     width: 100%;
-    height: 100%;
+    height: 200px; /* Match wrapper height exactly */
     object-fit: fill;
     pointer-events: none;
   }
