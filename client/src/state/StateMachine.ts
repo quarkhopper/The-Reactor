@@ -127,7 +127,7 @@ class StateMachine {
     if (cmd.type === 'power_button_press') {
       if (this.state === 'off') {
         this.updateState('init');
-      } else if (this.state === 'on') {
+      } else if (this.state === 'on' || this.state === 'scram') {
         this.updateState('shutdown');
       }
       // Forward the power button press
