@@ -65,31 +65,28 @@ const PanelButton: React.FC<PanelButtonProps> = ({
     return () => unsubscribe();
   }, [id, displayColor]);
 
-  // Handle initialization
+  // Handle initialization and shutdown
   useEffect(() => {
     const handleCommand = (cmd: Command) => {
-      if (cmd.type === 'process_begin' && cmd.id === id) {
-        if (cmd.process === 'init') {
-          // Reset component state
-          setIsHeld(false);
-          setCurrentColor('off');
-          setIsTestMode(false);
-          // Acknowledge initialization
-          registry.acknowledge(id);
-        } else if (cmd.process === 'shutdown') {
-          // Reset component state
-          setIsHeld(false);
-          setCurrentColor('off');
-          setIsTestMode(false);
-          // Acknowledge shutdown
-          registry.acknowledge(id);
-        }
+      if (cmd.type === 'process_begin' && cmd.process === 'init') {
+        // Reset component state for initialization
+        setIsHeld(false);
+        setCurrentColor('off');
+        setIsTestMode(false);
+        registry.acknowledge(id, () => {
+          console.log(`[PanelButton] Initialization acknowledged for ${id}`);
+        });
+      } else if (cmd.type === 'process_begin' && cmd.process === 'shutdown') {
+        // Reset state during shutdown
+        setIsHeld(false);
+        setCurrentColor('off');
+        setIsTestMode(false);
       }
     };
-    
+
     const unsubscribe = stateMachine.subscribe(handleCommand);
     return () => unsubscribe();
-  }, [id]);
+  }, []);
 
   // Handle test sequence
   useEffect(() => {
