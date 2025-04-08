@@ -81,6 +81,13 @@ class RegistryManager {
         callback();
       }
     }, 100);
+
+    // Log components that have not acknowledged after 10 seconds
+    setTimeout(() => {
+      if (this.pending.size > 0) {
+        console.warn('[RegistryManager] Components that have not acknowledged:', Array.from(this.pending));
+      }
+    }, 10000);
   }
 
   public beginShutdown(callback: () => void) {

@@ -94,6 +94,9 @@ class StateMachine {
   }
 
   emit(cmd: Command) {
+    // Log all emitted commands for debugging
+    console.log(`[StateMachine] Emitting command:`, cmd);
+
     // Log state changes immediately
     if (cmd.type === 'state_change' && cmd.id === 'system') {
       console.log(`[StateMachine] State change: ${cmd.state}`);

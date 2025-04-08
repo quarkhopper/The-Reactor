@@ -75,6 +75,10 @@ export default function DigitalDisplay({ id, x, y, value, label }: DigitalDispla
   // Handle initialization and shutdown
   useEffect(() => {
     const handleCommand = (cmd: Command) => {
+      if (cmd.type === 'process_begin') {
+        console.log(`[DigitalDisplay] Received process_begin:`, cmd);
+      }
+
       if (cmd.type === 'process_begin' && cmd.process === 'init') {
         // Reset component state for initialization
         setDisplayValue(0);
