@@ -1,5 +1,4 @@
-import stateMachine from './StateMachine';
-import type { Command } from './types';
+import MessageBus from './MessageBus';
 
 // Tick configuration
 const TICK_INTERVAL = 1000; // 1 second between ticks
@@ -37,7 +36,7 @@ export function startTicking() {
     });
 
     // Emit tick event
-    stateMachine.emit({
+    MessageBus.emit({
       type: 'tick',
       id: 'system',
       counter: tickCounter
@@ -67,14 +66,29 @@ export function isTicking(): boolean {
 }
 
 // Initialize tick engine
-stateMachine.subscribe((cmd: Command) => {
-  if (cmd.type === 'state_change') {
-    if (cmd.state === 'on') {
+export function initTickEngine() {
+  MessageBus.subscribe((msg: Record<string, any>) => {
+    if (isTickEngineMessage(msg)) {
+      handleTickEngineMessage(msg);
+    }
+  });
+}
+
+function isTickEngineMessage(msg: Record<string, any>): boolean {
+  return (
+    typeof msg.type === 'string' &&
+    msg.type === 'state_change'
+  );
+}
+
+function handleTickEngineMessage(msg: Record<string, any>) {
+  if (msg.type === 'state_change') {
+    if (msg.state === 'on') {
       startTicking();
-    } else if (cmd.state === 'off' || cmd.state === 'shutdown') {
+    } else if (msg.state === 'off' || msg.state === 'shutdown') {
       stopTicking();
     }
   }
-});
+}
 
 console.log('[tickEngine] Module initialized');
