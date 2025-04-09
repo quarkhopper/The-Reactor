@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import MessageBus from '../MessageBus';
 
 import '../css/components/CircularGauge.css';
 
@@ -17,9 +18,28 @@ interface CircularGaugeProps {
   eventType: 'core_temp_update' | 'turbine_rpm_update'; // Specify which event to listen for
 }
 
+function handleCircularGaugeMessage(msg: Record<string, any>, id: string, setDisplayValue: (value: number) => void) {
+  if (msg.id === id) {
+    console.log(`[CircularGauge] Received message:`, msg);
+    if (msg.type === 'core_temp_update' || msg.type === 'turbine_rpm_update') {
+      setDisplayValue(msg.value);
+    }
+  }
+}
+
 export default function CircularGauge({ id, x, y, value, limit, eventType }: CircularGaugeProps) {
   const [displayValue, setDisplayValue] = useState(value);
   const [isTestMode, setIsTestMode] = useState(false);
+
+  // Subscribe to MessageBus once when the component mounts
+  useEffect(() => {
+    const handleMessage = (msg: Record<string, any>) => {
+      handleCircularGaugeMessage(msg, id, setDisplayValue);
+    };
+
+    const unsubscribe = MessageBus.subscribe(handleMessage);
+    return () => unsubscribe();
+  }, [id]);
 
   // Handle state changes for visual updates
   useEffect(() => {
