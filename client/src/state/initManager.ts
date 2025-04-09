@@ -1,12 +1,18 @@
-import stateMachine from './StateMachine';
 import { registry } from './registry';
-import type { Command } from './types';
+import MessageBus from './MessageBus';
 
 class InitManager {
   private initialized: boolean = false;
 
   constructor() {
     // First pass - just construct
+
+    // Subscribe to MessageBus
+    MessageBus.subscribe((msg: Record<string, any>) => {
+      if (this.isInitManagerMessage(msg)) {
+        this.handleMessage(msg);
+      }
+    });
   }
 
   // Second pass - initialize
@@ -14,19 +20,25 @@ class InitManager {
     if (this.initialized) {
       return;
     }
-    
+
     console.log('[initManager] Initializing');
-    
-    // Subscribe to state changes
-    stateMachine.subscribe((cmd: Command) => {
-      if (cmd.type === 'state_change' && cmd.state === 'init') {
-        this.handleInit();
-      }
-    });
-    
+
     registry.init();
-    
+
     this.initialized = true;
+  }
+
+  private isInitManagerMessage(msg: Record<string, any>): boolean {
+    return (
+      typeof msg.type === 'string' &&
+      (msg.type === 'state_change' || msg.type === 'process_begin' || msg.type === 'process_complete')
+    );
+  }
+
+  private handleMessage(msg: Record<string, any>) {
+    if (msg.type === 'state_change' && msg.state === 'init') {
+      this.handleInit();
+    }
   }
 
   private handleInit() {
@@ -38,7 +50,7 @@ class InitManager {
 
     // Emit a single process_begin message for all components
     console.log('[initManager] Emitting single process_begin for all components');
-    stateMachine.emit({
+    MessageBus.emit({
       type: 'process_begin',
       id: 'system',
       process: 'init'
@@ -47,7 +59,7 @@ class InitManager {
 
   private handleInitComplete() {
     // Emit completion message
-    stateMachine.emit({
+    MessageBus.emit({
       type: 'process_complete',
       id: 'init',
       process: 'init'
