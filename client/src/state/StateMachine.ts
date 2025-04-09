@@ -24,6 +24,11 @@ class StateMachine {
   constructor() {
     console.log('[StateMachine] Constructor called');
     // First pass - just construct
+
+    // Subscribe to MessageBus
+    MessageBus.subscribe((msg: Record<string, any>) => {
+      this.handleCommand(msg);
+    });
   }
 
   // Second pass - initialize
@@ -92,16 +97,31 @@ class StateMachine {
     });
   }
 
-  emit(cmd: Record<string, any>) {
-    console.log(`[StateMachine] Emitting command:`, cmd);
+  // Added a guard function to validate if a message is relevant to the StateMachine
+  private isStateMachineMessage(msg: Record<string, any>): boolean {
+    return (
+      typeof msg.type === 'string' &&
+      (msg.type === 'power_button_press' ||
+       msg.type === 'process_complete' ||
+       msg.type === 'scram_button_press' ||
+       msg.type === 'state_change')
+    );
+  }
 
-    if (cmd.type === 'power_button_press') {
+  // Updated the handleCommand method to use the guard pattern
+  private handleCommand(msg: Record<string, any>) {
+    if (!this.isStateMachineMessage(msg)) {
+      return;
+    }
+
+    console.log(`[StateMachine] Handling command:`, msg);
+
+    if (msg.type === 'power_button_press') {
       if (this.state === 'off') {
         this.updateState('init');
       } else if (this.state === 'on' || this.state === 'scram') {
         this.updateState('shutdown');
       }
-      MessageBus.emit(cmd);
       return;
     }
 
@@ -109,25 +129,22 @@ class StateMachine {
       return;
     }
 
-    if (cmd.type === 'process_complete') {
-      if (cmd.process === 'init' && this.currentState === 'init') {
+    if (msg.type === 'process_complete') {
+      if (msg.process === 'init' && this.currentState === 'init') {
         this.updateState('test');
-      } else if (cmd.process === 'test' && this.currentState === 'test') {
+      } else if (msg.process === 'test' && this.currentState === 'test') {
         this.updateState('startup');
-      } else if (cmd.process === 'shutdown' && this.currentState === 'shutdown') {
+      } else if (msg.process === 'shutdown' && this.currentState === 'shutdown') {
         this.updateState('off');
       }
-      MessageBus.emit(cmd);
       return;
-    } else if (cmd.type === 'scram_button_press') {
+    } else if (msg.type === 'scram_button_press') {
       if (this.state === 'scram') {
         this.updateState('on');
       } else {
         this.updateState('scram');
       }
     }
-
-    MessageBus.emit(cmd);
   }
 
   log(message: string) {
