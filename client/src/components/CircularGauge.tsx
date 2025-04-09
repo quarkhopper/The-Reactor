@@ -1,7 +1,4 @@
 import { useEffect, useState } from 'react';
-import { registry } from '../state/registry';
-import stateMachine from '../state/StateMachine';
-import type { Command, AppState } from '../state/types';
 
 import '../css/components/CircularGauge.css';
 
