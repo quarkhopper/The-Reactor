@@ -1,36 +1,97 @@
-# GenSystem Development Plan
+# Component Bus Architecture Specification
 
-## Core Components
-1. **Secondary Loop**
-   - Heat exchanger interface with primary loop
-   - Secondary coolant flow mechanics
-   - Temperature differential monitoring
+## Overview
 
-2. **Turbine System**
-   - Connect to RPM gauge for visualization
-   - Implement steam-driven rotation mechanics
-   - Add efficiency curves based on steam conditions
+All UI components are to be treated as hardware simulation modules. Each component acts independently and communicates solely via a central message bus (`MasterBus.ts`). Components must be completely isolated from global application logic, state machines, or external resource references.
 
-3. **Secondary Pump Cluster**
-   - Flow rate controls
-   - Pressure management
-   - Integration with secondary loop
+## Imports Allowed per Component
+- React (only hooks/components needed)
+- `MasterBus` from `../state/MessageBus`
 
-## UI/Display Updates
-1. **Power Grid Interface**
-   - Digital displays showing external grid demand
-   - Implement oscillating demand function with noise
-   - Real-time power output vs demand comparison
+Optional:
+- TypeScript `types.ts` definitions (interfaces only, no logic or state constants)
 
-2. **New Indicators**
-   - Steam quality/pressure in secondary loop
-   - Turbine efficiency metrics
-   - Grid stability indicators
+## Forbidden in Components
+- Importing enums like `AppState`, `CommandType`, or centralized state objects.
+- Accessing any global context or inter-component awareness.
+- Referencing or mutating application-level state directly.
 
-## Implementation Order
-1. Secondary loop core mechanics
-2. Turbine and RPM systems
-3. Pump cluster integration
-4. Power demand simulation
-5. UI indicators and displays
+## Messaging Rules
+- All components **emit** and **subscribe** through `MasterBus`.
+- Messages must be plain objects with a minimum structure:
+  ```ts
+  type Message = {
+    type: string;
+    id?: string;
+    [key: string]: any;
+  };
+  ```
+- All components may ignore irrelevant messages.
+- `MasterBus.subscribe((message: Message) => void)`
+- `MasterBus.emit(message: Message)`
+
+## Local Logic Enforcement
+- Each component contains all of its display logic and internal state.
+- State is updated exclusively via bus messages or user input (e.g. click).
+- Messages must contain everything the component needs to act (no external lookups).
+
+## Example Component Pattern
+```ts
+import { useEffect, useState } from 'react';
+import MasterBus from '../state/MessageBus';
+
+export default function MyComponent() {
+  const [active, setActive] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = MasterBus.subscribe((msg) => {
+      if (msg.type === 'activate' && msg.id === 'my_component') {
+        setActive(true);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleClick = () => {
+    MasterBus.emit({ type: 'clicked', id: 'my_component' });
+  };
+
+  return <button onClick={handleClick}>{active ? 'Active' : 'Inactive'}</button>;
+}
+```
+
+## Shared Types
+- All common types, if needed, must be located in `types.ts`.
+- Types must only describe structure, not values or enums.
+- If enums or state constants are needed, use plain string literals.
+
+## MasterBus.ts (Essentials)
+```ts
+// Message type definition
+export interface Message {
+  type: string;
+  id?: string;
+  [key: string]: any;
+}
+
+// Subscriptions
+const subscribers = new Set<(msg: Message) => void>();
+
+const MasterBus = {
+  subscribe(callback: (msg: Message) => void) {
+    subscribers.add(callback);
+    return () => subscribers.delete(callback);
+  },
+  emit(msg: Message) {
+    subscribers.forEach((cb) => cb(msg));
+  },
+};
+
+export default MasterBus;
+```
+
+## Component Autonomy
+- Components are **blind** to the global application state.
+- Components are **autonomous**, responding to and producing only messages.
+- Components can simulate embedded modules in a hardware environment, following isolated, event-driven behavior.
 
