@@ -2,12 +2,12 @@ import { AppState, Command, CommandCallback } from './types';
 import { testManager } from './testManager';
 import { initManager } from './initManager';
 import { shutdownManager } from './shutdownManager';
+import MessageBus from './MessageBus';
 
 // Define the class structure
 class StateMachine {
   private state: AppState = 'off';  // Start in off state
   private currentState: AppState = 'off'; // Moved from PowerStateManager
-  private callbacks: CommandCallback[] = [];
   private initialized: boolean = false;
 
   // Define the state transition map
@@ -60,9 +60,9 @@ class StateMachine {
     if (newState !== this.currentState) {
       console.log(`[StateMachine] State change: ${this.currentState} -> ${newState}`);
       this.currentState = newState;
-      this.emit({
+      MessageBus.emit({
         type: 'state_change',
-        id: 'power',
+        id: 'system',
         state: newState
       });
     }
@@ -85,8 +85,8 @@ class StateMachine {
     console.log(`[StateMachine] State transition: ${this.currentState} -> ${newState}`);
     this.currentState = newState;
 
-    // Emit state change
-    this.emit({
+    // Emit state change using MessageBus
+    MessageBus.emit({
       type: 'state_change',
       id: 'system',
       state: newState
@@ -94,86 +94,41 @@ class StateMachine {
   }
 
   emit(cmd: Command) {
-    // Log all emitted commands for debugging
     console.log(`[StateMachine] Emitting command:`, cmd);
 
-    // Log state changes immediately
-    if (cmd.type === 'state_change' && cmd.id === 'system') {
-      console.log(`[StateMachine] State change: ${cmd.state}`);
-      // Forward state changes even when off
-      for (const cb of this.callbacks) cb(cmd);
-      return;
-    }
-
-    // Only log other important commands
-    if (cmd.type === 'power_button_press') {
-      console.log('[StateMachine] Power button pressed');
-    } else if (cmd.type === 'scram_button_press') {
-      console.log('[StateMachine] SCRAM button pressed');
-    }
-    
-    // Special case: power button works even when off
     if (cmd.type === 'power_button_press') {
       if (this.state === 'off') {
         this.updateState('init');
       } else if (this.state === 'on' || this.state === 'scram') {
         this.updateState('shutdown');
       }
-      // Forward the power button press
-      for (const cb of this.callbacks) cb(cmd);
+      MessageBus.emit(cmd);
       return;
     }
 
-    // Block all other commands when power is off
     if (this.state === 'off') {
       return;
     }
-    
-    // Handle state change commands
-    if (cmd.type === 'state_change' && cmd.id === 'system') {
-      // Forward the state change command
-      for (const cb of this.callbacks) cb(cmd);
-      return;
-    }
-    
-    // Handle process completion
+
     if (cmd.type === 'process_complete') {
-      console.log(`[StateMachine] Received process_complete command: process=${cmd.process}, currentState=${this.state}`);
       if (cmd.process === 'init' && this.currentState === 'init') {
-        console.log('[StateMachine] Process init complete, transitioning to test');
         this.updateState('test');
       } else if (cmd.process === 'test' && this.currentState === 'test') {
-        console.log('[StateMachine] Process test complete, transitioning to startup');
         this.updateState('startup');
       } else if (cmd.process === 'shutdown' && this.currentState === 'shutdown') {
-        console.log('[StateMachine] Process shutdown complete, transitioning to off');
         this.updateState('off');
       }
-      // Forward the process completion
-      for (const cb of this.callbacks) cb(cmd);
+      MessageBus.emit(cmd);
       return;
     } else if (cmd.type === 'scram_button_press') {
-      // Handle scram button press
       if (this.state === 'scram') {
-        // If already in SCRAM state, transition back to 'on' state
-        console.log('[StateMachine] SCRAM button pressed while in SCRAM state - transitioning to ON state');
         this.updateState('on');
       } else {
-        // Normal SCRAM behavior - transition to scram state
         this.updateState('scram');
       }
     }
-    
-    // Normal operation when power is on
-    for (const cb of this.callbacks) cb(cmd);
-  }
 
-  subscribe(cb: CommandCallback) {
-    this.callbacks.push(cb);
-    return () => {
-      const index = this.callbacks.indexOf(cb);
-      if (index !== -1) this.callbacks.splice(index, 1);
-    };
+    MessageBus.emit(cmd);
   }
 
   log(message: string) {
