@@ -189,7 +189,7 @@ function tick() {
             
             
             // Emit state change
-            stateMachine.emit({
+            MessageBus.emit({
               type: 'fuel_rod_state_update',
               id: `fuel_rod_button_${x}_${y}`,
               state: newState,
@@ -247,7 +247,7 @@ function tick() {
         maxTemp = Math.max(maxTemp, rod.temperature);
 
         // Emit temperature update command
-        stateMachine.emit({
+        MessageBus.emit({
           type: 'temperature_update',
           id: `fuel_rod_button_${x}_${y}`,
           value: rod.temperature
@@ -259,7 +259,7 @@ function tick() {
     const avgTemp = totalTemp / (GRID_SIZE * GRID_SIZE);
     
     // Emit average temperature to update the circular gauge
-    stateMachine.emit({
+    MessageBus.emit({
       type: 'core_temp_update',
       value: avgTemp
     });
