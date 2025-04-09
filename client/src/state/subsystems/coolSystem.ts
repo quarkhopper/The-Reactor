@@ -1,7 +1,5 @@
 import { Subsystem } from '../types';
 import MessageBus from '../MessageBus';
-import stateMachine from '../StateMachine';
-import type { Command } from '../types';
 import { registerSubsystem } from '../tickEngine';
 
 // Coolant system properties (all normalized 0-1)
@@ -125,7 +123,7 @@ function getState() {
   };
 }
 
-function handleCoolInput(cmd: Command) {
+function handleCoolInput(cmd: Record<string, any>) {
   if (cmd.type === 'position_update' && cmd.id.startsWith('cooling_')) {
     // Handle pump speed updates from cooling sliders
     const index = parseInt(cmd.id.split('_')[1]); // Format: cooling_0 or cooling_1
@@ -190,7 +188,7 @@ function handleCoolInput(cmd: Command) {
 }
 
 // Type guard to validate if a message is a Command
-function isCommand(msg: Record<string, any>): msg is Command {
+function isCommand(msg: Record<string, any>): boolean {
   return (
     typeof msg.type === 'string' &&
     (msg.type === 'position_update' || msg.type === 'core_temp_update' || msg.type === 'state_change') &&
