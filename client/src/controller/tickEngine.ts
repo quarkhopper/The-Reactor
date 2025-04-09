@@ -1,4 +1,4 @@
-import MessageBus from './MessageBus';
+import MessageBus from '../MessageBus';
 
 // Tick configuration
 const TICK_INTERVAL = 1000; // 1 second between ticks

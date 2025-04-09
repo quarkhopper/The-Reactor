@@ -1,5 +1,5 @@
 import { Subsystem } from '../types';
-import MessageBus from '../MessageBus';
+import MessageBus from '../../MessageBus';
 import { registerSubsystem } from '../tickEngine';
 
 // Coolant system properties (all normalized 0-1)

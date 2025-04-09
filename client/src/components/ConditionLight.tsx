@@ -1,7 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import stateMachine from '../state/StateMachine';
-import { registry } from '../state/registry';
-import type { Command, AppState } from '../state/types';
 
 import '../css/components/ConditionLight.css';
 

@@ -1,5 +1,5 @@
 import { registry } from './registry';
-import MessageBus from './MessageBus';
+import MessageBus from '../MessageBus';
 
 class InitManager {
   private initialized: boolean = false;

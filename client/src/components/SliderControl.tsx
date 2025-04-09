@@ -1,7 +1,4 @@
 import React, { useEffect, useState, useRef } from 'react';
-import stateMachine from '../state/StateMachine';
-import { registry } from '../state/registry';
-import type { Command, AppState } from '../state/types';
 
 import baseImg from '../images/slider_base.png';
 import knobImg from '../images/slider_knob.png';

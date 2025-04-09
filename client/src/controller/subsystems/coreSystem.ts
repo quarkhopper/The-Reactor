@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import MessageBus from '../MessageBus';
+import MessageBus from '../../MessageBus';
 
 const GRID_SIZE = 6;
 const ROD_COUNT = 8;

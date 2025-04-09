@@ -1,7 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import stateMachine from '../state/StateMachine';
-import { registry } from '../state/registry';
-import type { Command, AppState } from '../state/types';
 
 import off from '../images/indicator_off.png';
 import amber from '../images/indicator_amber.png';

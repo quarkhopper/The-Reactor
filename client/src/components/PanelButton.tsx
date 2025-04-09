@@ -1,7 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import stateMachine from '../state/StateMachine';
-import { registry } from '../state/registry';
-import type { Command, AppState } from '../state/types';
 
 import glow_off from '../images/button_off.png';
 import glow_green from '../images/button_glow_green.png';

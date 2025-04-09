@@ -1,5 +1,5 @@
 import { getAllComponentIds } from './componentManifest';
-import MessageBus from './MessageBus';
+import MessageBus from '../MessageBus';
 
 class TestManager {
   // Track which components have completed their test sequence

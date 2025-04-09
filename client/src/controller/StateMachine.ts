@@ -1,8 +1,9 @@
+import './subsystems';
+import MessageBus from '../MessageBus';
 import { AppState } from './types';
 import { testManager } from './testManager';
 import { initManager } from './initManager';
 import { shutdownManager } from './shutdownManager';
-import MessageBus from './MessageBus';
 
 // Define the class structure
 class StateMachine {

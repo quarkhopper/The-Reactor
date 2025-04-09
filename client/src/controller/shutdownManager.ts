@@ -1,6 +1,6 @@
 import { registry } from './registry';
 import { getAllComponentIds } from './componentManifest';
-import MessageBus from './MessageBus';
+import MessageBus from '../MessageBus';
 
 class ShutdownManager {
   private initialized: boolean = false;

@@ -1,7 +1,7 @@
 import Panel from './components/Panel';
 import MainPanel from './panels/MainPanel';
-import './state/subsystems';
 import stateMachine from './state/StateMachine';
+import './MessageBus';
 
 function App() {
   // Initialize the state management system

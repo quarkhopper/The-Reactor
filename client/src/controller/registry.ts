@@ -1,5 +1,5 @@
 import { getAllComponentIds } from './componentManifest';
-import MessageBus from './MessageBus';
+import MessageBus from '../MessageBus';
 
 class RegistryManager {
   private pending: Set<string> = new Set();
@@ -9,7 +9,6 @@ class RegistryManager {
 
   constructor() {
     // First pass - just construct
-
   }
   
   // Second pass - initialize
