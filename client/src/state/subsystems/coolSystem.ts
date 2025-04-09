@@ -1,4 +1,5 @@
 import { Subsystem } from '../types';
+import MessageBus from '../MessageBus';
 import stateMachine from '../StateMachine';
 import type { Command } from '../types';
 import { registerSubsystem } from '../tickEngine';
@@ -94,21 +95,21 @@ function tick() {
     pressures.primary = calculatePressure();
     
     // Emit the new temperature for UI update
-    stateMachine.emit({
+    MessageBus.emit({
       type: 'set_indicator',
       id: 'pump_temp_meter_primary',
       value: temperatures.primary
     });
 
     // Emit the new pressure for UI update
-    stateMachine.emit({
+    MessageBus.emit({
       type: 'set_indicator',
       id: 'pump_pres_meter_primary',
       value: pressures.primary
     });
 
     // Emit coolant temperature update for core cooling calculations
-    stateMachine.emit({
+    MessageBus.emit({
       type: 'coolant_temp_update',
       value: temperatures.primary
     });
@@ -133,7 +134,7 @@ function handleCoolInput(cmd: Command) {
       COOLANT_PROPERTIES.flowRate = cmd.value; // Update flow rate with pump speed
 
       // Emit flow rate update
-      stateMachine.emit({
+      MessageBus.emit({
         type: 'flow_rate_update',
         value: cmd.value
       });
@@ -154,14 +155,14 @@ function handleCoolInput(cmd: Command) {
       console.log('[coolSystem] Startup initiated - setting primary pump to 50%');
       
       // Update the pump slider position
-      stateMachine.emit({
+      MessageBus.emit({
         type: 'position_update',
         id: 'cooling_0',
         value: 0.5
       });
 
       // Emit flow rate update
-      stateMachine.emit({
+      MessageBus.emit({
         type: 'flow_rate_update',
         value: 0.5
       });
@@ -173,14 +174,14 @@ function handleCoolInput(cmd: Command) {
       console.log('[coolSystem] SCRAM initiated - setting primary pump to 100%');
       
       // Update the pump slider position
-      stateMachine.emit({
+      MessageBus.emit({
         type: 'position_update',
         id: 'cooling_0',
         value: 1.0
       });
 
       // Emit flow rate update
-      stateMachine.emit({
+      MessageBus.emit({
         type: 'flow_rate_update',
         value: 1.0
       });
@@ -188,8 +189,21 @@ function handleCoolInput(cmd: Command) {
   }
 }
 
-// Subscribe to commands
-stateMachine.subscribe(handleCoolInput);
+// Type guard to validate if a message is a Command
+function isCommand(msg: Record<string, any>): msg is Command {
+  return (
+    typeof msg.type === 'string' &&
+    (msg.type === 'position_update' || msg.type === 'core_temp_update' || msg.type === 'state_change') &&
+    typeof msg.id === 'string'
+  );
+}
+
+// Updated subscription to validate and filter messages
+MessageBus.subscribe((msg: Record<string, any>) => {
+  if (isCommand(msg)) {
+    handleCoolInput(msg);
+  }
+});
 
 const coolSystem: Subsystem = {
   tick,

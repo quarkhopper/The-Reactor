@@ -1,4 +1,4 @@
-import { AppState, Command, CommandCallback } from './types';
+import { AppState } from './types';
 import { testManager } from './testManager';
 import { initManager } from './initManager';
 import { shutdownManager } from './shutdownManager';
@@ -56,7 +56,6 @@ class StateMachine {
 
   // Set state (used by other managers)
   setState(newState: AppState) {
-    // Only emit if the state is actually changing
     if (newState !== this.currentState) {
       console.log(`[StateMachine] State change: ${this.currentState} -> ${newState}`);
       this.currentState = newState;
@@ -93,7 +92,7 @@ class StateMachine {
     });
   }
 
-  emit(cmd: Command) {
+  emit(cmd: Record<string, any>) {
     console.log(`[StateMachine] Emitting command:`, cmd);
 
     if (cmd.type === 'power_button_press') {
