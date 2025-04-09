@@ -1,6 +1,5 @@
-import stateMachine from './StateMachine';
 import { getAllComponentIds } from './componentManifest';
-import type { Command } from './types';
+import MessageBus from './MessageBus';
 
 class TestManager {
   // Track which components have completed their test sequence
@@ -19,31 +18,44 @@ class TestManager {
     if (this.initialized) {
       return;
     }
-    
+
     console.log('[testManager] Initializing');
-    
-    // Subscribe to state changes and test results
-    stateMachine.subscribe((cmd: Command) => {
-      if (cmd.type === 'state_change' && cmd.state === 'test') {
-        this.handleTest();
-      } else if (cmd.type === 'test_result') {
-        this.handleTestResult(cmd);
+
+    // Subscribe to MessageBus
+    MessageBus.subscribe((msg: Record<string, any>) => {
+      if (this.isTestManagerMessage(msg)) {
+        this.handleMessage(msg);
       }
     });
-    
+
     this.initialized = true;
+  }
+
+  private isTestManagerMessage(msg: Record<string, any>): boolean {
+    return (
+      typeof msg.type === 'string' &&
+      (msg.type === 'state_change' || msg.type === 'test_result')
+    );
+  }
+
+  private handleMessage(msg: Record<string, any>) {
+    if (msg.type === 'state_change' && msg.state === 'test') {
+      this.handleTest();
+    } else if (msg.type === 'test_result') {
+      this.handleTestResult(msg);
+    }
   }
 
   private handleTest() {
     // Reset state
     this.resetTestSequence();
-    
+
     // Emit process_begin for each component
     const componentIds = getAllComponentIds();
     console.log(`[testManager] Starting test sequence for ${componentIds.length} components`);
-    
+
     componentIds.forEach(id => {
-      stateMachine.emit({
+      MessageBus.emit({
         type: 'process_begin',
         id,
         process: 'test'
@@ -60,27 +72,25 @@ class TestManager {
     }, 10000);
   }
 
-  private handleTestResult(cmd: Command) {
-    if (cmd.type === 'test_result') {
-      const { id, passed } = cmd;
-      
-      if (passed) {
-        this.testedComponents.add(id);
-      }
-      
-      // Check if all components have been tested
-      const allComponentIds = getAllComponentIds();
-      if (this.testedComponents.size >= allComponentIds.length && !this.transitionInProgress) {
-        console.log(`[testManager] Test sequence complete: ${this.testedComponents.size}/${allComponentIds.length} components passed`);
-        this.transitionInProgress = true;
-        
-        // Emit process completion
-        stateMachine.emit({
-          type: 'process_complete',
-          id: 'test',
-          process: 'test'
-        });
-      }
+  private handleTestResult(msg: Record<string, any>) {
+    const { id, passed } = msg;
+
+    if (passed) {
+      this.testedComponents.add(id);
+    }
+
+    // Check if all components have been tested
+    const allComponentIds = getAllComponentIds();
+    if (this.testedComponents.size >= allComponentIds.length && !this.transitionInProgress) {
+      console.log(`[testManager] Test sequence complete: ${this.testedComponents.size}/${allComponentIds.length} components passed`);
+      this.transitionInProgress = true;
+
+      // Emit process completion
+      MessageBus.emit({
+        type: 'process_complete',
+        id: 'test',
+        process: 'test'
+      });
     }
   }
 
@@ -91,4 +101,4 @@ class TestManager {
 }
 
 // Create singleton instance
-export const testManager = new TestManager(); 
+export const testManager = new TestManager();
