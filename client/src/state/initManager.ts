@@ -7,19 +7,20 @@ class InitManager {
   constructor() {
     // First pass - just construct
 
+  }
+  
+  // Second pass - initialize
+  init() {
+    if (this.initialized) {
+      return;
+    }
+    
     // Subscribe to MessageBus
     MessageBus.subscribe((msg: Record<string, any>) => {
       if (this.isInitManagerMessage(msg)) {
         this.handleMessage(msg);
       }
     });
-  }
-
-  // Second pass - initialize
-  init() {
-    if (this.initialized) {
-      return;
-    }
 
     console.log('[initManager] Initializing');
 

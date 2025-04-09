@@ -92,6 +92,51 @@ function handleCommand(msg: Record<string, any>) {
 }
 ```
 
+## Additional Guidelines for Encapsulated Components
+
+### MessageBus Subscription in Encapsulated Components
+For encapsulated components like `initManager` or `registry` that have an `init()` function, the `MessageBus` subscription should be placed inside the `init()` function rather than the constructor. This ensures that the subscription occurs after the `MessageBus` has been constructed and is ready to handle subscriptions.
+
+### Why Avoid Subscribing in the Constructor?
+- **Dependency Timing**: Subscribing in the constructor could lead to an attempted subscription before the `MessageBus` is fully constructed, causing runtime errors or undefined behavior.
+- **Initialization Order**: Placing the subscription in the `init()` function ensures that it aligns with the two-pass initialization pattern, where construction and initialization are separated.
+
+### Example
+```typescript
+class ExampleManager {
+  private initialized: boolean = false;
+
+  constructor() {
+    // First pass - just construct
+  }
+
+  init() {
+    if (this.initialized) {
+      return;
+    }
+
+    // Subscribe to MessageBus
+    MessageBus.subscribe((msg: Record<string, any>) => {
+      if (this.isRelevantMessage(msg)) {
+        this.handleMessage(msg);
+      }
+    });
+
+    this.initialized = true;
+  }
+
+  private isRelevantMessage(msg: Record<string, any>): boolean {
+    return typeof msg.type === 'string' && msg.type === 'example_type';
+  }
+
+  private handleMessage(msg: Record<string, any>) {
+    // Handle the message
+  }
+}
+```
+
+By following this guideline, you ensure that `MessageBus` subscriptions are safe, predictable, and aligned with the overall initialization pattern of the application.
+
 ## Benefits
 - **Consistency**: Ensures a uniform approach to message handling across the application.
 - **Scalability**: Supports the addition of new message types without modifying the `MessageBus`.

@@ -1,6 +1,5 @@
-import stateMachine from './StateMachine';
 import { getAllComponentIds } from './componentManifest';
-import type { Command } from './types';
+import MessageBus from './MessageBus';
 
 class RegistryManager {
   private pending: Set<string> = new Set();
@@ -10,40 +9,41 @@ class RegistryManager {
 
   constructor() {
     // First pass - just construct
-  }
 
+  }
+  
   // Second pass - initialize
   init() {
     if (this.initialized) {
       return;
     }
-    
-    // Subscribe to state changes
-    stateMachine.subscribe(this.handleCommand.bind(this));
-    
+    // Subscribe to MessageBus
+    MessageBus.subscribe((msg: Record<string, any>) => {
+      if (this.isRegistryMessage(msg)) {
+        this.handleMessage(msg);
+      }
+    });
+
     this.initialized = true;
   }
 
-  private handleCommand(cmd: Command) {
-    if (cmd.type === 'state_change') {
-      if (cmd.state === 'init') {
+  private isRegistryMessage(msg: Record<string, any>): boolean {
+    return (
+      typeof msg.type === 'string' &&
+      msg.type === 'state_change'
+    );
+  }
+
+  private handleMessage(msg: Record<string, any>) {
+    if (msg.type === 'state_change') {
+      if (msg.state === 'init') {
         this.reset();
         this.isInitializing = true;
-      } else if (cmd.state === 'shutdown') {
+      } else if (msg.state === 'shutdown') {
         this.reset();
         this.isShuttingDown = true;
       }
     }
-  }
-
-  private handleRegistryComplete(callback: () => void) {
-    this.isInitializing = false;
-    callback(); // Notify initManager that initialization is complete
-  }
-
-  private handleShutdownComplete(callback: () => void) {
-    this.isShuttingDown = false;
-    callback(); // Notify initManager that shutdown is complete
   }
 
   private reset() {
@@ -100,6 +100,16 @@ class RegistryManager {
         callback();
       }
     }, 100);
+  }
+
+  private handleRegistryComplete(callback: () => void) {
+    this.isInitializing = false;
+    callback(); // Notify initManager that initialization is complete
+  }
+
+  private handleShutdownComplete(callback: () => void) {
+    this.isShuttingDown = false;
+    callback(); // Notify initManager that shutdown is complete
   }
 }
 
