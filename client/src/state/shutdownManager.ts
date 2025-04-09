@@ -1,7 +1,6 @@
-import stateMachine from './StateMachine';
 import { registry } from './registry';
 import { getAllComponentIds } from './componentManifest';
-import type { Command } from './types';
+import MessageBus from './MessageBus';
 
 class ShutdownManager {
   private initialized: boolean = false;
@@ -17,36 +16,49 @@ class ShutdownManager {
     if (this.initialized) {
       return;
     }
-    
-    // Subscribe to state changes and process_complete events
-    stateMachine.subscribe((cmd: Command) => {
-      if (cmd.type === 'state_change' && cmd.id === 'system' && cmd.state === 'shutdown') {
-        this.handleShutdown();
-      } else if (cmd.type === 'process_complete' && cmd.process === 'shutdown') {
-        this.handleComponentShutdown(cmd.id);
+
+    // Subscribe to MessageBus
+    MessageBus.subscribe((msg: Record<string, any>) => {
+      if (this.isShutdownManagerMessage(msg)) {
+        this.handleMessage(msg);
       }
     });
-    
+
     this.initialized = true;
+  }
+
+  private isShutdownManagerMessage(msg: Record<string, any>): boolean {
+    return (
+      typeof msg.type === 'string' &&
+      (msg.type === 'state_change' || msg.type === 'process_complete')
+    );
+  }
+
+  private handleMessage(msg: Record<string, any>) {
+    if (msg.type === 'state_change' && msg.id === 'system' && msg.state === 'shutdown') {
+      this.handleShutdown();
+    } else if (msg.type === 'process_complete' && msg.process === 'shutdown') {
+      this.handleComponentShutdown(msg.id);
+    }
   }
 
   private handleShutdown() {
     // Reset tracking state
     this.componentsShutdown.clear();
-    
+
     // Start the shutdown process
     registry.beginShutdown(() => {
       // This callback runs when all components are shut down
       this.handleShutdownComplete();
     });
-    
+
     // Get component IDs and store total count
     const componentIds = getAllComponentIds();
     this.totalComponents = componentIds.length;
-    
+
     // Emit process_begin for each component
     componentIds.forEach(id => {
-      stateMachine.emit({
+      MessageBus.emit({
         type: 'process_begin',
         id,
         process: 'shutdown'
@@ -57,7 +69,7 @@ class ShutdownManager {
   private handleComponentShutdown(componentId: string) {
     // Track component shutdown
     this.componentsShutdown.add(componentId);
-    
+
     // Check if all components have completed shutdown
     if (this.componentsShutdown.size === this.totalComponents) {
       this.handleShutdownComplete();
@@ -66,7 +78,7 @@ class ShutdownManager {
 
   private handleShutdownComplete() {
     // Emit completion message
-    stateMachine.emit({
+    MessageBus.emit({
       type: 'process_complete',
       id: 'shutdown',
       process: 'shutdown'
@@ -75,4 +87,4 @@ class ShutdownManager {
 }
 
 // Create singleton instance
-export const shutdownManager = new ShutdownManager(); 
+export const shutdownManager = new ShutdownManager();
