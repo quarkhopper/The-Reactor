@@ -4,10 +4,67 @@ import '../css/components/MasterButton.css';
 import bezel from '../images/master_button_bezel.png';
 import glowOff from '../images/master_button_off.png';
 import glowOn from '../images/master_button_on.png';
+import MessageBus from '../MessageBus';
 
 interface MasterButtonProps {
   x: number;
   y: number;
+}
+
+function handleMasterButtonMessage(
+  msg: Record<string, any>,
+  setLit: (value: boolean) => void,
+  setBlinking: (value: boolean) => void,
+  setVisible: (value: boolean) => void
+) {
+  if (msg.type === 'state_change') {
+    const state = msg.state;
+    if (state === 'on' || state === 'scram') {
+      setLit(true);
+      setBlinking(false);
+      setVisible(true);
+    } else if (state === 'startup') {
+      setLit(true);
+      setBlinking(true);
+    } else if (state === 'shutdown') {
+      setLit(false);
+      setBlinking(false);
+      setVisible(false);
+    } else {
+      setLit(false);
+      setBlinking(false);
+      setVisible(false);
+    }
+  } else if (msg.type === 'process_begin') {
+    if (msg.process === 'init') {
+      setLit(false);
+      setBlinking(false);
+      setVisible(false);
+      console.log(`[MasterButton] Initialization acknowledged for master`);
+    } else if (msg.process === 'shutdown') {
+      setLit(false);
+      setBlinking(false);
+      setVisible(false);
+    } else if (msg.process === 'test' && msg.id === 'master') {
+      setTimeout(() => {
+        MessageBus.emit({
+          type: 'test_result',
+          id: 'master',
+          passed: true
+        });
+      }, 500);
+    }
+  }
+}
+
+function isMasterButtonMessage(msg: Record<string, any>): boolean {
+  return (
+    typeof msg.type === 'string' &&
+    (msg.type === 'state_change' ||
+     msg.type === 'process_begin' ||
+     msg.type === 'power_button_press') &&
+    (msg.id === 'master' || msg.type === 'state_change') // Allow state_change without specific id
+  );
 }
 
 export default function MasterButton({ x, y }: MasterButtonProps) {
@@ -15,78 +72,18 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
   const [blinking, setBlinking] = useState(false);
   const [visible, setVisible] = useState(false);
 
-  // Handle state changes for visual updates
+  // Consolidate subscriptions into a single useEffect
   useEffect(() => {
-    const handleStateChange = (state: AppState) => {
-      if (state === 'on' || state === 'scram') {
-        setLit(true);
-        setBlinking(false);
-        setVisible(true);
-      } else if (state === 'startup') {
-        setLit(true);
-        setBlinking(true);
-      } else if (state === 'shutdown') {
-        setLit(false);
-        setBlinking(false);
-        setVisible(false);
-      } else {
-        setLit(false);
-        setBlinking(false);
-        setVisible(false);
-      }
-    };
-    
-    const unsubscribe = stateMachine.subscribe((cmd: Command) => {
-      if (cmd.type === 'state_change') {
-        handleStateChange(cmd.state);
-      }
-    });
-    
-    return () => unsubscribe();
-  }, []);
-
-  // Handle initialization and shutdown
-  useEffect(() => {
-    const handleCommand = (cmd: Command) => {
-      if (cmd.type === 'process_begin' && cmd.process === 'init') {
-        // Reset component state for initialization
-        setLit(false);
-        setBlinking(false);
-        setVisible(false);
-        registry.acknowledge('master', () => {
-          console.log(`[MasterButton] Initialization acknowledged for master`);
-        });
-      } else if (cmd.type === 'process_begin' && cmd.process === 'shutdown') {
-        // Reset state during shutdown
-        setLit(false);
-        setBlinking(false);
-        setVisible(false);
+    const handleMessage = (msg: Record<string, any>) => {
+      if (isMasterButtonMessage(msg)) {
+        handleMasterButtonMessage(msg, setLit, setBlinking, setVisible);
       }
     };
 
-    const unsubscribe = stateMachine.subscribe(handleCommand);
-    return () => unsubscribe();
-  }, []);
-
-  // Handle test sequence
-  useEffect(() => {
-    const handleCommand = (cmd: Command) => {
-      if (cmd.type === 'process_begin' && cmd.id === 'master' && cmd.process === 'test') {
-        // Complete the test after a short delay
-        const timer = setTimeout(() => {
-          stateMachine.emit({
-            type: 'test_result',
-            id: 'master',
-            passed: true
-          });
-        }, 500);
-        
-        return () => clearTimeout(timer);
-      }
+    const unsubscribe = MessageBus.subscribe(handleMessage);
+    return () => {
+      unsubscribe();
     };
-    
-    const unsubscribe = stateMachine.subscribe(handleCommand);
-    return () => unsubscribe();
   }, []);
 
   // Blinking animation loop
@@ -105,7 +102,7 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
 
   const handlePress = () => {
     // Emit power button press directly
-    stateMachine.emit({
+    MessageBus.emit({
       type: 'power_button_press',
       id: 'master'
     });
