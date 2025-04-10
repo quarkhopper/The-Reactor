@@ -58,7 +58,7 @@ class InitManager {
       // Emit process_complete message
       MessageBus.emit({
         type: 'process_complete',
-        id: 'init',
+        id: 'system',
         process: 'init',
       });
       console.log('[initManager] Initialization complete');
@@ -68,8 +68,3 @@ class InitManager {
 
 // Create singleton instance
 export const initManager = new InitManager();
-
-// Add initialization function
-export const initInitManager = () => {
-  return initManager;
-};

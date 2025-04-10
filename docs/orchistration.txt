@@ -1,0 +1,12 @@
+The Reactor is an application that is essentially a oversimplified simulation of a nuclear reactor with a single panel UI. It is designed around component isolation. The evenaul goal is to port the code into actual physical hardware controllers on a system bus. As such, the components will only have access to their local memory, which is generally just the react library and the MessageBus for communication. 
+
+All communication is done in agnostic JSON. Message processing is offloaded on the recipients. 
+
+Controller code that is assumed to have shared memory is in the client/src/controller/ directory and subdirectories. Construction and initialization follow a two-pass, hierarchical system. 
+
+In the first pass, construction of the StateMachine and the MessageBus are called in App.tsx. The StateMachine, in turn, constructs child process managers and, those construct their helpers (if any). Subsystems exist for the major functional areas of the simulation including the core, cooling syste, generation system, etc. These are constructed by import of subsystems.ts from the StateMachine on first pass, which in turn construct and initialize/registe the subsystems in the client/src/controller/subsystems directory. This subsystem registration connects each subsystem to the tickEngine. 
+
+Initialization occurs on a second pass, App.tsx calls stateMachine.init(), which in turn calls the init() methods of the managers, which in turn initialize their helpers, if any require it. 
+
+
+Please review all documents in docs/ directory for design details. 

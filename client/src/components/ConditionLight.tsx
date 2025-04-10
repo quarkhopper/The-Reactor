@@ -108,11 +108,6 @@ const ConditionLight: React.FC<ConditionLightProps> = ({
           console.log(`[ConditionLight] Shutdown acknowledged for ${id}`);
         } else if (msg.process === 'test') {
           setIsTestMode(true);
-          MessageBus.emit({
-            type: 'acknowledge',
-            id,
-            process: 'test',
-          });
           console.log(`[ConditionLight] Test acknowledged for ${id}`);
 
           const sequence: ConditionColor[] = ['red', 'amber', 'green', 'white', 'off'];
