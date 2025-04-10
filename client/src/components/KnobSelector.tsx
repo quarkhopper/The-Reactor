@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import MessageBus from '../MessageBus';
 
 import knobImg from '../images/knob_selector.png';
 import '../css/components/KnobSelector.css';
@@ -18,74 +19,91 @@ export default function KnobSelector({ id, x, y, leftLabel, rightLabel }: KnobSe
 
   // Handle state changes
   useEffect(() => {
-    const handleCommand = (cmd: Command) => {
-      if (cmd.type === 'state_change' && cmd.id === 'system') {
-        if (cmd.state === 'test') {
-          setIsTestMode(true);
-        } else if (cmd.state === 'startup') {
-          setIsTestMode(false);
-          setToggled(false);
-        }
+    const handleStateChange = (state: string) => {
+      if (state === 'test') {
+        setIsTestMode(true);
+      } else if (state === 'startup') {
+        setIsTestMode(false);
+        setToggled(false);
       }
     };
 
-    const unsubscribe = stateMachine.subscribe(handleCommand);
-    return () => unsubscribe();
+    const subscription = MessageBus.subscribe((msg) => {
+      if (msg.type === 'state_change' && msg.id === 'system') {
+        handleStateChange(msg.state);
+      }
+    });
+
+    return () => {
+      subscription();
+    };
   }, [id]);
 
   // Handle initialization and shutdown
   useEffect(() => {
-    const handleCommand = (cmd: Command) => {
+    const handleCommand = (cmd: Record<string, any>) => {
       if (cmd.type === 'process_begin' && cmd.process === 'init') {
-        // Reset component state for initialization
         setToggled(false);
         setIsTestMode(false);
-        registry.acknowledge(id, () => {
-          console.log(`[KnobSelector] Initialization acknowledged for ${id}`);
+        MessageBus.emit({
+          type: 'acknowledge',
+          id,
+          process: 'init',
         });
       } else if (cmd.type === 'process_begin' && cmd.process === 'shutdown') {
-        // Reset state during shutdown
         setToggled(false);
         setIsTestMode(false);
       }
     };
 
-    const unsubscribe = stateMachine.subscribe(handleCommand);
-    return () => unsubscribe();
-  }, []);
+    const subscription = MessageBus.subscribe((msg) => {
+      if (msg.type === 'process_begin' && msg.id === id) {
+        handleCommand(msg);
+      }
+    });
+
+    return () => {
+      subscription();
+    };
+  }, [id]);
 
   // Handle test sequence
   useEffect(() => {
-    const handleCommand = (cmd: Command) => {
+    const handleCommand = (cmd: Record<string, any>) => {
       if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'test') {
         setIsTestMode(true);
-        
-        // Simple test - just acknowledge
+
         setTimeout(() => {
-          stateMachine.emit({
+          MessageBus.emit({
             type: 'test_result',
             id,
-            passed: true
+            passed: true,
           });
           setIsTestMode(false);
         }, 500);
       }
     };
 
-    const unsubscribe = stateMachine.subscribe(handleCommand);
-    return () => unsubscribe();
+    const subscription = MessageBus.subscribe((msg) => {
+      if (msg.type === 'process_begin' && msg.id === id) {
+        handleCommand(msg);
+      }
+    });
+
+    return () => {
+      subscription();
+    };
   }, [id]);
 
   const handleClick = () => {
     if (!isTestMode) {
       const newToggled = !toggled;
       setToggled(newToggled);
-      
-      // Emit knob state change
-      stateMachine.emit({
+
+      MessageBus.emit({
         type: 'knob_change',
         id,
-        value: newToggled ? 'right' : 'left'
+        value: newToggled ? 'right' : 'left',
       });
     }
   };
