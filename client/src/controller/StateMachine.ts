@@ -3,6 +3,7 @@ import MessageBus from '../MessageBus';
 import { AppState } from './types';
 import { testManager } from './testManager';
 import { initManager } from './initManager';
+import { startupManager } from './startupManager';
 import { shutdownManager } from './shutdownManager';
 
 // Define the class structure
@@ -45,6 +46,7 @@ class StateMachine {
     // Initialize managers in order - they will cascade to their dependencies
     initManager.init();   // This will cascade to registry
     testManager.init();
+    startupManager.init(); 
     shutdownManager.init();
     
     this.initialized = true;
@@ -136,6 +138,8 @@ class StateMachine {
         this.updateState('test');
       } else if (msg.process === 'test' && this.currentState === 'test') {
         this.updateState('startup');
+      } else if (msg.process === 'startup' && this.currentState === 'startup') {
+        this.updateState('on');
       } else if (msg.process === 'shutdown' && this.currentState === 'shutdown') {
         this.updateState('off');
       }
