@@ -40,11 +40,22 @@ function handleMasterButtonMessage(
       setLit(false);
       setBlinking(false);
       setVisible(false);
+      MessageBus.emit({
+        type: 'acknowledge',
+        id: 'master',
+        process: 'init',
+      });
       console.log(`[MasterButton] Initialization acknowledged for master`);
     } else if (msg.process === 'shutdown') {
       setLit(false);
       setBlinking(false);
       setVisible(false);
+      MessageBus.emit({
+        type: 'acknowledge',
+        id: 'master',
+        process: 'shutdown',
+      });
+      console.log(`[MasterButton] Shutdown acknowledged for master`);
     } else if (msg.process === 'test' && msg.id === 'master') {
       setTimeout(() => {
         MessageBus.emit({

@@ -2,13 +2,11 @@
 
 ## Component Structure
 
-### Basic Structure
+### Updated Structure
 
 ```typescript
 import React, { useState, useEffect } from 'react';
-import stateMachine from '../state/StateMachine';
-import { registry } from '../state/registry';
-import type { Command, AppState } from '../state/types';
+import MessageBus from '../MessageBus';
 
 interface ComponentProps {
   id: string;
@@ -17,76 +15,129 @@ interface ComponentProps {
 
 const Component: React.FC<ComponentProps> = ({ id, ...props }) => {
   // State management
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [displayState, setDisplayState] = useState(initialState);
+  const [isActive, setIsActive] = useState(false);
+  const [displayState, setDisplayState] = useState('default');
 
-  // Handle initialization
+  // Guard function to filter relevant messages
+  const isComponentMessage = (msg: Record<string, any>): boolean => {
+    return (
+      typeof msg.type === 'string' &&
+      (msg.type === 'state_change' || msg.type === 'process_begin') &&
+      msg.id === id
+    );
+  };
+
+  // Message handler
+  const handleMessage = (msg: Record<string, any>) => {
+    if (msg.type === 'state_change') {
+      setDisplayState(msg.state);
+    } else if (msg.type === 'process_begin' && msg.process === 'init') {
+      setIsActive(true);
+      MessageBus.emit({
+        type: 'acknowledge',
+        id,
+        process: 'init',
+      });
+    }
+  };
+
+  // Subscribe to MessageBus
   useEffect(() => {
-    const handleCommand = (cmd: Command) => {
-      if (cmd.type === 'process_begin' && cmd.id === id) {
-        handleInit();
+    const subscription = MessageBus.subscribe((msg) => {
+      if (isComponentMessage(msg)) {
+        handleMessage(msg);
       }
-    };
+    });
 
-    const unsubscribe = stateMachine.subscribe(handleCommand);
-    return unsubscribe;
+    return () => subscription();
   }, [id]);
 
-  // Handle state changes
-  useEffect(() => {
-    const handleStateChange = (cmd: Command) => {
-      if (cmd.type === 'state_change') {
-        updateDisplayState(cmd.state);
-      }
-    };
-
-    const unsubscribe = stateMachine.subscribe(handleStateChange);
-    return unsubscribe;
-  }, []);
-
-  const handleInit = () => {
-    // Initialize component
-    setIsInitialized(true);
-    // Acknowledge initialization
-    stateMachine.emit({
-      type: 'process_complete',
-      id,
-      process: 'init'
-    });
-  };
-
-  const updateDisplayState = (state: AppState) => {
-    // Update visual state based on app state
-    setDisplayState(calculateDisplayState(state));
-  };
-
   return (
-    // Component JSX
+    <div>
+      {/* Component JSX */}
+    </div>
   );
 };
 
 export default Component;
 ```
 
+## Key Patterns
+
+### 1. Guard Functions
+- Use guard functions to filter messages relevant to the component.
+- Example:
+  ```typescript
+  const isComponentMessage = (msg: Record<string, any>): boolean => {
+    return (
+      typeof msg.type === 'string' &&
+      (msg.type === 'state_change' || msg.type === 'process_begin') &&
+      msg.id === id
+    );
+  };
+  ```
+
+### 2. Message Handling
+- Centralize message handling in a dedicated function.
+- Example:
+  ```typescript
+  const handleMessage = (msg: Record<string, any>) => {
+    if (msg.type === 'state_change') {
+      setDisplayState(msg.state);
+    } else if (msg.type === 'process_begin' && msg.process === 'init') {
+      setIsActive(true);
+      MessageBus.emit({
+        type: 'acknowledge',
+        id,
+        process: 'init',
+      });
+    }
+  };
+  ```
+
+### 3. MessageBus Integration
+- Subscribe to `MessageBus` in a `useEffect` hook.
+- Ensure proper cleanup by unsubscribing when the component unmounts.
+- Example:
+  ```typescript
+  useEffect(() => {
+    const subscription = MessageBus.subscribe((msg) => {
+      if (isComponentMessage(msg)) {
+        handleMessage(msg);
+      }
+    });
+
+    return () => subscription();
+  }, [id]);
+  ```
+
+### 4. Acknowledgment Messages
+- Emit `acknowledge` messages for `init` and `shutdown` processes.
+- Example:
+  ```typescript
+  MessageBus.emit({
+    type: 'acknowledge',
+    id,
+    process: 'init',
+  });
+  ```
+
 ## Component Types
 
 ### 1. Control Components
 - Buttons, switches, toggles
 - Direct user interaction
-- Binary or multi-state controls
-- Visual feedback on state
+- Emit messages for user actions
 
 ### 2. Display Components
 - Gauges, meters, indicators
 - Show system state
-- Visual feedback
-- No direct interaction
+- Subscribe to `MessageBus` for updates
 
 ### 3. Process Components
-- Complex state management
-- Multiple sub-states
-- Process tracking
-- State transitions
+- Manage complex state transitions
+- Track process progress
+- Emit and handle process-related messages
 
 ## Component States
 
@@ -146,7 +197,7 @@ const handleTest = () => {
   runTestSequence()
     .then(() => {
       // Report success
-      stateMachine.emit({
+      MessageBus.emit({
         type: 'test_result',
         id,
         passed: true
@@ -154,7 +205,7 @@ const handleTest = () => {
     })
     .catch(() => {
       // Report failure
-      stateMachine.emit({
+      MessageBus.emit({
         type: 'test_result',
         id,
         passed: false
@@ -198,25 +249,15 @@ const handleTest = () => {
 ## Best Practices
 
 ### 1. State Management
-- Clear state transitions
-- Consistent state handling
-- State validation
-- Error recovery
+- Use React state hooks for local state.
+- Update state based on messages from `MessageBus`.
 
-### 2. Event Handling
-- Clean event handlers
-- Proper cleanup
-- Error handling
-- State updates
+### 2. Message Handling
+- Use guard functions to filter messages.
+- Centralize message handling in a single function.
 
-### 3. Visual Feedback
-- Clear indicators
-- Consistent styling
-- User feedback
-- Error display
+### 3. Cleanup
+- Unsubscribe from `MessageBus` in the `useEffect` cleanup function.
 
-### 4. Testing
-- Test coverage
-- Error cases
-- State transitions
-- User interaction 
+### 4. Consistency
+- Follow the same pattern for all components to ensure maintainability.
