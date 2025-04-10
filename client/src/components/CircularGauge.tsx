@@ -18,75 +18,75 @@ interface CircularGaugeProps {
   eventType: 'core_temp_update' | 'turbine_rpm_update'; // Specify which event to listen for
 }
 
-function handleCircularGaugeMessage(msg: Record<string, any>, id: string, setDisplayValue: (value: number) => void, setIsTestMode: (value: boolean) => void) {
-  if (msg.id === id) {
-    console.log(`[CircularGauge] Received message:`, msg);
-
-    if (msg.type === 'core_temp_update' || msg.type === 'turbine_rpm_update') {
-      setDisplayValue(msg.value);
-    } else if (msg.type === 'state_change') {
-      const state = msg.state;
-      if (state === 'startup' || state === 'on') {
-        setIsTestMode(false);
-        setDisplayValue(0); // Reset display value on state change
-      } else if (state === 'shutdown') {
-        setIsTestMode(false);
-        setDisplayValue(0); // Reset display value during shutdown
-      }
-    } else if (msg.type === 'process_begin') {
-      if (msg.process === 'init') {
-        setDisplayValue(0);
-        setIsTestMode(false);
-        MessageBus.emit({
-          type: 'acknowledge',
-          id,
-          process: 'init',
-        });
-        console.log(`[CircularGauge] Initialization acknowledged for ${id}`);
-      } else if (msg.process === 'shutdown') {
-        setDisplayValue(0);
-        setIsTestMode(false);
-        MessageBus.emit({
-          type: 'acknowledge',
-          id,
-          process: 'shutdown',
-        });
-        console.log(`[CircularGauge] Shutdown acknowledged for ${id}`);
-      } else if (msg.process === 'test') {
-        setIsTestMode(true);
-        let i = 0;
-        const steps = 40;
-
-        const interval = setInterval(() => {
-          const phase = i < steps ? i / steps : 2 - i / steps;
-          setDisplayValue(phase);
-          i++;
-
-          if (i > steps * 2) {
-            clearInterval(interval);
-            setIsTestMode(false);
-            setDisplayValue(0);
-            console.log(`[CircularGauge] Test sequence complete for ${id}`);
-          }
-        }, 20);
-        MessageBus.emit({
-          type: 'test_result',
-          id,
-          passed: true
-        });
-      }
-    }
-  }
-}
-
 export default function CircularGauge({ id, x, y, value, limit, eventType }: CircularGaugeProps) {
   const [displayValue, setDisplayValue] = useState(value);
   const [isTestMode, setIsTestMode] = useState(false);
 
+  function handleCircularGaugeMessage(msg: Record<string, any>) {
+    if (msg.id === id) {
+      console.log(`[CircularGauge] Received message:`, msg);
+  
+      if (msg.type === 'core_temp_update' || msg.type === 'turbine_rpm_update') {
+        setDisplayValue(msg.value);
+      } else if (msg.type === 'state_change') {
+        const state = msg.state;
+        if (state === 'startup' || state === 'on') {
+          setIsTestMode(false);
+          setDisplayValue(0); // Reset display value on state change
+        } else if (state === 'shutdown') {
+          setIsTestMode(false);
+          setDisplayValue(0); // Reset display value during shutdown
+        }
+      } else if (msg.type === 'process_begin') {
+        if (msg.process === 'init') {
+          setDisplayValue(0);
+          setIsTestMode(false);
+          MessageBus.emit({
+            type: 'acknowledge',
+            id,
+            process: 'init',
+          });
+          console.log(`[CircularGauge] Initialization acknowledged for ${id}`);
+        } else if (msg.process === 'shutdown') {
+          setDisplayValue(0);
+          setIsTestMode(false);
+          MessageBus.emit({
+            type: 'acknowledge',
+            id,
+            process: 'shutdown',
+          });
+          console.log(`[CircularGauge] Shutdown acknowledged for ${id}`);
+        } else if (msg.process === 'test') {
+          setIsTestMode(true);
+                    let i = 0;
+          const steps = 40;
+  
+          const interval = setInterval(() => {
+            const phase = i < steps ? i / steps : 2 - i / steps;
+            setDisplayValue(phase);
+            i++;
+  
+            if (i > steps * 2) {
+              clearInterval(interval);
+              setIsTestMode(false);
+              setDisplayValue(0);
+                            console.log(`[CircularGauge] Test sequence complete for ${id}`);
+            }
+          }, 20);
+MessageBus.emit({
+          type: 'test_result',
+          id,
+          passed: true
+        });
+        }
+      }
+    }
+  }
+
   // Consolidate subscriptions into a single useEffect
   useEffect(() => {
     const handleMessage = (msg: Record<string, any>) => {
-      handleCircularGaugeMessage(msg, id, setDisplayValue, setIsTestMode);
+      handleCircularGaugeMessage(msg);
     };
 
     const unsubscribe = MessageBus.subscribe(handleMessage);
