@@ -2,7 +2,7 @@
 
 // Removed the Command type to align with JSON-based messaging
 
-export type AppState = 'off' | 'init' | 'test' | 'startup' | 'on' | 'shutdown' | 'scram';
+export type AppState = 'off' | 'init' | 'test' | 'fault' | 'startup' | 'on' | 'shutdown' | 'scram';
 export type ConditionColor = 'red' | 'green' | 'amber' | 'white' | 'off';
 
 // Retained internal types for main controller components

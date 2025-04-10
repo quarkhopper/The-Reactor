@@ -30,8 +30,7 @@ class TestManager {
   private isTestManagerMessage(msg: Record<string, any>): boolean {
     return (
       typeof msg.type === 'string' &&
-      (msg.type === 'test_result' ||
-       msg.type === 'state_change')
+      (msg.type === 'test_result' || msg.type === 'state_change')
     );
   }
 
@@ -41,31 +40,53 @@ class TestManager {
     }
 
     if( msg.type === 'state_change' && msg.state === 'test' ) {
-      this.testedComponents.clear(); // Reset tested components
-      MessageBus.emit({
-        type: 'process_begin',
-        id: 'system',
-        process: 'test',
-      });
-      console.log('[initManager] testing components');
-    }  
+      this.beginTest();
+    } 
+    else if (msg.type === 'test_result' && this.componentIds.includes(msg.id)) {
+      if (msg.passed === true) {
+        this.testedComponents.add(msg.id);
+        if (this.testedComponents.size === this.componentIds.length) {
+          // Emit process_complete message
+          this.handleTestComplete();
+        }
+      } else {
+        // Handle test failure case
+        console.error(`[TestManager] Test failed for component: ${msg.id}`);
+        this.handleTestFailure();
+      }
+    } 
 
-    if (msg.type === 'test_result' && 
-      this.componentIds.includes(msg.id) &&
-      msg.passed === true) {
+  }
 
-      this.testedComponents.add(msg.id);
-    }
 
-    if (this.testedComponents.size === this.componentIds.length) {
-      // Emit process_complete message
-      MessageBus.emit({
-        type: 'process_complete',
-        id: 'system',
-        process: 'test',
-      });
-      console.log('[initManager] test complete');
-    }
+  beginTest() {
+    this.testedComponents.clear(); // Reset tested components
+    MessageBus.emit({
+      type: 'process_begin',
+      id: 'system',
+      process: 'test',
+    });
+    console.log('[initManager] testing components');
+  }
+
+  handleTestFailure() {
+    // Emit process_fault message with failure status
+    MessageBus.emit({
+      type: 'process_fault',
+      id: 'test',
+      process: 'test',
+    });
+    console.log('[TestManager] Test process failed for some components');
+  }
+
+  handleTestComplete() {
+    // Emit process_complete message
+    MessageBus.emit({
+      type: 'process_complete',
+      id: 'test',
+      process: 'test',
+    });
+    console.log('[TestManager] Test process complete for all components');
   }
 }
 

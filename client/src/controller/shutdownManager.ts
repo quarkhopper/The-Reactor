@@ -4,6 +4,7 @@ import MessageBus from '../MessageBus';
 class ShutdownManager {
   private initialized: boolean = false;
   private acknowledgedComponents: Set<string> = new Set();
+  private componentIds: string[] = [];
 
   constructor() {
     // First pass - just construct
@@ -15,33 +16,46 @@ class ShutdownManager {
       return;
     }
 
+    this.componentIds = getAllComponentIds();
+
     // Subscribe to MessageBus
     MessageBus.subscribe((msg: Record<string, any>) => {
-      if (msg.type === 'acknowledge' && this.isShutdownComponent(msg.id)) {
-        this.acknowledgedComponents.add(msg.id);
-
-        // Check if all components have acknowledged
-        if (this.acknowledgedComponents.size === this.getTotalComponents()) {
-          this.handleShutdownComplete();
-        }
-      }
+      this.handleCommand(msg);
     });
 
     this.initialized = true;
   }
 
-  private isShutdownComponent(componentId: string): boolean {
-    return getAllComponentIds().includes(componentId);
+  private isShutdownManagerMessage(msg: Record<string, any>): boolean {
+    return (
+      typeof msg.type === 'string' &&
+      (msg.type === 'state_change' || msg.type === 'acknowledge')
+    );
   }
 
-  private getTotalComponents(): number {
-    return getAllComponentIds().length;
+  private handleCommand(msg: Record<string, any>) {
+    if (!this.isShutdownManagerMessage(msg)) {
+      return;
+    }
+
+    if (msg.type === 'state_change' && msg.state === 'shutdown') {
+      this.beginShutdown();
+    }
+
+    if (msg.type === 'acknowledge' && this.componentIds.includes(msg.id)) {
+      this.acknowledgedComponents.add(msg.id);
+    }
+
+    if (
+      this.acknowledgedComponents.size === this.componentIds.length
+    ) {
+      this.handleShutdownComplete();
+    }
   }
 
-  public beginShutdown() {
+  private beginShutdown() {
     // Reset tracking state
     this.acknowledgedComponents.clear();
-
     // Emit process_begin for all components
     MessageBus.emit({
       type: 'process_begin',
@@ -59,6 +73,7 @@ class ShutdownManager {
       id: 'shutdown',
       process: 'shutdown',
     });
+
     console.log('[shutdownManager] Shutdown complete');
   }
 }

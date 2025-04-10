@@ -14,12 +14,13 @@ class StateMachine {
   // Define the state transition map
   private static STATE_TRANSITIONS: Record<AppState, AppState[]> = {
     'off': ['init'],
-    'init': ['test'],
-    'test': ['startup'],
-    'startup': ['on'],
-    'on': ['shutdown', 'scram'],
+    'init': ['test', 'fault'],
+    'test': ['startup', 'fault'],
+    'fault': ['shutdown'],
+    'startup': ['on', 'fault'],
+    'on': ['shutdown', 'scram', 'fault'],
     'shutdown': ['off'],
-    'scram': ['on', 'shutdown']  // Can recover to on or shutdown completely
+    'scram': ['on', 'shutdown', 'fault']  // Can recover to on or shutdown completely
   };
 
   constructor() {
@@ -104,6 +105,7 @@ class StateMachine {
       typeof msg.type === 'string' &&
       (msg.type === 'power_button_press' ||
        msg.type === 'process_complete' ||
+       msg.type === 'process_fault' ||
        msg.type === 'scram_button_press')
     );
   }
@@ -137,6 +139,9 @@ class StateMachine {
       } else if (msg.process === 'shutdown' && this.currentState === 'shutdown') {
         this.updateState('off');
       }
+      return;
+    } else if (msg.type === 'process_fault') {
+      this.updateState('fault');
       return;
     } else if (msg.type === 'scram_button_press') {
       if (this.state === 'scram') {
