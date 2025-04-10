@@ -26,7 +26,7 @@ export default function CircularGauge({ id, x, y, value, limit, eventType }: Cir
     if (msg.id === id) {
       console.log(`[CircularGauge] Received message:`, msg);
   
-      if (msg.type === 'core_temp_update' || msg.type === 'turbine_rpm_update') {
+      if (msg.type === eventType) {
         setDisplayValue(msg.value);
       } else if (msg.type === 'state_change') {
         const state = msg.state;
@@ -70,13 +70,12 @@ export default function CircularGauge({ id, x, y, value, limit, eventType }: Cir
               clearInterval(interval);
               setIsTestMode(false);
               setDisplayValue(0);
-                            console.log(`[CircularGauge] Test sequence complete for ${id}`);
             }
           }, 20);
-MessageBus.emit({
-          type: 'test_result',
-          id,
-          passed: true
+          MessageBus.emit({
+            type: 'test_result',
+            id,
+            passed: true
         });
         }
       }
