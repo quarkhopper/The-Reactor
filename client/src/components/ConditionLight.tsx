@@ -126,10 +126,11 @@ const ConditionLight: React.FC<ConditionLightProps> = ({
               clearInterval(interval);
               setIsTestMode(false);
               setDisplayColor(color);
+              // Emit test_result message
               MessageBus.emit({
-                type: 'process_complete',
+                type: 'test_result',
                 id,
-                process: 'test',
+                passed: true, // Assuming the test passes; adjust logic as needed
               });
               console.log(`[ConditionLight] Test sequence complete for ${id}`);
             }

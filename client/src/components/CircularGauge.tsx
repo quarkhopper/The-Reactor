@@ -70,13 +70,13 @@ export default function CircularGauge({ id, x, y, value, limit, eventType }: Cir
               clearInterval(interval);
               setIsTestMode(false);
               setDisplayValue(0);
+              MessageBus.emit({
+                type: 'test_result',
+                id,
+                passed: true
+              });
             }
           }, 20);
-          MessageBus.emit({
-            type: 'test_result',
-            id,
-            passed: true
-        });
         }
       }
     }

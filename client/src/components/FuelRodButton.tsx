@@ -138,13 +138,14 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({ id, x, y, gridX, gridY, l
       if (i >= sequence.length) {
         clearInterval(interval);
         setIsTestMode(false);
+        MessageBus.emit({
+          type: 'test_result',
+          id,
+          passed: true,
+        });
       }
     }, 150);
-    MessageBus.emit({
-      type: 'test_result',
-      id,
-      passed: true,
-    });
+
   };
 
   useEffect(() => {

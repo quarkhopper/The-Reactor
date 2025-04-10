@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import MessageBus from '../MessageBus';
 
 import glow_off from '../images/button_off.png';
 import glow_green from '../images/button_glow_green.png';
@@ -45,80 +46,91 @@ const PanelButton: React.FC<PanelButtonProps> = ({
 
   // Handle state changes for visual updates
   useEffect(() => {
-    const handleStateChange = (state: AppState) => {
+    const handleStateChange = (state: string) => {
       if (state === 'startup' || state === 'on') {
-        // Ensure components are reset when entering startup or on state
         setIsTestMode(false);
         setCurrentColor(displayColor);
       }
     };
-    
-    const unsubscribe = stateMachine.subscribe((cmd: Command) => {
-      if (cmd.type === 'state_change') {
-        handleStateChange(cmd.state);
+
+    const subscription = MessageBus.subscribe((msg) => {
+      if (msg.type === 'state_change' && msg.id === id) {
+        handleStateChange(msg.state);
       }
     });
-    
-    return () => unsubscribe();
+
+    return () => {
+      subscription();
+    };
   }, [id, displayColor]);
 
   // Handle initialization and shutdown
   useEffect(() => {
-    const handleCommand = (cmd: Command) => {
+    const handleCommand = (cmd: Record<string, any>) => {
       if (cmd.type === 'process_begin' && cmd.process === 'init') {
-        // Reset component state for initialization
         setIsHeld(false);
         setCurrentColor('off');
         setIsTestMode(false);
-        registry.acknowledge(id, () => {
-          console.log(`[PanelButton] Initialization acknowledged for ${id}`);
+        MessageBus.emit({
+          type: 'acknowledge',
+          id,
+          process: 'init',
         });
       } else if (cmd.type === 'process_begin' && cmd.process === 'shutdown') {
-        // Reset state during shutdown
         setIsHeld(false);
         setCurrentColor('off');
         setIsTestMode(false);
       }
     };
 
-    const unsubscribe = stateMachine.subscribe(handleCommand);
-    return () => unsubscribe();
-  }, []);
+    const subscription = MessageBus.subscribe((msg) => {
+      if (msg.type === 'process_begin' && msg.id === id) {
+        handleCommand(msg);
+      }
+    });
+
+    return () => {
+      subscription();
+    };
+  }, [id]);
 
   // Handle test sequence
   useEffect(() => {
-    const handleCommand = (cmd: Command) => {
+    const handleCommand = (cmd: Record<string, any>) => {
       if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'test') {
         setIsTestMode(true);
-        
-        // Perform test sequence
+
         const sequence: ButtonColor[] = ['red', 'amber', 'green', 'white', 'off'];
         let i = 0;
-        
+
         const interval = setInterval(() => {
           setCurrentColor(sequence[i]);
           i++;
-          
+
           if (i >= sequence.length) {
             clearInterval(interval);
             setIsTestMode(false);
             setCurrentColor(displayColor);
-            
-            // Emit test result when test sequence completes
-            stateMachine.emit({
+
+            MessageBus.emit({
               type: 'test_result',
               id,
-              passed: true
+              passed: true,
             });
           }
         }, 150);
-        
-        return () => clearInterval(interval);
       }
     };
-    
-    const unsubscribe = stateMachine.subscribe(handleCommand);
-    return () => unsubscribe();
+
+    const subscription = MessageBus.subscribe((msg) => {
+      if (msg.type === 'process_begin' && msg.id === id) {
+        handleCommand(msg);
+      }
+    });
+
+    return () => {
+      subscription();
+    };
   }, [id, displayColor]);
 
   // Update color when displayColor prop changes (but not during test mode)
@@ -137,10 +149,9 @@ const PanelButton: React.FC<PanelButtonProps> = ({
       if (onClick) {
         onClick();
       } else {
-        // Emit button press command
-        stateMachine.emit({
+        MessageBus.emit({
           type: 'button_press',
-          id
+          id,
         });
       }
     }

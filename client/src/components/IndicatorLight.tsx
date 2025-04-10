@@ -97,13 +97,14 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
 
           if (i >= sequence.length) {
             clearInterval(interval);
+            MessageBus.emit({
+              type: 'test_result',
+              id,
+              passed: true,
+            });
           }
         }, 150);
-        MessageBus.emit({
-          type: 'test_result',
-          id,
-          passed: true,
-        });
+
         return () => clearInterval(interval);
       }
     };
