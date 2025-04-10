@@ -37,10 +37,21 @@ function handleCircularGaugeMessage(msg: Record<string, any>, id: string, setDis
       if (msg.process === 'init') {
         setDisplayValue(0);
         setIsTestMode(false);
+        MessageBus.emit({
+          type: 'acknowledge',
+          id,
+          process: 'init',
+        });
         console.log(`[CircularGauge] Initialization acknowledged for ${id}`);
       } else if (msg.process === 'shutdown') {
         setDisplayValue(0);
         setIsTestMode(false);
+        MessageBus.emit({
+          type: 'acknowledge',
+          id,
+          process: 'shutdown',
+        });
+        console.log(`[CircularGauge] Shutdown acknowledged for ${id}`);
       } else if (msg.process === 'test') {
         setIsTestMode(true);
         let i = 0;
@@ -58,6 +69,11 @@ function handleCircularGaugeMessage(msg: Record<string, any>, id: string, setDis
             console.log(`[CircularGauge] Test sequence complete for ${id}`);
           }
         }, 20);
+        MessageBus.emit({
+          type: 'test_result',
+          id,
+          passed: true
+        });
       }
     }
   }
