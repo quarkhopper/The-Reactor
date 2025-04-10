@@ -104,8 +104,7 @@ class StateMachine {
       typeof msg.type === 'string' &&
       (msg.type === 'power_button_press' ||
        msg.type === 'process_complete' ||
-       msg.type === 'scram_button_press' ||
-       msg.type === 'state_change')
+       msg.type === 'scram_button_press')
     );
   }
 
