@@ -1,11 +1,9 @@
-import { registry } from './registry';
 import { getAllComponentIds } from './componentManifest';
 import MessageBus from '../MessageBus';
 
 class ShutdownManager {
   private initialized: boolean = false;
-  private componentsShutdown: Set<string> = new Set();
-  private totalComponents: number = 0;
+  private acknowledgedComponents: Set<string> = new Set();
 
   constructor() {
     // First pass - just construct
@@ -19,70 +17,49 @@ class ShutdownManager {
 
     // Subscribe to MessageBus
     MessageBus.subscribe((msg: Record<string, any>) => {
-      if (this.isShutdownManagerMessage(msg)) {
-        this.handleMessage(msg);
+      if (msg.type === 'acknowledge' && this.isShutdownComponent(msg.id)) {
+        this.acknowledgedComponents.add(msg.id);
+
+        // Check if all components have acknowledged
+        if (this.acknowledgedComponents.size === this.getTotalComponents()) {
+          this.handleShutdownComplete();
+        }
       }
     });
 
     this.initialized = true;
   }
 
-  private isShutdownManagerMessage(msg: Record<string, any>): boolean {
-    return (
-      typeof msg.type === 'string' &&
-      (msg.type === 'state_change' || msg.type === 'process_complete')
-    );
+  private isShutdownComponent(componentId: string): boolean {
+    return getAllComponentIds().includes(componentId);
   }
 
-  private handleMessage(msg: Record<string, any>) {
-    if (msg.type === 'state_change' && msg.id === 'system' && msg.state === 'shutdown') {
-      this.handleShutdown();
-    } else if (msg.type === 'process_complete' && msg.process === 'shutdown') {
-      this.handleComponentShutdown(msg.id);
-    }
+  private getTotalComponents(): number {
+    return getAllComponentIds().length;
   }
 
-  private handleShutdown() {
+  public beginShutdown() {
     // Reset tracking state
-    this.componentsShutdown.clear();
+    this.acknowledgedComponents.clear();
 
-    // Start the shutdown process
-    registry.beginShutdown(() => {
-      // This callback runs when all components are shut down
-      this.handleShutdownComplete();
+    // Emit process_begin for all components
+    MessageBus.emit({
+      type: 'process_begin',
+      id: 'system',
+      process: 'shutdown',
     });
 
-    // Get component IDs and store total count
-    const componentIds = getAllComponentIds();
-    this.totalComponents = componentIds.length;
-
-    // Emit process_begin for each component
-    componentIds.forEach(id => {
-      MessageBus.emit({
-        type: 'process_begin',
-        id,
-        process: 'shutdown'
-      });
-    });
-  }
-
-  private handleComponentShutdown(componentId: string) {
-    // Track component shutdown
-    this.componentsShutdown.add(componentId);
-
-    // Check if all components have completed shutdown
-    if (this.componentsShutdown.size === this.totalComponents) {
-      this.handleShutdownComplete();
-    }
+    console.log('[shutdownManager] Shutdown process started for all components');
   }
 
   private handleShutdownComplete() {
-    // Emit completion message
+    // Emit process_complete message
     MessageBus.emit({
       type: 'process_complete',
       id: 'shutdown',
-      process: 'shutdown'
+      process: 'shutdown',
     });
+    console.log('[shutdownManager] Shutdown complete');
   }
 }
 
