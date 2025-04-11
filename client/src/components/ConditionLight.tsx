@@ -43,6 +43,7 @@ const ConditionLight: React.FC<ConditionLightProps> = ({
 
   function handleConditionLightMessage(msg: Record<string, any>) {
     if (msg.type === 'state_change') {
+
       if (msg.state === 'startup' || msg.state === 'on') {
         setIsTestMode(false);
       }
@@ -54,7 +55,6 @@ const ConditionLight: React.FC<ConditionLightProps> = ({
             setDisplayColor('off');
             break;
           case 'init':
-          case 'test':
           case 'startup':
             setDisplayColor('amber');
             break;
@@ -68,7 +68,6 @@ const ConditionLight: React.FC<ConditionLightProps> = ({
       } else if (id.includes('TRANS')) {
         switch (msg.state) {
           case 'init':
-          case 'test':
           case 'startup':
             setDisplayColor('amber');
             break;
@@ -80,8 +79,15 @@ const ConditionLight: React.FC<ConditionLightProps> = ({
             setDisplayColor('off');
             break;
         }
-      } else {
-        setDisplayColor(color);
+      } else if (id.includes('FAULT')) {
+        switch (msg.state) {
+          case 'fault':
+            setDisplayColor('red');
+            break;
+          default:
+            setDisplayColor('off');
+            break;
+        }
       }
     } else if (msg.type === 'process_begin') {
       if (msg.process === 'init') {
@@ -92,7 +98,6 @@ const ConditionLight: React.FC<ConditionLightProps> = ({
           id,
           process: 'init',
         });
-        console.log(`[ConditionLight] Initialization acknowledged for ${id}`);
       } else if (msg.process === 'shutdown') {
         setDisplayColor('off');
         setIsTestMode(false);
@@ -101,10 +106,8 @@ const ConditionLight: React.FC<ConditionLightProps> = ({
           id,
           process: 'shutdown',
         });
-        console.log(`[ConditionLight] Shutdown acknowledged for ${id}`);
       } else if (msg.process === 'test') {
         setIsTestMode(true);
-        console.log(`[ConditionLight] Test acknowledged for ${id}`);
 
         const sequence: ConditionColor[] = ['red', 'amber', 'green', 'white', 'off'];
         let i = 0;
@@ -123,7 +126,6 @@ const ConditionLight: React.FC<ConditionLightProps> = ({
               id,
               passed: true, // Assuming the test passes; adjust logic as needed
             });
-            console.log(`[ConditionLight] Test sequence complete for ${id}`);
           }
         }, 150);
       }

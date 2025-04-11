@@ -53,53 +53,52 @@ export default function DigitalDisplay({ id, x, y, value, label }: DigitalDispla
   const [isTestMode, setIsTestMode] = useState(false);
 
   function handleDigitalDisplayMessage(msg: Record<string, any>) {
-    if (msg.id === id) {
-      console.log(`[DigitalDisplay] Received message:`, msg);
 
-      if (msg.type === 'state_change') {
-        const state = msg.state;
-        if (state === 'startup' || state === 'on') {
-          setIsTestMode(false);
-          setDisplayValue(value);
-        }
-      } else if (msg.type === 'process_begin') {
-        if (msg.process === 'init') {
-          setDisplayValue(0);
-          setIsTestMode(false);
-          MessageBus.emit({
-            type: 'acknowledge',
-            id,
-            process: 'init',
-          });
-          console.log(`[DigitalDisplay] Initialization acknowledged for ${id}`);
-        } else if (msg.process === 'shutdown') {
-          setDisplayValue(0);
-          setIsTestMode(false);
-          MessageBus.emit({
-            type: 'acknowledge',
-            id,
-            process: 'shutdown',
-          });
-          console.log(`[DigitalDisplay] Shutdown acknowledged for ${id}`);
-        } else if (msg.process === 'test') {
-          setIsTestMode(true);
-          setDisplayValue(0);
+    if (msg.type === 'state_change') {
+      const state = msg.state;
+      if (state === 'startup' || state === 'on') {
+        setIsTestMode(false);
+        setDisplayValue(value);
+      }
+    } else if (msg.type === 'process_begin') {
+      if (msg.process === 'init') {
+        setDisplayValue(0);
+        setIsTestMode(false);
+        MessageBus.emit({
+          type: 'acknowledge',
+          id,
+          process: 'init',
+        });
+      } else if (msg.process === 'shutdown') {
+        setDisplayValue(0);
+        setIsTestMode(false);
+        MessageBus.emit({
+          type: 'acknowledge',
+          id,
+          process: 'shutdown',
+        });
+      } else if (msg.process === 'test') {
+        setIsTestMode(true);
+        setDisplayValue(0);
+        setTimeout(() => {
+          setDisplayValue(0.88);
+
           setTimeout(() => {
-            setDisplayValue(0.88);
+            setDisplayValue(0);
+            setIsTestMode(false);
 
-            setTimeout(() => {
-              setDisplayValue(0);
-              setIsTestMode(false);
-
-              // Emit test_result message
-              MessageBus.emit({
-                type: 'test_result',
-                id,
-                passed: true, // Assuming the test passes; adjust logic as needed
-              });
-            }, 1000);
-          }, 100);
-        }
+            // Emit test_result message
+            MessageBus.emit({
+              type: 'test_result',
+              id,
+              passed: true, // Assuming the test passes; adjust logic as needed
+            });
+          }, 1000);
+        }, 100);
+      }
+    } else if (msg.type == 'digital_display_update') {
+      if (msg.id === id || !isTestMode) {
+        setDisplayValue(msg.value);
       }
     }
   }
@@ -114,48 +113,7 @@ export default function DigitalDisplay({ id, x, y, value, label }: DigitalDispla
     return () => {
       unsubscribe();
     };
-  }, [id, value]);
-
-  useEffect(() => {
-    const handleCommand = (cmd: Record<string, any>) => {
-      if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'test') {
-        setIsTestMode(true);
-        setDisplayValue(0);
-
-        setTimeout(() => {
-          setDisplayValue(0.88);
-
-          setTimeout(() => {
-            setDisplayValue(0);
-            setIsTestMode(false);
-
-            MessageBus.emit({
-              type: 'test_result',
-              id,
-              passed: true, // Assuming the test passes; adjust logic as needed
-            });
-          }, 1000);
-        }, 100);
-      }
-    };
-
-    const subscription = MessageBus.subscribe((msg) => {
-      if (msg.type === 'process_begin' && msg.id === id) {
-        handleCommand(msg);
-      }
-    });
-
-    return () => {
-      subscription();
-    };
   }, [id]);
-
-  // Update value when not in test mode
-  useEffect(() => {
-    if (!isTestMode) {
-      setDisplayValue(value);
-    }
-  }, [value, isTestMode]);
 
   // Function to convert a raw value to display digits
   const getDisplayDigits = (rawValue: number) => {

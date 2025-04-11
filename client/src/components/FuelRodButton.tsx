@@ -15,7 +15,6 @@ interface FuelRodButtonProps {
   y: number;  // Screen Y coordinate
   gridX: number;  // Grid X coordinate
   gridY: number;  // Grid Y coordinate
-  label?: string;
 }
 
 type ButtonColor = 'off' | 'green' | 'amber' | 'red' | 'white';
@@ -38,7 +37,7 @@ const glowMap: Record<ButtonColor, string> = {
   white: glow_white,
 };
 
-const FuelRodButton: React.FC<FuelRodButtonProps> = ({ id, x, y, gridX, gridY, label }) => {
+const FuelRodButton: React.FC<FuelRodButtonProps> = ({ id, x, y, gridX, gridY }) => {
   const [state, setState] = useState<FuelRodState>('engaged');
   const [activeColor, setActiveColor] = useState<ButtonColor>('off');
   const [isTestMode, setIsTestMode] = useState(false);
@@ -216,7 +215,6 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({ id, x, y, gridX, gridY, l
             }}
           />
         )}
-        {label && <div className="panel-button-label">{label}</div>}
       </div>
     </div>
   );

@@ -24,8 +24,6 @@ export default function CircularGauge({ id, x, y, value, limit, eventType }: Cir
 
   function handleCircularGaugeMessage(msg: Record<string, any>) {
 
-    console.log(`[CircularGauge] Received message:`, msg);
-
     if (msg.type === eventType && !isTestMode) {
       setDisplayValue(msg.value);
     } else if (msg.type === 'state_change') {
@@ -46,7 +44,6 @@ export default function CircularGauge({ id, x, y, value, limit, eventType }: Cir
           id,
           process: 'init',
         });
-        console.log(`[CircularGauge] Initialization acknowledged for ${id}`);
       } else if (msg.process === 'shutdown') {
         setDisplayValue(0);
         setIsTestMode(false);
@@ -55,7 +52,6 @@ export default function CircularGauge({ id, x, y, value, limit, eventType }: Cir
           id,
           process: 'shutdown',
         });
-        console.log(`[CircularGauge] Shutdown acknowledged for ${id}`);
       } else if (msg.process === 'test') {
         setIsTestMode(true);
                   let i = 0;
