@@ -55,9 +55,7 @@ class TestManager {
         this.handleTestFailure();
       }
     } 
-
   }
-
 
   beginTest() {
     this.testedComponents.clear(); // Reset tested components

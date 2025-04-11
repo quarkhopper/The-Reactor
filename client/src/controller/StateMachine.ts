@@ -8,7 +8,6 @@ import { shutdownManager } from './shutdownManager';
 
 // Define the class structure
 class StateMachine {
-  private state: AppState = 'off';  // Start in off state
   private currentState: AppState = 'off'; // Moved from PowerStateManager
   private initialized: boolean = false;
 
@@ -55,7 +54,7 @@ class StateMachine {
 
   // Get current state
   getState(): AppState {
-    return this.state;
+    return this.currentState;
   }
 
   // Get the current state
@@ -119,17 +118,18 @@ class StateMachine {
     }
 
     console.log(`[StateMachine] Handling command:`, msg);
-
+    
     if (msg.type === 'power_button_press') {
-      if (this.state === 'off') {
+      console.log(`[StateMachine] Power button pressed`);
+      if (this.currentState === 'off') {
         this.updateState('init');
-      } else if (this.state === 'on' || this.state === 'scram') {
+      } else if (this.currentState === 'on' || this.currentState === 'scram') {
         this.updateState('shutdown');
       }
       return;
     }
 
-    if (this.state === 'off') {
+    if (this.currentState === 'off') {
       return;
     }
 
@@ -143,17 +143,22 @@ class StateMachine {
       } else if (msg.process === 'shutdown' && this.currentState === 'shutdown') {
         this.updateState('off');
       }
+      console.log(`[StateMachine] Process complete: ${msg.process}`);
       return;
     } else if (msg.type === 'process_fault') {
+      console.warn(`[StateMachine] Process fault: ${msg.process}`);
       this.updateState('fault');
       return;
     } else if (msg.type === 'scram_button_press') {
-      if (this.state === 'scram') {
+      console.log(`[StateMachine] Scram button pressed`);
+      if (this.currentState === 'scram') {
         this.updateState('on');
       } else {
         this.updateState('scram');
       }
+      return;
     }
+    console.log(`[StateMachine] Unhandled message type: ${msg.type}`);
   }
 
   log(message: string) {

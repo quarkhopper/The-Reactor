@@ -1,6 +1,8 @@
 import { getAllComponentIds } from './componentManifest';
 import MessageBus from '../MessageBus';
 
+const INIT_FAIL_INTERVAL = 10000; // 10 seconds
+
 class InitManager {
   private initialized: boolean = false;
   private acknowledgedComponents: Set<string> = new Set();
@@ -60,6 +62,19 @@ class InitManager {
       process: 'init',
     });
     console.log('[initManager] Initializing components');
+
+    setTimeout(() => {
+      if (this.acknowledgedComponents.size < this.componentIds.length) {
+        console.error('[initManager] Initialization failed: timeout reached');
+        console.log('[initManager] uninitialized components:', this.componentIds.filter(id => !this.acknowledgedComponents.has(id)));
+
+        MessageBus.emit({
+          type: 'process_fault',
+          id: 'system',
+          process: 'init',
+        });
+      }
+    }, INIT_FAIL_INTERVAL); // Simulate a delay for initialization process
   }
 
   handleInitComplete() {
