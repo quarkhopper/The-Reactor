@@ -73,7 +73,8 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
           process: 'shutdown',
         });
         console.log(`[MasterButton] Shutdown acknowledged for master`);
-      } else if (msg.process === 'test' && msg.id === 'master') {
+      } else if (msg.process === 'test') {
+        setLit(true);
         setTimeout(() => {
           MessageBus.emit({
             type: 'test_result',

@@ -66,12 +66,12 @@ class TestManager {
       id: 'system',
       process: 'test',
     });
-    console.log('[initManager] testing components');
+    console.log('[TestManager] testing components');
 
     setTimeout(() => {
       if (this.testedComponents.size < this.componentIds.length) {
-        console.error('[testManager] Testing failed: timeout reached');
-        console.log('[testManager] untested components:', this.componentIds.filter(id => !this.testedComponents.has(id)));
+        console.error('[TestManager] Testing failed: timeout reached');
+        console.log('[TestManager] untested components:', this.componentIds.filter(id => !this.testedComponents.has(id)));
 
         MessageBus.emit({
           type: 'process_fault',

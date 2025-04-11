@@ -28,15 +28,17 @@ class ShutdownManager {
     this.initialized = true;
   }
 
-  private isShutdownManagerMessage(msg: Record<string, any>): boolean {
+  private isValidMessage(msg: Record<string, any>): boolean {
     return (
       typeof msg.type === 'string' &&
-      (msg.type === 'state_change' || msg.type === 'acknowledge')
+      (msg.type === 'state_change' || 
+        (msg.type === 'acknowledge' && msg.process === 'shutdown')
+      )
     );
   }
 
   private handleCommand(msg: Record<string, any>) {
-    if (!this.isShutdownManagerMessage(msg)) {
+    if (!this.isValidMessage(msg)) {
       return;
     }
 
@@ -48,9 +50,7 @@ class ShutdownManager {
       this.acknowledgedComponents.add(msg.id);
     }
 
-    if (
-      this.acknowledgedComponents.size === this.componentIds.length
-    ) {
+    if (this.acknowledgedComponents.size === this.componentIds.length) {
       this.handleShutdownComplete();
     }
   }
@@ -65,12 +65,12 @@ class ShutdownManager {
       process: 'shutdown',
     });
 
-    console.log('[shutdownManager] Shutdown process started for all components');
+    console.log('[ShutdownManager] Shutdown process started for all components');
 
     setTimeout(() => {
       if (this.acknowledgedComponents.size < this.componentIds.length) {
-        console.error('[shutdownManager] Shutdown failed: timeout reached');
-        console.log('[shutdownManager] shutdown components:', this.componentIds.filter(id => !this.acknowledgedComponents.has(id)));
+        console.error('[ShutdownManager] Shutdown failed: timeout reached');
+        console.log('[ShutdownManager] Shutdown components:', this.componentIds.filter(id => !this.acknowledgedComponents.has(id)));
 
         MessageBus.emit({
           type: 'process_fault',
@@ -89,7 +89,7 @@ class ShutdownManager {
       process: 'shutdown',
     });
 
-    console.log('[shutdownManager] Shutdown complete');
+    console.log('[ShutdownManager] Shutdown complete');
   }
 }
 

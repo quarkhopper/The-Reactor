@@ -19,7 +19,7 @@ class StateMachine {
     'fault': ['shutdown', 'off'],
     'startup': ['on', 'fault'],
     'on': ['shutdown', 'scram', 'fault'],
-    'shutdown': ['off'],
+    'shutdown': ['off', 'fault'],
     'scram': ['on', 'shutdown', 'fault']  // Can recover to on or shutdown completely
   };
 

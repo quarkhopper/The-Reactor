@@ -23,15 +23,16 @@ class StartupManager  {
   }
 
   // Added a guard function to validate if a message is relevant to the StateMachine
-  private isInitManagerMessage(msg: Record<string, any>): boolean {
+  private isValidMessage(msg: Record<string, any>): boolean {
     return (
       typeof msg.type === 'string' &&
-      (msg.type === 'acknowledge' || msg.type === 'state_change')
+      ((msg.type === 'acknowledge' && msg.process === 'startup') ||
+        msg.type === 'state_change')
     );
   }
 
   private handleCommand(msg: Record<string, any>) {
-    if (!this.isInitManagerMessage(msg)) {
+    if (!this.isValidMessage(msg)) {
       return;
     }
 
@@ -46,7 +47,7 @@ class StartupManager  {
       id: 'system',
       process: 'startup',
     });
-    console.log('[initManager] starting system');
+    console.log('[StartupManager] starting system');
 
     setTimeout(() => {
       this.handleStartupComplete();
@@ -59,7 +60,7 @@ class StartupManager  {
       id: 'system',
       process: 'startup',
     });
-    console.log('[initManager] Initialization complete');
+    console.log('[StartupManager] Startup process complete for all components');
   }
 }
 

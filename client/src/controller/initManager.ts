@@ -29,15 +29,16 @@ class InitManager {
   }
 
   // Added a guard function to validate if a message is relevant to the StateMachine
-  private isInitManagerMessage(msg: Record<string, any>): boolean {
+  private isValidMessage(msg: Record<string, any>): boolean {
     return (
       typeof msg.type === 'string' &&
-      (msg.type === 'acknowledge' || msg.type === 'state_change')
+      ((msg.type === 'acknowledge' && msg.process === 'init')
+       || msg.type === 'state_change')
     );
   }
 
   private handleCommand(msg: Record<string, any>) {
-    if (!this.isInitManagerMessage(msg)) {
+    if (!this.isValidMessage(msg)) {
       return;
     }
 
@@ -67,7 +68,7 @@ class InitManager {
     setTimeout(() => {
       if (this.acknowledgedComponents.size < this.componentIds.length) {
         console.error('[initManager] Initialization failed: timeout reached');
-        console.log('[initManager] uninitialized components:', this.componentIds.filter(id => !this.acknowledgedComponents.has(id)));
+        console.log('[initManager] Uninitialized components:', this.componentIds.filter(id => !this.acknowledgedComponents.has(id)));
 
         MessageBus.emit({
           type: 'process_fault',
