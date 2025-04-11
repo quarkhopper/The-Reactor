@@ -27,9 +27,7 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
     return (
       typeof msg.type === 'string' &&
       (msg.type === 'state_change' ||
-       msg.type === 'process_begin' ||
-       msg.type === 'power_button_press') &&
-      (msg.id === 'master' || msg.type === 'state_change') // Allow state_change without specific id
+       msg.type === 'process_begin')
     );
   }
 

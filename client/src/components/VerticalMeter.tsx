@@ -16,105 +16,69 @@ interface VerticalMeterProps {
 export default function VerticalMeter({ id, x, y }: VerticalMeterProps) {
   const [currentValue, setCurrentValue] = useState(0);
 
-  // Handle state changes for visual updates
   useEffect(() => {
-    const handleStateChange = (state: string) => {
+    const unsubscribe = MessageBus.subscribe(handleMessage);
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  const isValidMessage = (msg: Record<string, any>) => {
+    return (
+      typeof msg.type === 'string' &&
+      (msg.type === 'state_change' ||
+        msg.type === 'process_begin' ||
+        msg.type === 'set_meter')
+    );
+  };
+
+  function handleMessage(msg: Record<string, any>) {
+    if (!isValidMessage(msg)) return; // Guard clause
+
+    if (msg.type === 'state_change') {
+      const state = msg.state;
       if (state === 'startup' || state === 'on') {
         setCurrentValue(0);
       }
-    };
-
-    const subscription = MessageBus.subscribe((msg) => {
-      if (msg.type === 'state_change' && msg.id === id) {
-        handleStateChange(msg.state);
-      } else if (msg.type === 'set_indicator' && msg.id === id) {
-        setCurrentValue(msg.value);
-      }
-    });
-
-    return () => {
-      subscription();
-    };
-  }, [id]);
-
-  // Handle initialization and shutdown
-  useEffect(() => {
-    const handleCommand = (cmd: Record<string, any>) => {
-      if (cmd.type === 'process_begin' && cmd.process === 'init') {
+    } else if (msg.type === 'set_meter' && msg.id === id) {
+      setCurrentValue(msg.value);
+    } else if (msg.type === 'process_begin') {
+      if (msg.process === 'init') {
         setCurrentValue(0);
         MessageBus.emit({
           type: 'acknowledge',
           id,
           process: 'init',
         });
-      } else if (cmd.type === 'process_begin' && cmd.process === 'shutdown') {
+      } else if (msg.process === 'shutdown') {
         setCurrentValue(0);
+        MessageBus.emit({
+          type: 'acknowledge',
+          id,
+          process: 'shutdown',
+        });
+      } else if (msg.process === 'test') {
+        handleTest();    
       }
-    };
+    }
+  }
 
-    const subscription = MessageBus.subscribe((msg) => {
-      if (msg.type === 'process_begin' && msg.id === id) {
-        handleCommand(msg);
-      }
+  function handleTest() {
+    let sequence = [0, 0.25, 0.5, 0.75, 1, 0];
+    let i = 0;
+    const interval = setInterval(() => {
+      setCurrentValue(sequence[i]);
+      i++;
+    }, 150);
+
+    MessageBus.emit({
+      type: 'test_result',
+      id,
+      passed: true,
     });
 
-    return () => {
-      subscription();
-    };
-  }, [id]);
-
-  // Handle test sequence
-  useEffect(() => {
-    const handleCommand = (cmd: Record<string, any>) => {
-      if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'test') {
-        const sequence: Array<'off' | 'green' | 'amber' | 'red' | 'white'> = ['red', 'amber', 'green', 'white', 'off'];
-        let i = 0;
-
-        const interval = setInterval(() => {
-          switch (sequence[i]) {
-            case 'off':
-              setCurrentValue(0);
-              break;
-            case 'green':
-              setCurrentValue(0.25);
-              break;
-            case 'amber':
-              setCurrentValue(0.5);
-              break;
-            case 'red':
-              setCurrentValue(0.75);
-              break;
-            case 'white':
-              setCurrentValue(1);
-              break;
-          }
-          i++;
-
-          if (i >= sequence.length) {
-            clearInterval(interval);
-            setCurrentValue(0);
-            MessageBus.emit({
-              type: 'test_result',
-              id,
-              passed: true,
-            });
-          }
-        }, 150);
-
-        return () => clearInterval(interval);
-      }
-    };
-
-    const subscription = MessageBus.subscribe((msg) => {
-      if (msg.type === 'process_begin' && msg.id === id) {
-        handleCommand(msg);
-      }
-    });
-
-    return () => {
-      subscription();
-    };
-  }, [id]);
+    return () => clearInterval(interval);
+  }
 
   const clamped = Math.max(0, Math.min(1, currentValue));
 
