@@ -16,7 +16,7 @@ class StateMachine {
     'off': ['init'],
     'init': ['test', 'fault'],
     'test': ['startup', 'fault'],
-    'fault': ['shutdown'],
+    'fault': ['shutdown', 'off'],
     'startup': ['on', 'fault'],
     'on': ['shutdown', 'scram', 'fault'],
     'shutdown': ['off'],
@@ -29,7 +29,7 @@ class StateMachine {
 
     // Subscribe to MessageBus
     MessageBus.subscribe((msg: Record<string, any>) => {
-      this.handleCommand(msg);
+      this.handleMessage(msg);
     });
   }
 
@@ -101,7 +101,7 @@ class StateMachine {
   }
 
   // Added a guard function to validate if a message is relevant to the StateMachine
-  private isStateMachineMessage(msg: Record<string, any>): boolean {
+  private isValidMessage(msg: Record<string, any>): boolean {
     return (
       typeof msg.type === 'string' &&
       (msg.type === 'power_button_press' ||
@@ -112,19 +112,20 @@ class StateMachine {
   }
 
   // Updated the handleCommand method to use the guard pattern
-  private handleCommand(msg: Record<string, any>) {
-    if (!this.isStateMachineMessage(msg)) {
+  private handleMessage(msg: Record<string, any>) {
+    if (!this.isValidMessage(msg)) {
       return;
     }
 
-    console.log(`[StateMachine] Handling command:`, msg);
-    
     if (msg.type === 'power_button_press') {
       console.log(`[StateMachine] Power button pressed`);
       if (this.currentState === 'off') {
         this.updateState('init');
       } else if (this.currentState === 'on' || this.currentState === 'scram') {
         this.updateState('shutdown');
+      } else if (this.currentState === 'fault') {
+        this.updateState('off');
+        return;
       }
       return;
     }
@@ -143,7 +144,6 @@ class StateMachine {
       } else if (msg.process === 'shutdown' && this.currentState === 'shutdown') {
         this.updateState('off');
       }
-      console.log(`[StateMachine] Process complete: ${msg.process}`);
       return;
     } else if (msg.type === 'process_fault') {
       console.warn(`[StateMachine] Process fault: ${msg.process}`);

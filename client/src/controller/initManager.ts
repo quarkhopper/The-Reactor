@@ -1,7 +1,7 @@
 import { getAllComponentIds } from './componentManifest';
 import MessageBus from '../MessageBus';
 
-const INIT_FAIL_INTERVAL = 10000; // 10 seconds
+const INIT_FAIL_TIMEOUT = 10000; // 10 seconds
 
 class InitManager {
   private initialized: boolean = false;
@@ -75,7 +75,7 @@ class InitManager {
           process: 'init',
         });
       }
-    }, INIT_FAIL_INTERVAL); // Simulate a delay for initialization process
+    }, INIT_FAIL_TIMEOUT);
   }
 
   handleInitComplete() {

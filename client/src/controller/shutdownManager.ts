@@ -1,6 +1,8 @@
 import { getAllComponentIds } from './componentManifest';
 import MessageBus from '../MessageBus';
 
+const SHUTDOWN_FAIL_TIMEOUT = 10000; // 10 seconds
+
 class ShutdownManager {
   private initialized: boolean = false;
   private acknowledgedComponents: Set<string> = new Set();
@@ -64,6 +66,19 @@ class ShutdownManager {
     });
 
     console.log('[shutdownManager] Shutdown process started for all components');
+
+    setTimeout(() => {
+      if (this.acknowledgedComponents.size < this.componentIds.length) {
+        console.error('[shutdownManager] Shutdown failed: timeout reached');
+        console.log('[shutdownManager] shutdown components:', this.componentIds.filter(id => !this.acknowledgedComponents.has(id)));
+
+        MessageBus.emit({
+          type: 'process_fault',
+          id: 'system',
+          process: 'shutdown',
+        });
+      }
+    }, SHUTDOWN_FAIL_TIMEOUT);
   }
 
   private handleShutdownComplete() {

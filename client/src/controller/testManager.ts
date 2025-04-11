@@ -1,6 +1,8 @@
 import { getAllComponentIds } from './componentManifest';
 import MessageBus from '../MessageBus';
 
+const TEST_FAIL_TIMEOUT = 10000; // 10 seconds
+
 class TestManager {
   private initialized: boolean = false;
   private testedComponents: Set<string> = new Set();
@@ -65,6 +67,20 @@ class TestManager {
       process: 'test',
     });
     console.log('[initManager] testing components');
+
+    setTimeout(() => {
+      if (this.testedComponents.size < this.componentIds.length) {
+        console.error('[testManager] Testing failed: timeout reached');
+        console.log('[testManager] untested components:', this.componentIds.filter(id => !this.testedComponents.has(id)));
+
+        MessageBus.emit({
+          type: 'process_fault',
+          id: 'system',
+          process: 'test',
+        });
+      }
+    }, TEST_FAIL_TIMEOUT);
+
   }
 
   handleTestFailure() {
