@@ -59,7 +59,7 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({ id, x, y, gridX, gridY })
       typeof msg.type === 'string' &&
       (msg.type === 'state_change' || 
         msg.type === 'process_begin' || 
-        msg.type === 'temperature_update' || 
+        (msg.type === 'temperature_update' && msg.x === gridX && msg.y === gridY) || 
         msg.type === 'fuel_rod_state_update'));
   };
 
