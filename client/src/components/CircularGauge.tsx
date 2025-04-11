@@ -18,11 +18,15 @@ interface CircularGaugeProps {
   eventType: 'core_temp_update' | 'turbine_rpm_update'; // Specify which event to listen for
 }
 
-function handleCircularGaugeMessage(msg: Record<string, any>, id: string, setDisplayValue: (value: number) => void, setIsTestMode: (value: boolean) => void) {
-  if (msg.id === id) {
+export default function CircularGauge({ id, x, y, value, limit, eventType }: CircularGaugeProps) {
+  const [displayValue, setDisplayValue] = useState(value);
+  const [isTestMode, setIsTestMode] = useState(false);
+
+  function handleCircularGaugeMessage(msg: Record<string, any>) {
+
     console.log(`[CircularGauge] Received message:`, msg);
 
-    if (msg.type === 'core_temp_update' || msg.type === 'turbine_rpm_update') {
+    if (msg.type === eventType && !isTestMode) {
       setDisplayValue(msg.value);
     } else if (msg.type === 'state_change') {
       const state = msg.state;
@@ -54,7 +58,7 @@ function handleCircularGaugeMessage(msg: Record<string, any>, id: string, setDis
         console.log(`[CircularGauge] Shutdown acknowledged for ${id}`);
       } else if (msg.process === 'test') {
         setIsTestMode(true);
-        let i = 0;
+                  let i = 0;
         const steps = 40;
 
         const interval = setInterval(() => {
@@ -66,27 +70,21 @@ function handleCircularGaugeMessage(msg: Record<string, any>, id: string, setDis
             clearInterval(interval);
             setIsTestMode(false);
             setDisplayValue(0);
-            console.log(`[CircularGauge] Test sequence complete for ${id}`);
+            MessageBus.emit({
+              type: 'test_result',
+              id,
+              passed: true
+            });
           }
         }, 20);
-        MessageBus.emit({
-          type: 'test_result',
-          id,
-          passed: true
-        });
       }
     }
   }
-}
-
-export default function CircularGauge({ id, x, y, value, limit, eventType }: CircularGaugeProps) {
-  const [displayValue, setDisplayValue] = useState(value);
-  const [isTestMode, setIsTestMode] = useState(false);
 
   // Consolidate subscriptions into a single useEffect
   useEffect(() => {
     const handleMessage = (msg: Record<string, any>) => {
-      handleCircularGaugeMessage(msg, id, setDisplayValue, setIsTestMode);
+      handleCircularGaugeMessage(msg);
     };
 
     const unsubscribe = MessageBus.subscribe(handleMessage);
@@ -94,13 +92,6 @@ export default function CircularGauge({ id, x, y, value, limit, eventType }: Cir
       unsubscribe(); // Ensure this does not return a value
     };
   }, [id]);
-
-  // Update value when not in test mode
-  useEffect(() => {
-    if (!isTestMode) {
-      setDisplayValue(value);
-    }
-  }, [value, isTestMode]);
 
   const clampedValue = Math.min(Math.max(displayValue, 0), 1);
   const angle = clampedValue * 180 - 90; // -90° to +90°

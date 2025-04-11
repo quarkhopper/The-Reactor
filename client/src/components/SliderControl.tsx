@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import MessageBus from '../MessageBus';
 
 import baseImg from '../images/slider_base.png';
 import knobImg from '../images/slider_knob.png';
@@ -23,118 +24,120 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, target, index, 
 
   // Handle state changes for visual updates
   useEffect(() => {
-    const handleStateChange = (state: AppState) => {
+    const handleStateChange = (state: string) => {
       if (state === 'startup' || state === 'on') {
-        // Ensure components are reset when entering startup or on state
         setIsTestMode(false);
       }
     };
-    
-    const unsubscribe = stateMachine.subscribe((cmd: Command) => {
-      if (cmd.type === 'state_change') {
-        handleStateChange(cmd.state);
-      } else if (cmd.type === 'position_update' && cmd.id === `${target}_${index}`) {
-        // Update slider position when receiving position update
-        setValue(cmd.value);
+
+    const subscription = MessageBus.subscribe((msg) => {
+      if (msg.type === 'state_change' && msg.id === id) {
+        handleStateChange(msg.state);
+      } else if (msg.type === 'position_update' && msg.id === `${target}_${index}`) {
+        setValue(msg.value);
       }
     });
-    
-    return () => unsubscribe();
+
+    return () => {
+      subscription();
+    };
   }, [id, target, index]);
 
   // Handle initialization and shutdown
   useEffect(() => {
-    const handleCommand = (cmd: Command) => {
+    const handleCommand = (cmd: Record<string, any>) => {
       if (cmd.type === 'process_begin' && cmd.process === 'init') {
-        // Reset component state for initialization
         setValue(0);
         setIsTestMode(false);
-        registry.acknowledge(id, () => {
-          console.log(`[SliderControl] Initialization acknowledged for ${id}`);
+        MessageBus.emit({
+          type: 'acknowledge',
+          id,
+          process: 'init',
         });
       } else if (cmd.type === 'process_begin' && cmd.process === 'shutdown') {
-        // Reset state during shutdown
         setValue(0);
         setIsTestMode(false);
       }
     };
 
-    const unsubscribe = stateMachine.subscribe(handleCommand);
-    return () => unsubscribe();
-  }, []);
+    const subscription = MessageBus.subscribe((msg) => {
+      if (msg.type === 'process_begin' && msg.id === id) {
+        handleCommand(msg);
+      }
+    });
+
+    return () => {
+      subscription();
+    };
+  }, [id]);
 
   // Handle test sequence
   useEffect(() => {
-    const handleCommand = (cmd: Command) => {
+    const handleCommand = (cmd: Record<string, any>) => {
       if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'test') {
         setIsTestMode(true);
-        
-        // Reset to bottom position (fully inserted)
         setValue(0);
-        
-        // Use a single continuous animation instead of steps
+
         let startTime = Date.now();
-        const totalDuration = 2000; // Total duration for one complete cycle
-        
+        const totalDuration = 2000;
+
         const animate = () => {
           const now = Date.now();
           const elapsed = now - startTime;
           const progress = Math.min(elapsed / totalDuration, 1);
-          
+
           if (progress >= 1) {
-            // Animation complete - ensure fully inserted
             setValue(0);
-            stateMachine.emit({
+            MessageBus.emit({
               type: 'position_update',
               id: `${target}_${index}`,
-              value: 0
+              value: 0,
             });
             setIsTestMode(false);
-            // Emit test result when test sequence completes
-            stateMachine.emit({
+            MessageBus.emit({
               type: 'test_result',
               id,
-              passed: true
+              passed: true,
             });
             return;
           }
-          
-          // Use a custom easing function that starts and ends at 0
-          // This ensures the slider starts at 0 (inserted), goes to 1 (withdrawn), and back to 0 (inserted)
+
           let currentValue;
           if (progress < 0.5) {
-            // First half: go from 0 (inserted) to 1 (withdrawn)
-            const p = progress * 2; // Scale to [0, 1]
+            const p = progress * 2;
             currentValue = p;
           } else {
-            // Second half: go from 1 (withdrawn) to 0 (inserted)
-            const p = (progress - 0.5) * 2; // Scale to [0, 1]
+            const p = (progress - 0.5) * 2;
             currentValue = 1 - p;
           }
-          
-          // Update value and emit
+
           setValue(currentValue);
-          stateMachine.emit({
+          MessageBus.emit({
             type: 'position_update',
             id: `${target}_${index}`,
-            value: currentValue
+            value: currentValue,
           });
-          
-          // Continue animation
+
           requestAnimationFrame(animate);
         };
-        
-        // Start animation
+
         const animationFrame = requestAnimationFrame(animate);
-        
+
         return () => {
           cancelAnimationFrame(animationFrame);
         };
       }
     };
-    
-    const unsubscribe = stateMachine.subscribe(handleCommand);
-    return () => unsubscribe();
+
+    const subscription = MessageBus.subscribe((msg) => {
+      if (msg.type === 'process_begin' && msg.id === id) {
+        handleCommand(msg);
+      }
+    });
+
+    return () => {
+      subscription();
+    };
   }, [id, target, index]);
 
   const updateValue = (clientY: number) => {
@@ -152,7 +155,7 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, target, index, 
     }
 
     // Emit position update with new target-based ID format
-    stateMachine.emit({
+    MessageBus.emit({
       type: 'position_update',
       id: `${target}_${index}`,
       value: newValue

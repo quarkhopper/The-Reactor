@@ -7,6 +7,7 @@ import red from '../images/indicator_red.png';
 import white from '../images/indicator_white.png';
 
 import '../css/components/IndicatorLight.css';
+import MessageBus from '../MessageBus';
 
 export type IndicatorColor = 'amber' | 'green' | 'red' | 'white' | 'off';
 
@@ -40,68 +41,83 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
   
   // Handle state changes
   useEffect(() => {
-    const handleStateChange = (state: AppState) => {
+    const handleStateChange = (state: string) => {
       if (state === 'startup' || state === 'on') {
         // Ensure components are reset when entering startup or on state
+        setDisplayColor('off');
       }
     };
-    
-    const unsubscribe = stateMachine.subscribe((cmd: Command) => {
-      if (cmd.type === 'state_change') {
-        handleStateChange(cmd.state);
+
+    const subscription = MessageBus.subscribe((msg) => {
+      if (msg.type === 'state_change' && msg.id === id) {
+        handleStateChange(msg.state);
       }
     });
-    
-    return () => unsubscribe();
+
+    return () => {
+      subscription();
+    };
   }, [id]);
   
   // Handle process_begin:init and process_begin:shutdown commands
   useEffect(() => {
-    const handleCommand = (cmd: Command) => {
+    const handleCommand = (cmd: Record<string, any>) => {
       if (cmd.type === 'process_begin' && cmd.process === 'init') {
-        registry.acknowledge(id, () => {
-          console.log(`[IndicatorLight] Initialization acknowledged for ${id}`);
+        MessageBus.emit({
+          type: 'acknowledge',
+          id,
+          process: 'init',
         });
       } else if (cmd.type === 'process_begin' && cmd.process === 'shutdown') {
-        // Turn off during shutdown
+        setDisplayColor('off');
       }
     };
 
-    const unsubscribe = stateMachine.subscribe(handleCommand);
-    return () => unsubscribe();
-  }, []);
+    const subscription = MessageBus.subscribe((msg) => {
+      if (msg.type === 'process_begin' && msg.id === id) {
+        handleCommand(msg);
+      }
+    });
+
+    return () => {
+      subscription();
+    };
+  }, [id]);
   
   // Handle test sequence
   useEffect(() => {
-    const handleCommand = (cmd: Command) => {
+    const handleCommand = (cmd: Record<string, any>) => {
       if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'test') {
-        
-        // Perform test sequence
         const sequence: IndicatorColor[] = ['red', 'amber', 'green', 'white', 'off'];
         let i = 0;
-        
+
         const interval = setInterval(() => {
           setDisplayColor(sequence[i]);
           i++;
-          
+
           if (i >= sequence.length) {
             clearInterval(interval);
-            
-            // Emit test result when test sequence completes
-            stateMachine.emit({
+            MessageBus.emit({
               type: 'test_result',
               id,
-              passed: true
+              passed: true,
             });
           }
         }, 150);
-        
+
         return () => clearInterval(interval);
       }
     };
-    
-    const unsubscribe = stateMachine.subscribe(handleCommand);
-    return () => unsubscribe();
+
+    const subscription = MessageBus.subscribe((msg) => {
+      if (msg.type === 'process_begin' && msg.id === id) {
+        handleCommand(msg);
+      }
+    });
+
+    return () => {
+      subscription();
+    };
   }, [id]);
   
   // Render

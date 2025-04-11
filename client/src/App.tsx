@@ -1,6 +1,6 @@
 import Panel from './components/Panel';
 import MainPanel from './panels/MainPanel';
-import stateMachine from './state/StateMachine';
+import stateMachine from './controller/StateMachine';
 import './MessageBus';
 
 function App() {

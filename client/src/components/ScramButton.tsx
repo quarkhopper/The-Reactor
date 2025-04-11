@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import MessageBus from '../MessageBus';
 
 import '../css/components/ScramButton.css';
 
@@ -18,81 +19,90 @@ export default function ScramButton({ id, x, y }: ScramButtonProps) {
 
   // Handle state changes for visual updates
   useEffect(() => {
-    const handleStateChange = (state: AppState) => {
+    const handleStateChange = (state: string) => {
       if (state === 'startup' || state === 'on') {
-        // Ensure components are reset when entering startup or on state
         setIsTestMode(false);
         setPressed(false);
       } else if (state === 'scram') {
-        // Button stays pressed during scram
         setPressed(true);
       }
     };
-    
-    const unsubscribe = stateMachine.subscribe((cmd: Command) => {
-      if (cmd.type === 'state_change') {
-        handleStateChange(cmd.state);
+
+    const subscription = MessageBus.subscribe((msg) => {
+      if (msg.type === 'state_change' && msg.id === id) {
+        handleStateChange(msg.state);
       }
     });
-    
-    return () => unsubscribe();
+
+    return () => {
+      subscription();
+    };
   }, [id]);
 
   // Handle initialization and shutdown
   useEffect(() => {
-    const handleCommand = (cmd: Command) => {
+    const handleCommand = (cmd: Record<string, any>) => {
       if (cmd.type === 'process_begin' && cmd.process === 'init') {
-        // Reset component state for initialization
         setPressed(false);
         setIsTestMode(false);
-        registry.acknowledge(id, () => {
-          console.log(`[ScramButton] Initialization acknowledged for ${id}`);
+        MessageBus.emit({
+          type: 'acknowledge',
+          id,
+          process: 'init',
         });
       } else if (cmd.type === 'process_begin' && cmd.process === 'shutdown') {
-        // Reset state during shutdown
         setPressed(false);
         setIsTestMode(false);
       }
     };
 
-    const unsubscribe = stateMachine.subscribe(handleCommand);
-    return () => unsubscribe();
-  }, []);
+    const subscription = MessageBus.subscribe((msg) => {
+      if (msg.type === 'process_begin' && msg.id === id) {
+        handleCommand(msg);
+      }
+    });
+
+    return () => {
+      subscription();
+    };
+  }, [id]);
 
   // Handle test sequence
   useEffect(() => {
-    const handleCommand = (cmd: Command) => {
+    const handleCommand = (cmd: Record<string, any>) => {
       if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'test') {
         setIsTestMode(true);
-        
-        // Press the button during test
         setPressed(true);
-        
-        // After a short delay, release and complete test
+
         setTimeout(() => {
           setPressed(false);
           setIsTestMode(false);
-          
-          // Emit test result when test sequence completes
-          stateMachine.emit({
+
+          MessageBus.emit({
             type: 'test_result',
             id,
-            passed: true
+            passed: true,
           });
         }, 500);
       }
     };
-    
-    const unsubscribe = stateMachine.subscribe(handleCommand);
-    return () => unsubscribe();
+
+    const subscription = MessageBus.subscribe((msg) => {
+      if (msg.type === 'process_begin' && msg.id === id) {
+        handleCommand(msg);
+      }
+    });
+
+    return () => {
+      subscription();
+    };
   }, [id]);
 
-  // Handle button press
   const handleClick = () => {
-    if (!isTestMode && (stateMachine.getState() === 'on' || stateMachine.getState() === 'scram')) {
-      stateMachine.emit({
+    if (!isTestMode) {
+      MessageBus.emit({
         type: 'scram_button_press',
-        id
+        id,
       });
     }
   };

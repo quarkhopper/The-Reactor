@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import MessageBus from '../MessageBus';
 
 import '../css/components/VerticalMeter.css';
 
@@ -17,53 +18,59 @@ export default function VerticalMeter({ id, x, y }: VerticalMeterProps) {
 
   // Handle state changes for visual updates
   useEffect(() => {
-    const handleStateChange = (state: AppState) => {
+    const handleStateChange = (state: string) => {
       if (state === 'startup' || state === 'on') {
-        // Ensure components are reset when entering startup or on state
+        setCurrentValue(0);
       }
     };
-    
-    const unsubscribe = stateMachine.subscribe((cmd: Command) => {
-      if (cmd.type === 'state_change') {
-        handleStateChange(cmd.state);
-      } else if (cmd.type === 'set_indicator' && cmd.id === id) {
-        // Update value when receiving indicator update
-        setCurrentValue(cmd.value);
+
+    const subscription = MessageBus.subscribe((msg) => {
+      if (msg.type === 'state_change' && msg.id === id) {
+        handleStateChange(msg.state);
+      } else if (msg.type === 'set_indicator' && msg.id === id) {
+        setCurrentValue(msg.value);
       }
     });
-    
-    return () => unsubscribe();
+
+    return () => {
+      subscription();
+    };
   }, [id]);
 
   // Handle initialization and shutdown
   useEffect(() => {
-    const handleCommand = (cmd: Command) => {
+    const handleCommand = (cmd: Record<string, any>) => {
       if (cmd.type === 'process_begin' && cmd.process === 'init') {
-        // Reset component state for initialization
         setCurrentValue(0);
-        registry.acknowledge(id, () => {
-          console.log(`[VerticalMeter] Initialization acknowledged for ${id}`);
+        MessageBus.emit({
+          type: 'acknowledge',
+          id,
+          process: 'init',
         });
       } else if (cmd.type === 'process_begin' && cmd.process === 'shutdown') {
-        // Reset state during shutdown
         setCurrentValue(0);
       }
     };
 
-    const unsubscribe = stateMachine.subscribe(handleCommand);
-    return () => unsubscribe();
-  }, []);
+    const subscription = MessageBus.subscribe((msg) => {
+      if (msg.type === 'process_begin' && msg.id === id) {
+        handleCommand(msg);
+      }
+    });
+
+    return () => {
+      subscription();
+    };
+  }, [id]);
 
   // Handle test sequence
   useEffect(() => {
-    const handleCommand = (cmd: Command) => {
+    const handleCommand = (cmd: Record<string, any>) => {
       if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'test') {
-        // Perform test sequence
         const sequence: Array<'off' | 'green' | 'amber' | 'red' | 'white'> = ['red', 'amber', 'green', 'white', 'off'];
         let i = 0;
-        
+
         const interval = setInterval(() => {
-          // Set value based on color
           switch (sequence[i]) {
             case 'off':
               setCurrentValue(0);
@@ -82,26 +89,31 @@ export default function VerticalMeter({ id, x, y }: VerticalMeterProps) {
               break;
           }
           i++;
-          
+
           if (i >= sequence.length) {
             clearInterval(interval);
             setCurrentValue(0);
-            
-            // Emit test result when test sequence completes
-            stateMachine.emit({
+            MessageBus.emit({
               type: 'test_result',
               id,
-              passed: true
+              passed: true,
             });
           }
         }, 150);
-        
+
         return () => clearInterval(interval);
       }
     };
-    
-    const unsubscribe = stateMachine.subscribe(handleCommand);
-    return () => unsubscribe();
+
+    const subscription = MessageBus.subscribe((msg) => {
+      if (msg.type === 'process_begin' && msg.id === id) {
+        handleCommand(msg);
+      }
+    });
+
+    return () => {
+      subscription();
+    };
   }, [id]);
 
   const clamped = Math.max(0, Math.min(1, currentValue));

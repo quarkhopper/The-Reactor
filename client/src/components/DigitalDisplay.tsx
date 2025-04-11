@@ -24,6 +24,8 @@ import numbersRight7 from '../images/numbers_right_7.png';
 import numbersRight8 from '../images/numbers_right_8.png';
 import numbersRight9 from '../images/numbers_right_9.png';
 
+import MessageBus from '../MessageBus';
+
 const leftDigits = [
   numbersLeft0, numbersLeft1, numbersLeft2, numbersLeft3, numbersLeft4,
   numbersLeft5, numbersLeft6, numbersLeft7, numbersLeft8, numbersLeft9,
@@ -50,82 +52,102 @@ export default function DigitalDisplay({ id, x, y, value, label }: DigitalDispla
   const [displayValue, setDisplayValue] = useState(value);
   const [isTestMode, setIsTestMode] = useState(false);
 
-  // Handle state changes for visual updates
+  function handleDigitalDisplayMessage(msg: Record<string, any>) {
+    if (msg.id === id) {
+      console.log(`[DigitalDisplay] Received message:`, msg);
+
+      if (msg.type === 'state_change') {
+        const state = msg.state;
+        if (state === 'startup' || state === 'on') {
+          setIsTestMode(false);
+          setDisplayValue(value);
+        }
+      } else if (msg.type === 'process_begin') {
+        if (msg.process === 'init') {
+          setDisplayValue(0);
+          setIsTestMode(false);
+          MessageBus.emit({
+            type: 'acknowledge',
+            id,
+            process: 'init',
+          });
+          console.log(`[DigitalDisplay] Initialization acknowledged for ${id}`);
+        } else if (msg.process === 'shutdown') {
+          setDisplayValue(0);
+          setIsTestMode(false);
+          MessageBus.emit({
+            type: 'acknowledge',
+            id,
+            process: 'shutdown',
+          });
+          console.log(`[DigitalDisplay] Shutdown acknowledged for ${id}`);
+        } else if (msg.process === 'test') {
+          setIsTestMode(true);
+          setDisplayValue(0);
+          setTimeout(() => {
+            setDisplayValue(0.88);
+
+            setTimeout(() => {
+              setDisplayValue(0);
+              setIsTestMode(false);
+
+              // Emit test_result message
+              MessageBus.emit({
+                type: 'test_result',
+                id,
+                passed: true, // Assuming the test passes; adjust logic as needed
+              });
+            }, 1000);
+          }, 100);
+        }
+      }
+    }
+  }
+
+  // Consolidate subscriptions into a single useEffect
   useEffect(() => {
-    const handleStateChange = (state: AppState) => {
-      if (state === 'startup' || state === 'on') {
-        // Ensure components are reset when entering startup or on state
-        setIsTestMode(false);
-        setDisplayValue(value);
-      }
+    const handleMessage = (msg: Record<string, any>) => {
+      handleDigitalDisplayMessage(msg);
     };
-    
-    const unsubscribe = stateMachine.subscribe((cmd: Command) => {
-      if (cmd.type === 'state_change') {
-        handleStateChange(cmd.state);
-      }
-    });
-    
-    return () => unsubscribe();
+
+    const unsubscribe = MessageBus.subscribe(handleMessage);
+    return () => {
+      unsubscribe();
+    };
   }, [id, value]);
 
-  // Handle initialization and shutdown
   useEffect(() => {
-    const handleCommand = (cmd: Command) => {
-      if (cmd.type === 'process_begin') {
-        console.log(`[DigitalDisplay] Received process_begin:`, cmd);
-      }
-
-      if (cmd.type === 'process_begin' && cmd.process === 'init') {
-        // Reset component state for initialization
-        setDisplayValue(0);
-        setIsTestMode(false);
-        registry.acknowledge(id, () => {
-          console.log(`[DigitalDisplay] Initialization acknowledged for ${id}`);
-        });
-      } else if (cmd.type === 'process_begin' && cmd.process === 'shutdown') {
-        // Reset state during shutdown
-        setDisplayValue(0);
-        setIsTestMode(false);
-      }
-    };
-
-    const unsubscribe = stateMachine.subscribe(handleCommand);
-    return () => unsubscribe();
-  }, []);
-
-  // Handle test sequence
-  useEffect(() => {
-    const handleCommand = (cmd: Command) => {
+    const handleCommand = (cmd: Record<string, any>) => {
       if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'test') {
         setIsTestMode(true);
-        
-        // Reset to 0
         setDisplayValue(0);
-        
-        // Super simple test: just show 88 for a second, then back to 00
+
         setTimeout(() => {
-          // Set to 88 (0.88 in normalized value)
           setDisplayValue(0.88);
-          
-          // After 1 second, set back to 00 and complete test
+
           setTimeout(() => {
             setDisplayValue(0);
             setIsTestMode(false);
-            
-            // Emit test result when test sequence completes
-            stateMachine.emit({
+
+            MessageBus.emit({
               type: 'test_result',
               id,
-              passed: true
+              passed: true, // Assuming the test passes; adjust logic as needed
             });
           }, 1000);
         }, 100);
       }
     };
-    
-    const unsubscribe = stateMachine.subscribe(handleCommand);
-    return () => unsubscribe();
+
+    const subscription = MessageBus.subscribe((msg) => {
+      if (msg.type === 'process_begin' && msg.id === id) {
+        handleCommand(msg);
+      }
+    });
+
+    return () => {
+      subscription();
+    };
   }, [id]);
 
   // Update value when not in test mode

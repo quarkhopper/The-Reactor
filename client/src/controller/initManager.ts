@@ -1,9 +1,12 @@
 import { getAllComponentIds } from './componentManifest';
 import MessageBus from '../MessageBus';
 
+const INIT_FAIL_INTERVAL = 10000; // 10 seconds
+
 class InitManager {
   private initialized: boolean = false;
   private acknowledgedComponents: Set<string> = new Set();
+  private componentIds: string[] = [];
 
   constructor() {
     // First pass - just construct
@@ -15,36 +18,70 @@ class InitManager {
       return;
     }
 
-    console.log('[initManager] Initializing');
-
-    // Emit process_begin for all components
-    const componentIds = getAllComponentIds();
-    MessageBus.emit({
-      type: 'process_begin',
-      id: 'system',
-      process: 'init',
-    });
+    this.componentIds = getAllComponentIds();
 
     // Subscribe to MessageBus for acknowledgments
     MessageBus.subscribe((msg: Record<string, any>) => {
-      if (msg.type === 'acknowledge' && componentIds.includes(msg.id)) {
-        this.acknowledgedComponents.add(msg.id);
-
-        // Check if all components have acknowledged
-        if (this.acknowledgedComponents.size === componentIds.length) {
-          this.handleInitComplete();
-        }
-      }
+      this.handleCommand(msg);
     });
 
     this.initialized = true;
   }
 
-  private handleInitComplete() {
-    // Emit process_complete message
+  // Added a guard function to validate if a message is relevant to the StateMachine
+  private isInitManagerMessage(msg: Record<string, any>): boolean {
+    return (
+      typeof msg.type === 'string' &&
+      (msg.type === 'acknowledge' || msg.type === 'state_change')
+    );
+  }
+
+  private handleCommand(msg: Record<string, any>) {
+    if (!this.isInitManagerMessage(msg)) {
+      return;
+    }
+
+    if( msg.type === 'state_change' && msg.state === 'init' ) {
+      this.beginInit();
+    }  
+
+    if (msg.type === 'acknowledge' && this.componentIds.includes(msg.id)) {
+      console.log(`[InitManager] Initialization acknowledged for ${msg.id}`);
+      this.acknowledgedComponents.add(msg.id);
+    }
+
+    if (this.acknowledgedComponents.size === this.componentIds.length) {
+      this.handleInitComplete();
+    }
+  }
+
+  beginInit() {
+    this.acknowledgedComponents.clear(); // Reset acknowledged components
+    MessageBus.emit({
+      type: 'process_begin',
+      id: 'system',
+      process: 'init',
+    });
+    console.log('[initManager] Initializing components');
+
+    setTimeout(() => {
+      if (this.acknowledgedComponents.size < this.componentIds.length) {
+        console.error('[initManager] Initialization failed: timeout reached');
+        console.log('[initManager] uninitialized components:', this.componentIds.filter(id => !this.acknowledgedComponents.has(id)));
+
+        MessageBus.emit({
+          type: 'process_fault',
+          id: 'system',
+          process: 'init',
+        });
+      }
+    }, INIT_FAIL_INTERVAL); // Simulate a delay for initialization process
+  }
+
+  handleInitComplete() {
     MessageBus.emit({
       type: 'process_complete',
-      id: 'init',
+      id: 'system',
       process: 'init',
     });
     console.log('[initManager] Initialization complete');
@@ -53,8 +90,3 @@ class InitManager {
 
 // Create singleton instance
 export const initManager = new InitManager();
-
-// Add initialization function
-export const initInitManager = () => {
-  return initManager;
-};
