@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import MessageBus from '../MessageBus';
-
 import knobImg from '../images/knob_selector.png';
 import '../css/components/KnobSelector.css';
 
@@ -14,99 +13,58 @@ interface KnobSelectorProps {
 
 export default function KnobSelector({ id, x, y, leftLabel, rightLabel }: KnobSelectorProps) {
   const [toggled, setToggled] = useState(false);
-  const [isTestMode, setIsTestMode] = useState(false);
   const rotation = toggled ? 45 : -45;
 
-  // Handle state changes
   useEffect(() => {
-    const handleStateChange = (state: string) => {
-      if (state === 'test') {
-        setIsTestMode(true);
-      } else if (state === 'startup') {
-        setIsTestMode(false);
-        setToggled(false);
-      }
-    };
-
-    const subscription = MessageBus.subscribe((msg) => {
-      if (msg.type === 'state_change' && msg.id === 'system') {
-        handleStateChange(msg.state);
-      }
-    });
-
+    const unsubscribe = MessageBus.subscribe(handleMessage);
     return () => {
-      subscription();
+      unsubscribe();
     };
-  }, [id]);
+  }, []);
 
-  // Handle initialization and shutdown
-  useEffect(() => {
-    const handleCommand = (cmd: Record<string, any>) => {
-      if (cmd.type === 'process_begin' && cmd.process === 'init') {
-        setToggled(false);
-        setIsTestMode(false);
+  const isValidMessage = (msg: Record<string, any>): boolean => {
+    return (    
+      typeof msg.type === 'string' &&
+      (msg.type === 'process_begin'));
+  };
+
+  function handleMessage(msg: Record<string, any>) {
+    if (!isValidMessage(msg)) return; // Guard clause
+
+    if (msg.type === 'process_begin') {
+      if (msg.process === 'init') {
         MessageBus.emit({
           type: 'acknowledge',
           id,
           process: 'init',
         });
-      } else if (cmd.type === 'process_begin' && cmd.process === 'shutdown') {
+      } else if (msg.process === 'shutdown') {
         setToggled(false);
-        setIsTestMode(false);
+        MessageBus.emit({
+          type: 'acknowledge',
+          id,
+          process: 'shutdown',
+        });
+      } else if (msg.process === 'test') {
+        MessageBus.emit({
+          type: 'test_result',
+          id,
+          passed: true,
+        });
       }
-    };
-
-    const subscription = MessageBus.subscribe((msg) => {
-      if (msg.type === 'process_begin' && msg.id === id) {
-        handleCommand(msg);
-      }
-    });
-
-    return () => {
-      subscription();
-    };
-  }, [id]);
-
-  // Handle test sequence
-  useEffect(() => {
-    const handleCommand = (cmd: Record<string, any>) => {
-      if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'test') {
-        setIsTestMode(true);
-
-        setTimeout(() => {
-          MessageBus.emit({
-            type: 'test_result',
-            id,
-            passed: true,
-          });
-          setIsTestMode(false);
-        }, 500);
-      }
-    };
-
-    const subscription = MessageBus.subscribe((msg) => {
-      if (msg.type === 'process_begin' && msg.id === id) {
-        handleCommand(msg);
-      }
-    });
-
-    return () => {
-      subscription();
-    };
-  }, [id]);
+    }
+  }
 
   const handleClick = () => {
-    if (!isTestMode) {
-      const newToggled = !toggled;
-      setToggled(newToggled);
+    const newToggled = !toggled;
+    setToggled(newToggled);
 
-      MessageBus.emit({
-        type: 'knob_change',
-        id,
-        value: newToggled ? 'right' : 'left',
-      });
-    }
-  };
+    MessageBus.emit({
+      type: 'knob_change',
+      id,
+      value: newToggled ? 'right' : 'left',
+    });
+  }
 
   return (
     <div className="knob-selector-wrapper" style={{ top: y, left: x }}>

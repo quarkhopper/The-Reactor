@@ -51,8 +51,25 @@ interface DigitalDisplayProps {
 export default function DigitalDisplay({ id, x, y, value, label }: DigitalDisplayProps) {
   const [displayValue, setDisplayValue] = useState(value);
   const [isTestMode, setIsTestMode] = useState(false);
+  
+  useEffect(() => {
+    const unsubscribe = MessageBus.subscribe(handleMessage);
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
-  function handleDigitalDisplayMessage(msg: Record<string, any>) {
+  // Guard function to filter relevant messages
+  const isValidMessage = (msg: Record<string, any>): boolean => {
+    return (
+      typeof msg.type === 'string' &&
+      (msg.type === 'state_change' || 
+        msg.type === 'process_begin' ||
+        msg.type === 'digital_display_update'));
+  };
+
+  function handleMessage(msg: Record<string, any>) {
+    if (!isValidMessage(msg)) return; // Guard clause
 
     if (msg.type === 'state_change') {
       const state = msg.state;
@@ -102,18 +119,6 @@ export default function DigitalDisplay({ id, x, y, value, label }: DigitalDispla
       }
     }
   }
-
-  // Consolidate subscriptions into a single useEffect
-  useEffect(() => {
-    const handleMessage = (msg: Record<string, any>) => {
-      handleDigitalDisplayMessage(msg);
-    };
-
-    const unsubscribe = MessageBus.subscribe(handleMessage);
-    return () => {
-      unsubscribe();
-    };
-  }, [id]);
 
   // Function to convert a raw value to display digits
   const getDisplayDigits = (rawValue: number) => {

@@ -16,7 +16,26 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
   const [blinking, setBlinking] = useState(false);
   const [visible, setVisible] = useState(false);
 
-  function handleMasterButtonMessage(msg: Record<string, any>) {
+  useEffect(() => {
+    const unsubscribe = MessageBus.subscribe(handleMessage);
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  function isValidMessage(msg: Record<string, any>): boolean {
+    return (
+      typeof msg.type === 'string' &&
+      (msg.type === 'state_change' ||
+       msg.type === 'process_begin' ||
+       msg.type === 'power_button_press') &&
+      (msg.id === 'master' || msg.type === 'state_change') // Allow state_change without specific id
+    );
+  }
+
+  function handleMessage(msg: Record<string, any>) {
+    if (!isValidMessage(msg)) return; // Guard clause
+    
     if (msg.type === 'state_change') {
       const state = msg.state;
       if (state === 'on' || state === 'scram') {
@@ -68,29 +87,9 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
     }
   }
 
-  function isMasterButtonMessage(msg: Record<string, any>): boolean {
-    return (
-      typeof msg.type === 'string' &&
-      (msg.type === 'state_change' ||
-       msg.type === 'process_begin' ||
-       msg.type === 'power_button_press') &&
-      (msg.id === 'master' || msg.type === 'state_change') // Allow state_change without specific id
-    );
-  }
 
-  // Consolidate subscriptions into a single useEffect
-  useEffect(() => {
-    const handleMessage = (msg: Record<string, any>) => {
-      if (isMasterButtonMessage(msg)) {
-        handleMasterButtonMessage(msg);
-      }
-    };
 
-    const unsubscribe = MessageBus.subscribe(handleMessage);
-    return () => {
-      unsubscribe();
-    };
-  }, []);
+
 
   // Blinking animation loop
   useEffect(() => {

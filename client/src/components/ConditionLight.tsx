@@ -9,9 +9,18 @@ import amber from '../images/condition_amber.png';
 import white from '../images/condition_white.png';
 import shine from '../images/condition_shine.png';
 
+const conditionImages: Record<ConditionColor, string> = {
+  off,
+  red,
+  green,
+  amber,
+  white,
+};
+
 import MessageBus from '../MessageBus';
 
 type ConditionColor = 'off' | 'red' | 'green' | 'amber' | 'white';
+const ConditionLabels = ['POWER', 'SCRAM', 'TRANS', 'FAULT', 'TEST'];
 
 interface ConditionLightProps {
   id: string;
@@ -21,14 +30,6 @@ interface ConditionLightProps {
   width?: number;
   label?: string;
 }
-
-const conditionImages: Record<ConditionColor, string> = {
-  off,
-  red,
-  green,
-  amber,
-  white,
-};
 
 const ConditionLight: React.FC<ConditionLightProps> = ({
   id,
@@ -41,7 +42,25 @@ const ConditionLight: React.FC<ConditionLightProps> = ({
   const [displayColor, setDisplayColor] = useState<ConditionColor>(color);
   const [isTestMode, setIsTestMode] = useState(false);
 
-  function handleConditionLightMessage(msg: Record<string, any>) {
+  useEffect(() => {
+    const unsubscribe = MessageBus.subscribe(handleMessage);
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  // Guard function to filter relevant messages
+  const isValidMessage = (msg: Record<string, any>): boolean => {
+    return (
+      typeof msg.type === 'string' &&
+      (msg.type === 'state_change' || 
+        msg.type === 'process_begin' || 
+        ConditionLabels.some(label => msg.type === label))
+    );
+  };
+
+  function handleMessage(msg: Record<string, any>) {
+    if (!isValidMessage(msg)) return; // Guard clause
     if (msg.type === 'state_change') {
 
       if (msg.state === 'startup' || msg.state === 'on') {
@@ -131,18 +150,6 @@ const ConditionLight: React.FC<ConditionLightProps> = ({
       }
     }
   }
-
-  // Consolidate subscriptions into a single useEffect
-  useEffect(() => {
-    const handleMessage = (msg: Record<string, any>) => {
-      handleConditionLightMessage(msg);
-    };
-
-    const unsubscribe = MessageBus.subscribe(handleMessage);
-    return () => {
-      unsubscribe();
-    };
-  }, [id, color]);
 
   // Update display color when color prop changes (but not during test mode)
   useEffect(() => {

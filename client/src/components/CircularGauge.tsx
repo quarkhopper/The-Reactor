@@ -22,8 +22,24 @@ export default function CircularGauge({ id, x, y, value, limit, eventType }: Cir
   const [displayValue, setDisplayValue] = useState(value);
   const [isTestMode, setIsTestMode] = useState(false);
 
-  function handleCircularGaugeMessage(msg: Record<string, any>) {
+  useEffect(() => {
+    const unsubscribe = MessageBus.subscribe(handleMessage);
+    return () => {
+      unsubscribe(); // Ensure this does not return a value
+    };
+  }, []);
 
+  // Guard function to filter relevant messages
+  const isValidMessage = (msg: Record<string, any>): boolean => {
+    return (
+      typeof msg.type === 'string' &&
+      (msg.type === 'state_change' || 
+        msg.type === 'process_begin' || 
+        msg.type === eventType));
+  };
+
+  function handleMessage(msg: Record<string, any>) {
+    if (!isValidMessage(msg)) return; // Guard clause
     if (msg.type === eventType && !isTestMode) {
       setDisplayValue(msg.value);
     } else if (msg.type === 'state_change') {
@@ -76,18 +92,6 @@ export default function CircularGauge({ id, x, y, value, limit, eventType }: Cir
       }
     }
   }
-
-  // Consolidate subscriptions into a single useEffect
-  useEffect(() => {
-    const handleMessage = (msg: Record<string, any>) => {
-      handleCircularGaugeMessage(msg);
-    };
-
-    const unsubscribe = MessageBus.subscribe(handleMessage);
-    return () => {
-      unsubscribe(); // Ensure this does not return a value
-    };
-  }, [id]);
 
   const clampedValue = Math.min(Math.max(displayValue, 0), 1);
   const angle = clampedValue * 180 - 90; // -90° to +90°

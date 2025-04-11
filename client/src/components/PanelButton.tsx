@@ -11,17 +11,6 @@ import '../css/components/PanelButton.css';
 
 type ButtonColor = 'off' | 'green' | 'amber' | 'red' | 'white';
 
-interface PanelButtonProps {
-  id: string;
-  x: number;
-  y: number;
-  label?: string;
-  onClick?: () => void;
-  isActive?: boolean;
-  displayColor?: ButtonColor;
-  disabled?: boolean;
-}
-
 const glowMap: Record<ButtonColor, string> = {
   off: glow_off,
   green: glow_green,
@@ -30,12 +19,21 @@ const glowMap: Record<ButtonColor, string> = {
   white: glow_white,
 };
 
+interface PanelButtonProps {
+  id: string;
+  x: number;
+  y: number;
+  label?: string;
+  isActive?: boolean;
+  displayColor?: ButtonColor;
+  disabled?: boolean;
+}
+
 const PanelButton: React.FC<PanelButtonProps> = ({ 
   id, 
   x, 
   y, 
   label,
-  onClick,
   isActive = false,
   displayColor = 'off',
   disabled = false
@@ -44,31 +42,35 @@ const PanelButton: React.FC<PanelButtonProps> = ({
   const [currentColor, setCurrentColor] = useState<ButtonColor>(displayColor);
   const [isTestMode, setIsTestMode] = useState(false);
 
-  // Handle state changes for visual updates
   useEffect(() => {
-    const handleStateChange = (state: string) => {
+    const unsubscribe = MessageBus.subscribe(handleMessage);
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  const isValidMessage = (msg: Record<string, any>): boolean => {
+    return (
+      typeof msg.type === 'string' &&
+      (msg.type === 'state_change' ||
+        msg.type === 'process_begin' ||
+        msg.type === 'button_press')
+    );
+  };
+
+  function handleMessage(msg: Record<string, any>) {
+    if (!isValidMessage(msg)) return; // Guard clause
+
+    if (msg.type === 'state_change') {
+      const state = msg.state;
       if (state === 'startup' || state === 'on') {
         setIsTestMode(false);
-        setCurrentColor(displayColor);
+        setCurrentColor('off');
+      } else if (state === 'off') {
+        setCurrentColor('off');
       }
-    };
-
-    const subscription = MessageBus.subscribe((msg) => {
-      if (msg.type === 'state_change' && msg.id === id) {
-        handleStateChange(msg.state);
-      }
-    });
-
-    return () => {
-      subscription();
-    };
-  }, [id, displayColor]);
-
-  // Handle initialization and shutdown
-  useEffect(() => {
-    const handleCommand = (cmd: Record<string, any>) => {
-      if (cmd.type === 'process_begin' && cmd.process === 'init') {
-        setIsHeld(false);
+    } else if (msg.type === 'process_begin') {
+      if (msg.process === 'init') {
         setCurrentColor('off');
         setIsTestMode(false);
         MessageBus.emit({
@@ -76,30 +78,16 @@ const PanelButton: React.FC<PanelButtonProps> = ({
           id,
           process: 'init',
         });
-      } else if (cmd.type === 'process_begin' && cmd.process === 'shutdown') {
-        setIsHeld(false);
+      } else if (msg.process === 'shutdown') {
         setCurrentColor('off');
         setIsTestMode(false);
-      }
-    };
-
-    const subscription = MessageBus.subscribe((msg) => {
-      if (msg.type === 'process_begin' && msg.id === id) {
-        handleCommand(msg);
-      }
-    });
-
-    return () => {
-      subscription();
-    };
-  }, [id]);
-
-  // Handle test sequence
-  useEffect(() => {
-    const handleCommand = (cmd: Record<string, any>) => {
-      if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'test') {
+        MessageBus.emit({
+          type: 'acknowledge',
+          id,
+          process: 'shutdown',
+        });
+      } else if (msg.process === 'test') {
         setIsTestMode(true);
-
         const sequence: ButtonColor[] = ['red', 'amber', 'green', 'white', 'off'];
         let i = 0;
 
@@ -120,18 +108,8 @@ const PanelButton: React.FC<PanelButtonProps> = ({
           }
         }, 150);
       }
-    };
-
-    const subscription = MessageBus.subscribe((msg) => {
-      if (msg.type === 'process_begin' && msg.id === id) {
-        handleCommand(msg);
-      }
-    });
-
-    return () => {
-      subscription();
-    };
-  }, [id, displayColor]);
+    }
+  }
 
   // Update color when displayColor prop changes (but not during test mode)
   useEffect(() => {
@@ -146,17 +124,13 @@ const PanelButton: React.FC<PanelButtonProps> = ({
 
   const handleMouseUp = () => {
     if (!disabled && !isTestMode && isHeld) {
-      if (onClick) {
-        onClick();
-      } else {
-        MessageBus.emit({
-          type: 'button_press',
-          id,
-        });
-      }
+      MessageBus.emit({
+        type: 'button_press',
+        id,
+      });
     }
     setIsHeld(false);
-  };
+  }
 
   const handleMouseLeave = () => setIsHeld(false);
 

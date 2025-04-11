@@ -46,17 +46,27 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({ id, x, y, gridX, gridY })
   const [isPulsing, setIsPulsing] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
 
+  useEffect(() => {
+    const unsubscribe = MessageBus.subscribe(handleMessage);
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
   // Guard function to filter relevant messages
-  const isComponentMessage = (msg: Record<string, any>): boolean => {
+  const isValidMessage = (msg: Record<string, any>): boolean => {
     return (
       typeof msg.type === 'string' &&
-      (msg.type === 'state_change' || msg.type === 'process_begin' || msg.type === 'temperature_update' || msg.type === 'fuel_rod_state_update') &&
-      msg.id === id
-    );
+      (msg.type === 'state_change' || 
+        msg.type === 'process_begin' || 
+        msg.type === 'temperature_update' || 
+        msg.type === 'fuel_rod_state_update'));
   };
 
   // Centralized message handler
   const handleMessage = (msg: Record<string, any>) => {
+    if (!isValidMessage(msg)) return; // Guard clause
+
     if (msg.type === 'state_change') {
       handleStateChange(msg.state);
     } else if (msg.type === 'process_begin') {
@@ -146,19 +156,6 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({ id, x, y, gridX, gridY })
     }, 150);
 
   };
-
-  useEffect(() => {
-    const subscription = MessageBus.subscribe((msg) => {
-      if (isComponentMessage(msg)) {
-        handleMessage(msg);
-      }
-    });
-
-    // Return a cleanup function that unsubscribes from MessageBus
-    return () => {
-      subscription();
-    };
-  }, [id]);
 
   useEffect(() => {
     if (!isBlinking) return;

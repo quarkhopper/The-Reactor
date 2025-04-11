@@ -30,6 +30,13 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
 }) => {
   const [displayColor, setDisplayColor] = useState<IndicatorColor>(initialColor);
   
+  useEffect(() => {
+    const unsubscribe = MessageBus.subscribe(handleMessage);
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
   // Color mapping for the indicator images
   const colorMap: Record<IndicatorColor, string> = {
     amber,
@@ -39,55 +46,34 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
     off,
   };
   
-  // Handle state changes
-  useEffect(() => {
-    const handleStateChange = (state: string) => {
+  // Guard function to filter relevant messages
+  const isValidMessage = (msg: Record<string, any>): boolean => {
+    return (
+      typeof msg.type === 'string' &&
+      (msg.type === 'state_change' || 
+        msg.type === 'process_begin' ||
+        msg.type === 'set_indicator'));
+  };
+
+  function handleMessage(msg: Record<string, any>) {
+    if (!isValidMessage(msg)) return; // Guard clause
+
+    if (msg.type === 'state_change') {
+      const state = msg.state;
       if (state === 'startup' || state === 'on') {
-        // Ensure components are reset when entering startup or on state
+        setDisplayColor('off'); // Reset display color on state change
+      } else if (state === 'shutdown') {
+        setDisplayColor('off'); // Reset display color during shutdown
+      }
+    } else if (msg.type === 'process_begin') {
+      if (msg.process === 'init') {
         setDisplayColor('off');
-      }
-    };
-
-    const subscription = MessageBus.subscribe((msg) => {
-      if (msg.type === 'state_change' && msg.id === id) {
-        handleStateChange(msg.state);
-      }
-    });
-
-    return () => {
-      subscription();
-    };
-  }, [id]);
-  
-  // Handle process_begin:init and process_begin:shutdown commands
-  useEffect(() => {
-    const handleCommand = (cmd: Record<string, any>) => {
-      if (cmd.type === 'process_begin' && cmd.process === 'init') {
         MessageBus.emit({
           type: 'acknowledge',
           id,
           process: 'init',
         });
-      } else if (cmd.type === 'process_begin' && cmd.process === 'shutdown') {
-        setDisplayColor('off');
-      }
-    };
-
-    const subscription = MessageBus.subscribe((msg) => {
-      if (msg.type === 'process_begin' && msg.id === id) {
-        handleCommand(msg);
-      }
-    });
-
-    return () => {
-      subscription();
-    };
-  }, [id]);
-  
-  // Handle test sequence
-  useEffect(() => {
-    const handleCommand = (cmd: Record<string, any>) => {
-      if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'test') {
+      } else if (msg.process === 'test') {
         const sequence: IndicatorColor[] = ['red', 'amber', 'green', 'white', 'off'];
         let i = 0;
 
@@ -106,20 +92,14 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
         }, 150);
 
         return () => clearInterval(interval);
+      } else if (msg.process === 'shutdown') {
+        setDisplayColor('off');
       }
-    };
+    } else if (msg.type === 'set_indicator' && msg.id === id) {
+      setDisplayColor(msg.color);
+    }
+  }
 
-    const subscription = MessageBus.subscribe((msg) => {
-      if (msg.type === 'process_begin' && msg.id === id) {
-        handleCommand(msg);
-      }
-    });
-
-    return () => {
-      subscription();
-    };
-  }, [id]);
-  
   // Render
   return (
     <div className="indicator-light-wrapper" style={{ top: y, left: x }}>
