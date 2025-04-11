@@ -1,5 +1,5 @@
-import { getAllComponentIds } from './componentManifest';
-import MessageBus from '../MessageBus';
+import { getAllComponentIds } from '../componentManifest';
+import MessageBus from '../../MessageBus';
 
 const SHUTDOWN_FAIL_TIMEOUT = 10000; // 10 seconds
 
@@ -31,9 +31,8 @@ class ShutdownManager {
   private isValidMessage(msg: Record<string, any>): boolean {
     return (
       typeof msg.type === 'string' &&
-      (msg.type === 'state_change' || 
-        (msg.type === 'acknowledge' && msg.process === 'shutdown')
-      )
+      ((msg.type === 'state_change' && msg.state === 'shutdown') || 
+        (msg.type === 'acknowledge' && msg.process === 'shutdown'))
     );
   }
 
@@ -42,7 +41,8 @@ class ShutdownManager {
       return;
     }
 
-    if (msg.type === 'state_change' && msg.state === 'shutdown') {
+    if (msg.type === 'state_change') {
+      console.log('[shutdownManager] Received shutdown state change');
       this.beginShutdown();
     }
 
@@ -70,7 +70,7 @@ class ShutdownManager {
     setTimeout(() => {
       if (this.acknowledgedComponents.size < this.componentIds.length) {
         console.error('[ShutdownManager] Shutdown failed: timeout reached');
-        console.log('[ShutdownManager] Shutdown components:', this.componentIds.filter(id => !this.acknowledgedComponents.has(id)));
+        console.log('[ShutdownManager] Shutdown not acknoledged for components:', this.componentIds.filter(id => !this.acknowledgedComponents.has(id)));
 
         MessageBus.emit({
           type: 'process_fault',
@@ -85,7 +85,7 @@ class ShutdownManager {
     // Emit process_complete message
     MessageBus.emit({
       type: 'process_complete',
-      id: 'shutdown',
+      id: 'system',
       process: 'shutdown',
     });
 

@@ -1,5 +1,5 @@
-import { getAllComponentIds } from './componentManifest';
-import MessageBus from '../MessageBus';
+import { getAllComponentIds } from '../componentManifest';
+import MessageBus from '../../MessageBus';
 
 const INIT_FAIL_TIMEOUT = 10000; // 10 seconds
 
@@ -31,9 +31,9 @@ class InitManager {
   // Added a guard function to validate if a message is relevant to the StateMachine
   private isValidMessage(msg: Record<string, any>): boolean {
     return (
-      typeof msg.type === 'string' &&
+      typeof msg.type === 'string' && 
       ((msg.type === 'acknowledge' && msg.process === 'init')
-       || msg.type === 'state_change')
+       || (msg.type === 'state_change' && msg.state === 'init'))
     );
   }
 
@@ -42,12 +42,12 @@ class InitManager {
       return;
     }
 
-    if( msg.type === 'state_change' && msg.state === 'init' ) {
+    if( msg.type === 'state_change') {
+      console.log('[initManager] Received init state change');
       this.beginInit();
     }  
 
     if (msg.type === 'acknowledge' && this.componentIds.includes(msg.id)) {
-      console.log(`[InitManager] Initialization acknowledged for ${msg.id}`);
       this.acknowledgedComponents.add(msg.id);
     }
 

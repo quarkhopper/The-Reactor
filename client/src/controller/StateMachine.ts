@@ -1,10 +1,10 @@
 import './subsystems';
 import MessageBus from '../MessageBus';
 import { AppState } from './types';
-import { testManager } from './testManager';
-import { initManager } from './initManager';
-import { startupManager } from './startupManager';
-import { shutdownManager } from './shutdownManager';
+import { testManager } from './process_managers/testManager';
+import { initManager } from './process_managers/initManager';
+import { startupManager } from './process_managers/startupManager';
+import { shutdownManager } from './process_managers/shutdownManager';
 
 // Define the class structure
 class StateMachine {

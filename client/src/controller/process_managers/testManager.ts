@@ -1,5 +1,5 @@
-import { getAllComponentIds } from './componentManifest';
-import MessageBus from '../MessageBus';
+import { getAllComponentIds } from '../componentManifest';
+import MessageBus from '../../MessageBus';
 
 const TEST_FAIL_TIMEOUT = 10000; // 10 seconds
 
@@ -32,7 +32,7 @@ class TestManager {
   private isTestManagerMessage(msg: Record<string, any>): boolean {
     return (
       typeof msg.type === 'string' &&
-      (msg.type === 'test_result' || msg.type === 'state_change')
+      (msg.type === 'test_result' || (msg.type === 'state_change' && msg.state === 'test'))
     );
   }
 
@@ -41,7 +41,7 @@ class TestManager {
       return;
     }
 
-    if( msg.type === 'state_change' && msg.state === 'test' ) {
+    if( msg.type === 'state_change') {
       this.beginTest();
     } 
     else if (msg.type === 'test_result' && this.componentIds.includes(msg.id)) {

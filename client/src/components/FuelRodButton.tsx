@@ -112,6 +112,11 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({ id, x, y, gridX, gridY })
       setIsHeld(false);
       setIsBlinking(false);
       setIsPulsing(false);
+      MessageBus.emit({
+        type: 'acknowledge',
+        id,
+        process: 'shutdown',
+      });
     } else if (cmd.process === 'test') {
       handleTestSequence();
     }

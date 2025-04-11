@@ -1,4 +1,4 @@
-import MessageBus from '../MessageBus';
+import MessageBus from '../../MessageBus';
 
 class StartupManager  {
   private initialized: boolean = false;
@@ -27,7 +27,7 @@ class StartupManager  {
     return (
       typeof msg.type === 'string' &&
       ((msg.type === 'acknowledge' && msg.process === 'startup') ||
-        msg.type === 'state_change')
+      (msg.type === 'state_change' && msg.state === 'startup'))
     );
   }
 
@@ -36,7 +36,7 @@ class StartupManager  {
       return;
     }
 
-    if( msg.type === 'state_change' && msg.state === 'startup' ) {
+    if( msg.type === 'state_change') {
       this.beginStartup();
     }  
   }

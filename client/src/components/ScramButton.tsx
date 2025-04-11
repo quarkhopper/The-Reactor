@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import MessageBus from '../MessageBus';
-
 import '../css/components/ScramButton.css';
-
 import bezel from '../images/e-stop_bezel.png';
 import buttonOut from '../images/e-stop_out.png';
 import buttonIn from '../images/e-stop_in.png';
@@ -55,6 +53,11 @@ export default function ScramButton({ id, x, y }: ScramButtonProps) {
       } else if (msg.process === 'shutdown') {
         setPressed(false);
         setIsTestMode(false);
+        MessageBus.emit({
+          type: 'acknowledge',
+          id,
+          process: 'init',
+        });
       } else if (msg.process === 'test') {
         setIsTestMode(true);
         setPressed(true);
