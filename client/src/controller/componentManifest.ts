@@ -39,7 +39,7 @@ export const COMPONENT_IDS = {
   
   // Controls
   [COMPONENT_CATEGORIES.CONTROLS]: [
-    'primary_speed',
+    'pump_speed',
     'slider_0', 'slider_1', 'slider_2', 'slider_3', 'slider_4', 'slider_5', 'slider_6', 'slider_7'
   ],
   

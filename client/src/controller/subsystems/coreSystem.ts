@@ -1,11 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import MessageBus from '../../MessageBus';
 
 const GRID_SIZE = 6;
 const ROD_COUNT = 8;
-
-let tickInterval: NodeJS.Timeout | null = null; // Store the interval ID
-let tickCounter = 0; // Track number of ticks
 
 // Add a debounce timer for recalculations
 let recalculationTimer: NodeJS.Timeout | null = null;
@@ -145,28 +142,9 @@ function precalculateBaseReactivities() {
   }
 }
 
-// Function to start the tick interval
-function startTick() {
-  if (!tickInterval) {
-    tickInterval = setInterval(() => {
-      tick();
-    }, 1000);
-  }
-}
-
-// Function to stop the tick interval
-function stopTick() {
-  if (tickInterval) {
-    clearInterval(tickInterval);
-    tickInterval = null;
-  }
-}
-
 // Main tick function
 function tick() {
   try {
-    tickCounter++;
-
     let totalTemp = 0;
     let minTemp = 1;
     let maxTemp = 0;
@@ -186,16 +164,18 @@ function tick() {
             rod.state = newState;
             delete rod.transitionStartTime;
             delete rod.previousState;
-            
-            
+           
             // Emit state change
             MessageBus.emit({
               type: 'fuel_rod_state_update',
-              id: `fuel_rod_button_${x}_${y}`,
+              id: 'sysstem',
               state: newState,
-              x,
-              y
+              x: x,
+              y: y
             });
+
+            // Schedule recalculation
+            scheduleRecalculation();                      
           }
         }
       }
@@ -272,126 +252,87 @@ function tick() {
 }
 
 // Type guard to validate if a message is relevant to coreSystem
-function isCoreSystemMessage(msg: Record<string, any>): boolean {
+function isValidMessage(msg: Record<string, any>): boolean {
   return (
     typeof msg.type === 'string' &&
     (msg.type === 'state_change' ||
      msg.type === 'coolant_temp_update' ||
      msg.type === 'flow_rate_update' ||
-     msg.type === 'position_update' ||
-     msg.type === 'fuel_rod_state_toggle' ||
-     msg.type === 'fuel_rod_state_update')
+     (msg.type === 'slider_position_update' && msg.target === 'rod') ||
+     msg.type === 'fuel_rod_state_toggle' )
   );
 }
 
-// Updated subscriptions to process raw JSON messages
-MessageBus.subscribe((msg: Record<string, any>) => {
-  if (isCoreSystemMessage(msg)) {
-    if (msg.type === 'state_change' && msg.id === 'system') {
-      if (msg.state === 'on') {
-        assignStructuredControlRodPositions();
-        precalculateDistances();
-        precalculateBaseReactivities();
-        startTick();
+MessageBus.subscribe(handleMessage);
 
-        console.log('[coreSystem] Transitioning to ON state - re-engaging withdrawn fuel rods');
-        for (let x = 0; x < GRID_SIZE; x++) {
-          for (let y = 0; y < GRID_SIZE; y++) {
-            const rod = fuelRods[x][y];
-            if (rod.state === 'withdrawn') {
-              rod.previousState = rod.state;
-              rod.state = 'transitioning';
-              rod.transitionStartTime = Date.now();
+function handleMessage (msg: Record<string, any>) {
+  if (!isValidMessage(msg)) return; // Guard clause
 
-              MessageBus.emit({
-                type: 'fuel_rod_state_update',
-                id: `fuel_rod_button_${x}_${y}`,
-                state: 'transitioning',
-                x,
-                y
-              });
-            }
+  if (msg.type === 'state_change') {
+    if (msg.state === 'startup') {
+      assignStructuredControlRodPositions();
+      precalculateDistances();
+      precalculateBaseReactivities();
+
+      console.log('[coreSystem] Transitioning to startup state - re-engaging withdrawn fuel rods');
+      for (let x = 0; x < GRID_SIZE; x++) {
+        for (let y = 0; y < GRID_SIZE; y++) {
+          const rod = fuelRods[x][y];
+          if (rod.state === 'withdrawn') {
+            rod.previousState = rod.state;
+            rod.state = 'transitioning';
+            rod.transitionStartTime = Date.now();
+
+            MessageBus.emit({
+              type: 'fuel_rod_state_update',
+              id: `fuel_rod_button_${x}_${y}`,
+              state: 'transitioning',
+              x,
+              y
+            });
           }
         }
-      } else if (msg.state === 'off' || msg.state === 'shutdown') {
-        stopTick();
-      } else if (msg.state === 'scram') {
-        console.log('[coreSystem] SCRAM initiated - inserting control rods');
-        for (let i = 0; i < controlRodPositions.length; i++) {
-          controlRodPositions[i] = 0;
-          MessageBus.emit({
-            type: 'control_rod_position_update',
-            id: i,
-            value: 0
-          });
-        }
-      }
-    } else if (msg.type === 'coolant_temp_update') {
-      coolantState.temperature = msg.value;
-    } else if (msg.type === 'flow_rate_update') {
-      coolantState.flowRate = msg.value;
-    } else if (msg.type === 'position_update' && msg.id.startsWith('rod_')) {
-      const rodIndex = parseInt(msg.id.split('_')[1], 10);
-      if (!isNaN(rodIndex) && rodIndex >= 0 && rodIndex < controlRodPositions.length) {
-        controlRodPositions[rodIndex] = msg.value;
-      }
-    } else if (msg.type === 'fuel_rod_state_toggle') {
-      const { x, y } = msg;
-      if (x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
-        const rod = fuelRods[x][y];
-        if (rod.state !== 'transitioning') {
-          rod.previousState = rod.state;
-          rod.state = 'transitioning';
-          rod.transitionStartTime = Date.now();
-
-          MessageBus.emit({
-            type: 'fuel_rod_state_update',
-            id: msg.id,
-            state: 'transitioning',
-            x: msg.x,
-            y: msg.y
-          });
-        }
-      }
-    } else if (msg.type === 'fuel_rod_state_update' && (msg.state === 'engaged' || msg.state === 'withdrawn')) {
-      const { x, y } = msg;
-      if (x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
-        const rod = fuelRods[x][y];
-        console.log(`[coreSystem] State update for rod ${x},${y}: ${rod.state} -> ${msg.state}`);
-        rod.state = msg.state;
-        scheduleRecalculation();
       }
     }
-  }
-});
-
-// React hook for components to use
-export function useCoreSystem() {
-  const [state, setState] = useState({
-    controlRodCoords,
-    controlRodPositions,
-    reactivity,
-    fuelRods
-  });
-
-  useEffect(() => {
-    // Subscribe to state updates
-    const unsubscribe = MessageBus.subscribe((msg: Record<string, any>) => {
-      if (isCoreSystemMessage(msg) && msg.type === 'position_update') {
-        // Update local state when rod positions change
-        setState(prev => ({
-          ...prev,
-          controlRodPositions: [...prev.controlRodPositions]
-        }));
+    if (msg.state === 'scram') {
+      console.log('[coreSystem] SCRAM initiated - inserting control rods');
+      for (let i = 0; i < controlRodPositions.length; i++) {
+        controlRodPositions[i] = 0;
+        MessageBus.emit({
+          type: 'control_rod_position_update',
+          id: i,
+          value: 0
+        });
       }
-    });
+    }
+  } else if (msg.type === 'coolant_temp_update') {
+    coolantState.temperature = msg.value;
+  } else if (msg.type === 'flow_rate_update') {
+    coolantState.flowRate = msg.value;
+  } else if (msg.type === 'slider_position_update') {
+    const rodIndex = msg.index;
+    if (!isNaN(rodIndex) && rodIndex >= 0 && rodIndex < controlRodPositions.length) {
+      controlRodPositions[rodIndex] = msg.value;
+    }
+  } else if (msg.type === 'fuel_rod_state_toggle') {
+    const { x, y } = msg;
+    if (x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
+      const rod = fuelRods[x][y];
+      if (rod.state !== 'transitioning') {
+        rod.previousState = rod.state;
+        rod.state = 'transitioning';
+        rod.transitionStartTime = Date.now();
 
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  return state;
+        MessageBus.emit({
+          type: 'fuel_rod_state_update',
+          id: `fuel_rod_button_${x}_${y}`,
+          state: 'transitioning',
+          x: msg.x,
+          y: msg.y
+        });
+      }
+    }
+  } 
 }
 
 // Export the core system as a subsystem
@@ -409,8 +350,6 @@ export default coreSystem;
 
 // Debounced function to schedule recalculations
 function scheduleRecalculation() {
-  console.log('[coreSystem] Scheduling recalculation...');
-  
   // Clear existing timer if there is one
   if (recalculationTimer) {
     clearTimeout(recalculationTimer);
@@ -427,8 +366,6 @@ function scheduleRecalculation() {
         }
       }
     }
-    
-    console.log(`[coreSystem] Performing delayed recalculation. Withdrawn rods: ${withdrawnCount}/${GRID_SIZE * GRID_SIZE}`);
     
     precalculateDistances();
     precalculateBaseReactivities();

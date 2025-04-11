@@ -9,11 +9,11 @@ interface SliderControlProps {
   x: number;
   y: number;
   target: string;  // e.g., 'cooling', 'rod'
-  index: number;   // meaningful index within the target system
-  onChange?: (value: number, target: string, index: number) => void;
+  index?: number;   // meaningful index within the target system
+  // onChange?: (value: number, target: string, index: number) => void;
 }
 
-const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, target, index, onChange }) => {
+const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, target, index }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
   const [value, setValue] = useState(0);
@@ -32,8 +32,9 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, target, index, 
       typeof msg.type === 'string' &&
       (msg.type === 'state_change' ||
         msg.type === 'process_begin' ||
-        msg.type === 'control_rod_position_update')
-    );
+        (msg.type === 'control_rod_position_update' && msg.index === index) || 
+          (msg.type === 'pump_speed_update' && target === 'cooling'))
+      );
   }
 
   function handleMessage(msg: Record<string, any>) {
@@ -86,11 +87,6 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, target, index, 
 
       if (progress >= 1) {
         setValue(0);
-        MessageBus.emit({
-          type: 'position_update',
-          id: `${target}_${index}`,
-          value: 0,
-        });
         setIsTestMode(false);
         MessageBus.emit({
           type: 'test_result',
@@ -111,8 +107,10 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, target, index, 
 
       setValue(currentValue);
       MessageBus.emit({
-        type: 'position_update',
-        id: `${target}_${index}`,
+        type: 'slider_position_update',
+        id: id,
+        target: target,
+        index: index,
         value: currentValue,
       });
 
@@ -136,9 +134,9 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, target, index, 
     const newValue = 1 - clamped / travelHeight;
     setValue(newValue);
 
-    if (onChange) {
-      onChange(newValue, target, index);
-    }
+    // if (onChange) {
+    //   onChange(newValue, target, index);
+    // }
 
     // Emit position update with new target-based ID format
     MessageBus.emit({

@@ -52,7 +52,8 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
       typeof msg.type === 'string' &&
       (msg.type === 'state_change' || 
         msg.type === 'process_begin' ||
-        msg.type === 'set_indicator'));
+        (msg.type === 'set_indicator' && msg.id === id))
+      );
   };
 
   function handleMessage(msg: Record<string, any>) {
@@ -94,8 +95,13 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
         return () => clearInterval(interval);
       } else if (msg.process === 'shutdown') {
         setDisplayColor('off');
+        MessageBus.emit({
+          type: 'acknowledge',
+          id,
+          process: 'shutdown',
+        });
       }
-    } else if (msg.type === 'set_indicator' && msg.id === id) {
+    } else if (msg.type === 'set_indicator') {
       setDisplayColor(msg.color);
     }
   }
