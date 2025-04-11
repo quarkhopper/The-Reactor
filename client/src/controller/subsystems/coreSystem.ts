@@ -318,8 +318,8 @@ MessageBus.subscribe((msg: Record<string, any>) => {
         for (let i = 0; i < controlRodPositions.length; i++) {
           controlRodPositions[i] = 0;
           MessageBus.emit({
-            type: 'position_update',
-            id: `rod_${i}`,
+            type: 'control_rod_position_update',
+            id: i,
             value: 0
           });
         }

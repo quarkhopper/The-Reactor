@@ -1,9 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import MessageBus from '../MessageBus';
-
 import baseImg from '../images/slider_base.png';
 import knobImg from '../images/slider_knob.png';
-
 import '../css/components/SliderControl.css';
 
 interface SliderControlProps {
@@ -22,31 +20,31 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, target, index, 
   const [isTestMode, setIsTestMode] = useState(false);
   const knobTravelRatio = 0.68;
 
-  // Handle state changes for visual updates
   useEffect(() => {
-    const handleStateChange = (state: string) => {
-      if (state === 'startup' || state === 'on') {
+    const unsubscribe = MessageBus.subscribe(handleMessage);
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  const isValidMessage = (msg: Record<string, any>): boolean => {
+    return (
+      typeof msg.type === 'string' &&
+      (msg.type === 'state_change' ||
+        msg.type === 'process_begin' ||
+        msg.type === 'control_rod_position_update')
+    );
+  }
+
+  function handleMessage(msg: Record<string, any>) {
+    if (!isValidMessage(msg)) return;
+
+    if (msg.type === 'state_change') {
+      if (msg.state === 'startup' || msg.state === 'on') {
         setIsTestMode(false);
       }
-    };
-
-    const subscription = MessageBus.subscribe((msg) => {
-      if (msg.type === 'state_change' && msg.id === id) {
-        handleStateChange(msg.state);
-      } else if (msg.type === 'position_update' && msg.id === `${target}_${index}`) {
-        setValue(msg.value);
-      }
-    });
-
-    return () => {
-      subscription();
-    };
-  }, [id, target, index]);
-
-  // Handle initialization and shutdown
-  useEffect(() => {
-    const handleCommand = (cmd: Record<string, any>) => {
-      if (cmd.type === 'process_begin' && cmd.process === 'init') {
+    } else if (msg.type === 'process_begin') {
+      if (msg.process === 'init') {
         setValue(0);
         setIsTestMode(false);
         MessageBus.emit({
@@ -54,91 +52,79 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, target, index, 
           id,
           process: 'init',
         });
-      } else if (cmd.type === 'process_begin' && cmd.process === 'shutdown') {
+      } else if (msg.process === 'shutdown') {
         setValue(0);
         setIsTestMode(false);
+        MessageBus.emit({
+          type: 'acknowledge',
+          id,
+          process: 'shutdown',
+        });
+      } else if (msg.process === 'test') {
+        handleTest();
       }
-    };
+    } else if (msg.type === 'control_rod_position_update' && 
+      target === 'rod' && 
+      index === msg.index) {
+      setValue(msg.value);
+    }
+  } 
 
-    const subscription = MessageBus.subscribe((msg) => {
-      if (msg.type === 'process_begin' && msg.id === id) {
-        handleCommand(msg);
-      }
-    });
-
-    return () => {
-      subscription();
-    };
-  }, [id]);
 
   // Handle test sequence
-  useEffect(() => {
-    const handleCommand = (cmd: Record<string, any>) => {
-      if (cmd.type === 'process_begin' && cmd.id === id && cmd.process === 'test') {
-        setIsTestMode(true);
+  function handleTest()   {
+    setIsTestMode(true);
+    setValue(0);
+
+    let startTime = Date.now();
+    const totalDuration = 2000;
+
+    const animate = () => {
+      const now = Date.now();
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / totalDuration, 1);
+
+      if (progress >= 1) {
         setValue(0);
-
-        let startTime = Date.now();
-        const totalDuration = 2000;
-
-        const animate = () => {
-          const now = Date.now();
-          const elapsed = now - startTime;
-          const progress = Math.min(elapsed / totalDuration, 1);
-
-          if (progress >= 1) {
-            setValue(0);
-            MessageBus.emit({
-              type: 'position_update',
-              id: `${target}_${index}`,
-              value: 0,
-            });
-            setIsTestMode(false);
-            MessageBus.emit({
-              type: 'test_result',
-              id,
-              passed: true,
-            });
-            return;
-          }
-
-          let currentValue;
-          if (progress < 0.5) {
-            const p = progress * 2;
-            currentValue = p;
-          } else {
-            const p = (progress - 0.5) * 2;
-            currentValue = 1 - p;
-          }
-
-          setValue(currentValue);
-          MessageBus.emit({
-            type: 'position_update',
-            id: `${target}_${index}`,
-            value: currentValue,
-          });
-
-          requestAnimationFrame(animate);
-        };
-
-        const animationFrame = requestAnimationFrame(animate);
-
-        return () => {
-          cancelAnimationFrame(animationFrame);
-        };
+        MessageBus.emit({
+          type: 'position_update',
+          id: `${target}_${index}`,
+          value: 0,
+        });
+        setIsTestMode(false);
+        MessageBus.emit({
+          type: 'test_result',
+          id,
+          passed: true,
+        });
+        return;
       }
+
+      let currentValue;
+      if (progress < 0.5) {
+        const p = progress * 2;
+        currentValue = p;
+      } else {
+        const p = (progress - 0.5) * 2;
+        currentValue = 1 - p;
+      }
+
+      setValue(currentValue);
+      MessageBus.emit({
+        type: 'position_update',
+        id: `${target}_${index}`,
+        value: currentValue,
+      });
+
+      requestAnimationFrame(animate);
     };
 
-    const subscription = MessageBus.subscribe((msg) => {
-      if (msg.type === 'process_begin' && msg.id === id) {
-        handleCommand(msg);
-      }
-    });
+    const animationFrame = requestAnimationFrame(animate);
 
     return () => {
-      subscription();
+      cancelAnimationFrame(animationFrame);
     };
-  }, [id, target, index]);
+  }
 
   const updateValue = (clientY: number) => {
     if (!containerRef.current || isTestMode) return;
