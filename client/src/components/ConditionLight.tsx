@@ -42,95 +42,90 @@ const ConditionLight: React.FC<ConditionLightProps> = ({
   const [isTestMode, setIsTestMode] = useState(false);
 
   function handleConditionLightMessage(msg: Record<string, any>) {
-    if (msg.id === id) {
-      console.log(`[ConditionLight] Received message:`, msg);
+    if (msg.type === 'state_change') {
+      if (msg.state === 'startup' || msg.state === 'on') {
+        setIsTestMode(false);
+      }
 
-      if (msg.type === 'state_change') {
-        const state = msg.state;
-        if (state === 'startup' || state === 'on') {
-          setIsTestMode(false);
+      if (id.includes('POWER')) {
+        switch (msg.state) {
+          case 'off':
+          case 'shutdown':
+            setDisplayColor('off');
+            break;
+          case 'init':
+          case 'test':
+          case 'startup':
+            setDisplayColor('amber');
+            break;
+          case 'scram':
+            setDisplayColor('red');
+            break;
+          case 'on':
+            setDisplayColor('green');
+            break;
         }
+      } else if (id.includes('TRANS')) {
+        switch (msg.state) {
+          case 'init':
+          case 'test':
+          case 'startup':
+            setDisplayColor('amber');
+            break;
+          case 'shutdown':
+          case 'off':
+            setDisplayColor('off');
+            break;
+          default:
+            setDisplayColor('off');
+            break;
+        }
+      } else {
+        setDisplayColor(color);
+      }
+    } else if (msg.type === 'process_begin') {
+      if (msg.process === 'init') {
+        setDisplayColor('off');
+        setIsTestMode(false);
+        MessageBus.emit({
+          type: 'acknowledge',
+          id,
+          process: 'init',
+        });
+        console.log(`[ConditionLight] Initialization acknowledged for ${id}`);
+      } else if (msg.process === 'shutdown') {
+        setDisplayColor('off');
+        setIsTestMode(false);
+        MessageBus.emit({
+          type: 'acknowledge',
+          id,
+          process: 'shutdown',
+        });
+        console.log(`[ConditionLight] Shutdown acknowledged for ${id}`);
+      } else if (msg.process === 'test') {
+        setIsTestMode(true);
+        console.log(`[ConditionLight] Test acknowledged for ${id}`);
 
-        if (id.includes('POWER')) {
-          switch (state) {
-            case 'off':
-            case 'shutdown':
-              setDisplayColor('off');
-              break;
-            case 'init':
-            case 'test':
-            case 'startup':
-              setDisplayColor('amber');
-              break;
-            case 'scram':
-              setDisplayColor('red');
-              break;
-            case 'on':
-              setDisplayColor('green');
-              break;
+        const sequence: ConditionColor[] = ['red', 'amber', 'green', 'white', 'off'];
+        let i = 0;
+
+        const interval = setInterval(() => {
+          setDisplayColor(sequence[i]);
+          i++;
+
+          if (i >= sequence.length) {
+            clearInterval(interval);
+            setIsTestMode(false);
+            setDisplayColor(color);
+            // Emit test_result message
+            MessageBus.emit({
+              type: 'test_result',
+              id,
+              passed: true, // Assuming the test passes; adjust logic as needed
+            });
+            console.log(`[ConditionLight] Test sequence complete for ${id}`);
           }
-        } else if (id.includes('TRANS')) {
-          switch (state) {
-            case 'init':
-            case 'test':
-            case 'startup':
-              setDisplayColor('amber');
-              break;
-            case 'shutdown':
-            case 'off':
-              setDisplayColor('off');
-              break;
-            default:
-              setDisplayColor('off');
-              break;
-          }
-        } else {
-          setDisplayColor(color);
-        }
-      } else if (msg.type === 'process_begin') {
-        if (msg.process === 'init') {
-          setDisplayColor('off');
-          setIsTestMode(false);
-          MessageBus.emit({
-            type: 'acknowledge',
-            id,
-            process: 'init',
-          });
-          console.log(`[ConditionLight] Initialization acknowledged for ${id}`);
-        } else if (msg.process === 'shutdown') {
-          setDisplayColor('off');
-          setIsTestMode(false);
-          MessageBus.emit({
-            type: 'acknowledge',
-            id,
-            process: 'shutdown',
-          });
-          console.log(`[ConditionLight] Shutdown acknowledged for ${id}`);
-        } else if (msg.process === 'test') {
-          setIsTestMode(true);
-          console.log(`[ConditionLight] Test acknowledged for ${id}`);
-
-          const sequence: ConditionColor[] = ['red', 'amber', 'green', 'white', 'off'];
-          let i = 0;
-
-          const interval = setInterval(() => {
-            setDisplayColor(sequence[i]);
-            i++;
-
-            if (i >= sequence.length) {
-              clearInterval(interval);
-              setIsTestMode(false);
-              setDisplayColor(color);
-              // Emit test_result message
-              MessageBus.emit({
-                type: 'test_result',
-                id,
-                passed: true, // Assuming the test passes; adjust logic as needed
-              });
-              console.log(`[ConditionLight] Test sequence complete for ${id}`);
-            }
-          }, 150);
-        }
+        }, 150);
       }
     }
   }

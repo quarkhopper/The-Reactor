@@ -46,6 +46,7 @@ class InitManager {
     }  
 
     if (msg.type === 'acknowledge' && this.componentIds.includes(msg.id)) {
+      console.log(`[InitManager] Initialization acknowledged for ${msg.id}`);
       this.acknowledgedComponents.add(msg.id);
     }
 

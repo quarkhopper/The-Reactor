@@ -23,61 +23,60 @@ export default function CircularGauge({ id, x, y, value, limit, eventType }: Cir
   const [isTestMode, setIsTestMode] = useState(false);
 
   function handleCircularGaugeMessage(msg: Record<string, any>) {
-    if (msg.id === id) {
-      console.log(`[CircularGauge] Received message:`, msg);
-  
-      if (msg.type === eventType) {
-        setDisplayValue(msg.value);
-      } else if (msg.type === 'state_change') {
-        const state = msg.state;
-        if (state === 'startup' || state === 'on') {
-          setIsTestMode(false);
-          setDisplayValue(0); // Reset display value on state change
-        } else if (state === 'shutdown') {
-          setIsTestMode(false);
-          setDisplayValue(0); // Reset display value during shutdown
-        }
-      } else if (msg.type === 'process_begin') {
-        if (msg.process === 'init') {
-          setDisplayValue(0);
-          setIsTestMode(false);
-          MessageBus.emit({
-            type: 'acknowledge',
-            id,
-            process: 'init',
-          });
-          console.log(`[CircularGauge] Initialization acknowledged for ${id}`);
-        } else if (msg.process === 'shutdown') {
-          setDisplayValue(0);
-          setIsTestMode(false);
-          MessageBus.emit({
-            type: 'acknowledge',
-            id,
-            process: 'shutdown',
-          });
-          console.log(`[CircularGauge] Shutdown acknowledged for ${id}`);
-        } else if (msg.process === 'test') {
-          setIsTestMode(true);
-                    let i = 0;
-          const steps = 40;
-  
-          const interval = setInterval(() => {
-            const phase = i < steps ? i / steps : 2 - i / steps;
-            setDisplayValue(phase);
-            i++;
-  
-            if (i > steps * 2) {
-              clearInterval(interval);
-              setIsTestMode(false);
-              setDisplayValue(0);
-              MessageBus.emit({
-                type: 'test_result',
-                id,
-                passed: true
-              });
-            }
-          }, 20);
-        }
+
+    console.log(`[CircularGauge] Received message:`, msg);
+
+    if (msg.type === eventType && !isTestMode) {
+      setDisplayValue(msg.value);
+    } else if (msg.type === 'state_change') {
+      const state = msg.state;
+      if (state === 'startup' || state === 'on') {
+        setIsTestMode(false);
+        setDisplayValue(0); // Reset display value on state change
+      } else if (state === 'shutdown') {
+        setIsTestMode(false);
+        setDisplayValue(0); // Reset display value during shutdown
+      }
+    } else if (msg.type === 'process_begin') {
+      if (msg.process === 'init') {
+        setDisplayValue(0);
+        setIsTestMode(false);
+        MessageBus.emit({
+          type: 'acknowledge',
+          id,
+          process: 'init',
+        });
+        console.log(`[CircularGauge] Initialization acknowledged for ${id}`);
+      } else if (msg.process === 'shutdown') {
+        setDisplayValue(0);
+        setIsTestMode(false);
+        MessageBus.emit({
+          type: 'acknowledge',
+          id,
+          process: 'shutdown',
+        });
+        console.log(`[CircularGauge] Shutdown acknowledged for ${id}`);
+      } else if (msg.process === 'test') {
+        setIsTestMode(true);
+                  let i = 0;
+        const steps = 40;
+
+        const interval = setInterval(() => {
+          const phase = i < steps ? i / steps : 2 - i / steps;
+          setDisplayValue(phase);
+          i++;
+
+          if (i > steps * 2) {
+            clearInterval(interval);
+            setIsTestMode(false);
+            setDisplayValue(0);
+            MessageBus.emit({
+              type: 'test_result',
+              id,
+              passed: true
+            });
+          }
+        }, 20);
       }
     }
   }
@@ -93,13 +92,6 @@ export default function CircularGauge({ id, x, y, value, limit, eventType }: Cir
       unsubscribe(); // Ensure this does not return a value
     };
   }, [id]);
-
-  // Update value when not in test mode
-  useEffect(() => {
-    if (!isTestMode) {
-      setDisplayValue(value);
-    }
-  }, [value, isTestMode]);
 
   const clampedValue = Math.min(Math.max(displayValue, 0), 1);
   const angle = clampedValue * 180 - 90; // -90° to +90°

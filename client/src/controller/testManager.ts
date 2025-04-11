@@ -71,7 +71,7 @@ class TestManager {
     // Emit process_fault message with failure status
     MessageBus.emit({
       type: 'process_fault',
-      id: 'test',
+      id: 'system',
       process: 'test',
     });
     console.log('[TestManager] Test process failed for some components');
@@ -81,7 +81,7 @@ class TestManager {
     // Emit process_complete message
     MessageBus.emit({
       type: 'process_complete',
-      id: 'test',
+      id: 'system',
       process: 'test',
     });
     console.log('[TestManager] Test process complete for all components');

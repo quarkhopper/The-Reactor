@@ -32,7 +32,6 @@ const MessageBus = {
       return;
     }
 
-    console.log(`[MessageBus] Emitting message:`, msg);
     subscribers.forEach((callback) => callback(msg));
   },
 
