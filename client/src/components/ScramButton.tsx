@@ -17,16 +17,74 @@ export default function ScramButton({ id, x, y }: ScramButtonProps) {
   const [pressed, setPressed] = useState(false);
   const [isTestMode, setIsTestMode] = useState(false);
 
-  // Handle state changes for visual updates
   useEffect(() => {
-    const handleStateChange = (state: string) => {
-      if (state === 'startup' || state === 'on') {
-        setIsTestMode(false);
+    const unsubscribe = MessageBus.subscribe(handleMessage);
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  const isValidMessage = (msg: Record<string, any>): boolean => {
+    return (
+      typeof msg.type === 'string' &&
+      (msg.type === 'state_change' || msg.type === 'process_begin')
+    );
+  }
+
+  function handleMessage(msg: Record<string, any>) {
+    if (!isValidMessage(msg)) return;
+
+    if (msg.type === 'state_change') {
+      if (msg.state === 'startup' || 
+        msg.state === 'on' || 
+        msg.state === 'off') {
         setPressed(false);
-      } else if (state === 'scram') {
+        setIsTestMode(false);
+      } else if (msg.state === 'scram') {
         setPressed(true);
       }
-    };
+    } else if (msg.type === 'process_begin') {
+      if (msg.process === 'init') {
+        setPressed(false);
+        setIsTestMode(false);
+        MessageBus.emit({
+          type: 'acknowledge',
+          id,
+          process: 'init',
+        });
+      } else if (msg.process === 'shutdown') {
+        setPressed(false);
+        setIsTestMode(false);
+      } else if (msg.process === 'test') {
+        setIsTestMode(true);
+        setPressed(true);
+
+        setTimeout(() => {
+          setPressed(false);
+          setIsTestMode(false);
+
+          MessageBus.emit({
+            type: 'test_result',
+            id,
+            passed: true,
+          });
+        }, 500);
+      }
+    }
+  }
+
+  const handleStateChange = (state: string) => {
+    if (state === 'startup' || state === 'on') {
+      setIsTestMode(false);
+      setPressed(false);
+    } else if (state === 'scram') {
+      setPressed(true);
+    }
+  };
+
+  // Handle state changes for visual updates
+  useEffect(() => {
+
 
     const subscription = MessageBus.subscribe((msg) => {
       if (msg.type === 'state_change' && msg.id === id) {
