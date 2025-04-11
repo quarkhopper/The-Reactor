@@ -249,7 +249,9 @@ function tick() {
         // Emit temperature update command
         MessageBus.emit({
           type: 'temperature_update',
-          id: `fuel_rod_button_${x}_${y}`,
+          x: x,
+          y: y,
+          id: 'system',
           value: rod.temperature
         });
       }

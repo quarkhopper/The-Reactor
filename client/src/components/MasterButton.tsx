@@ -62,7 +62,6 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
           id: 'master',
           process: 'init',
         });
-        console.log(`[MasterButton] Initialization acknowledged for master`);
       } else if (msg.process === 'shutdown') {
         setLit(false);
         setBlinking(false);
@@ -72,7 +71,6 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
           id: 'master',
           process: 'shutdown',
         });
-        console.log(`[MasterButton] Shutdown acknowledged for master`);
       } else if (msg.process === 'test') {
         setLit(true);
         setTimeout(() => {

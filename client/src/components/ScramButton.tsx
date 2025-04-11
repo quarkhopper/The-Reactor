@@ -6,12 +6,11 @@ import buttonOut from '../images/e-stop_out.png';
 import buttonIn from '../images/e-stop_in.png';
 
 interface ScramButtonProps {
-  id: string;
   x: number;
   y: number;
 }
 
-export default function ScramButton({ id, x, y }: ScramButtonProps) {
+export default function ScramButton({ x, y }: ScramButtonProps) {
   const [pressed, setPressed] = useState(false);
   const [isTestMode, setIsTestMode] = useState(false);
 
@@ -47,7 +46,7 @@ export default function ScramButton({ id, x, y }: ScramButtonProps) {
         setIsTestMode(false);
         MessageBus.emit({
           type: 'acknowledge',
-          id,
+          id: 'scram',
           process: 'init',
         });
       } else if (msg.process === 'shutdown') {
@@ -55,8 +54,8 @@ export default function ScramButton({ id, x, y }: ScramButtonProps) {
         setIsTestMode(false);
         MessageBus.emit({
           type: 'acknowledge',
-          id,
-          process: 'init',
+          id: 'scram',
+          process: 'shutdown',
         });
       } else if (msg.process === 'test') {
         setIsTestMode(true);
@@ -68,7 +67,7 @@ export default function ScramButton({ id, x, y }: ScramButtonProps) {
 
           MessageBus.emit({
             type: 'test_result',
-            id,
+            id: 'scram',
             passed: true,
           });
         }, 500);
@@ -80,7 +79,7 @@ export default function ScramButton({ id, x, y }: ScramButtonProps) {
     if (!isTestMode) {
       MessageBus.emit({
         type: 'scram_button_press',
-        id,
+        id: 'scram',
       });
     }
   };

@@ -15,10 +15,9 @@ interface CircularGaugeProps {
   y: number;
   value: number; // 0–1
   limit: number; // Light turns on above this
-  eventType: 'core_temp_update' | 'turbine_rpm_update'; // Specify which event to listen for
 }
 
-export default function CircularGauge({ id, x, y, value, limit, eventType }: CircularGaugeProps) {
+export default function CircularGauge({ id, x, y, value, limit }: CircularGaugeProps) {
   const [displayValue, setDisplayValue] = useState(value);
   const [isTestMode, setIsTestMode] = useState(false);
 
@@ -35,12 +34,15 @@ export default function CircularGauge({ id, x, y, value, limit, eventType }: Cir
       typeof msg.type === 'string' &&
       (msg.type === 'state_change' || 
         msg.type === 'process_begin' || 
-        msg.type === eventType));
+        (msg.type === 'core_temp_update' && id === 'core_temp_gauge') ||
+        (msg.type === 'turbine_rpm_update' && id === 'turbine_rpm_gauge'))
+    );
   };
 
   function handleMessage(msg: Record<string, any>) {
     if (!isValidMessage(msg)) return; // Guard clause
-    if (msg.type === eventType && !isTestMode) {
+
+    if ((msg.type === 'core_temp_update' || msg.type === 'turbine_rpm_update') && !isTestMode) {
       setDisplayValue(msg.value);
     } else if (msg.type === 'state_change') {
       const state = msg.state;
