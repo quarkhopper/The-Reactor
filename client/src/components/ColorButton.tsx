@@ -18,11 +18,11 @@ interface ColorButtonProps {
   gridY?: number;  // Grid Y coordinate
   index?: number;  // Index for the button
   toggleSendEvent: string; // Event type to use for sending a toggle message
-  colorMap?: { range: [number, number]; color: string }[]; // Optional prop for custom temperature-to-color mapping
-  colorEvent?: { type: string }; // JSON object indicating the values that must be present for this to be true
-  litEvent?: { type: string; value: string }; // JSON object indicating the values that must be present for this to be true
-  dimEvent?: {type: string; value: string } // JSON object indicating the values that must be present for this to be true
-  blinkEvent?: {type: string; value: string } // JSON object indicating the values that must be present for this to be true
+  colorMap?: { range: [number, number]; color: string }[]; // Color mapping for temperature ranges
+  colorEvent?: { type: string }; 
+  litEvent?: { type: string; value: string }; 
+  dimEvent?: {type: string; value: string } 
+  blinkEvent?: {type: string; value: string } 
 }
 
 function getColorFromMap(temp: number, colorMap?: { range: [number, number]; color: string }[]): string {

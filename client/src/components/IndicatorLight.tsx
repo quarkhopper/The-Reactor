@@ -9,26 +9,37 @@ import white from '../images/indicator_white.png';
 import '../css/components/IndicatorLight.css';
 import MessageBus from '../MessageBus';
 
-export type IndicatorColor = 'amber' | 'green' | 'red' | 'white' | 'off';
+const colorImageMap: Record<string, string> = {
+  'off': off,
+  'amber': amber,
+  'green': green,
+  'red': red,
+  'white': white,
+};
+
 
 interface IndicatorLightProps {
   id: string;
   x: number;
   y: number;
-  label?: string;
-  topLabel?: string;
-  initialColor?: IndicatorColor;
+  gridX?: number;
+  gridY?: number;
+  index?: number;
+  colorMap?: { range: [number, number]; color: string }[]; // Color mapping for temperature ranges
+  colorEvent?: { type: string }; 
 }
 
 const IndicatorLight: React.FC<IndicatorLightProps> = ({
   id,
   x,
   y,
-  label,
-  topLabel,
-  initialColor = 'off'
+  gridX,
+  gridY,
+  index,
+  colorMap,
+  colorEvent,
 }) => {
-  const [displayColor, setDisplayColor] = useState<IndicatorColor>(initialColor);
+  const [displayColor, setDisplayColor] = useState<string>('off');
   
   useEffect(() => {
     const unsubscribe = MessageBus.subscribe(handleMessage);
@@ -37,23 +48,14 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
     };
   }, []);
 
-  // Color mapping for the indicator images
-  const colorMap: Record<IndicatorColor, string> = {
-    amber,
-    green,
-    red,
-    white,
-    off,
-  };
-  
+
   // Guard function to filter relevant messages
   const isValidMessage = (msg: Record<string, any>): boolean => {
-    return (
-      typeof msg.type === 'string' &&
-      (msg.type === 'state_change' || 
-        msg.type === 'process_begin' ||
-        (msg.type === 'set_indicator' && msg.id === id))
-      );
+    const validTypes = ['state_change', 'process_begin', colorEvent?.type];
+    return validTypes.includes(msg.type) &&
+      (!msg.index || msg.index === index) &&
+      (!msg.gridX || msg.gridX === gridX) &&
+      (!msg.gridY || msg.gridY === gridY);
   };
 
   function handleMessage(msg: Record<string, any>) {
@@ -75,7 +77,7 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
           process: 'init',
         });
       } else if (msg.process === 'test') {
-        const sequence: IndicatorColor[] = ['red', 'amber', 'green', 'white', 'off'];
+        const sequence: string[] = ['red', 'amber', 'green', 'white', 'off'];
         let i = 0;
 
         const interval = setInterval(() => {
@@ -109,9 +111,7 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
   // Render
   return (
     <div className="indicator-light-wrapper" style={{ top: y, left: x }}>
-      {topLabel && <div className="indicator-light-top-label">{topLabel}</div>}
-      <img src={colorMap[displayColor]} className="indicator-light-img" />
-      {label && <div className="indicator-light-label">{label}</div>}
+      <img src={colorImageMap[displayColor]} className="indicator-light-img" />
     </div>
   );
 };

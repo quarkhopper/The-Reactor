@@ -44,12 +44,12 @@ interface DigitalDisplayProps {
   id: string;
   x: number;
   y: number;
-  value: number;
-  label?: string;
+  valueEvent?: string;
+  index?: number;
 }
 
-export default function DigitalDisplay({ id, x, y, value, label }: DigitalDisplayProps) {
-  const [displayValue, setDisplayValue] = useState(value);
+export default function DigitalDisplay({ id, x, y, valueEvent, index }: DigitalDisplayProps) {
+  const [displayValue, setDisplayValue] = useState(0);
   const [isTestMode, setIsTestMode] = useState(false);
   
   useEffect(() => {
@@ -61,11 +61,9 @@ export default function DigitalDisplay({ id, x, y, value, label }: DigitalDispla
 
   // Guard function to filter relevant messages
   const isValidMessage = (msg: Record<string, any>): boolean => {
-    return (
-      typeof msg.type === 'string' &&
-      (msg.type === 'state_change' || 
-        msg.type === 'process_begin' ||
-        msg.type === 'digital_display_update'));
+    const validTypes = ['state_change', 'process_begin', valueEvent];
+    return validTypes.includes(msg.type) && 
+    (!index || msg.index === index);
   };
 
   function handleMessage(msg: Record<string, any>) {
@@ -75,7 +73,7 @@ export default function DigitalDisplay({ id, x, y, value, label }: DigitalDispla
       const state = msg.state;
       if (state === 'startup' || state === 'on') {
         setIsTestMode(false);
-        setDisplayValue(value);
+        setDisplayValue(0);
       }
     } else if (msg.type === 'process_begin') {
       if (msg.process === 'init') {
@@ -142,7 +140,6 @@ export default function DigitalDisplay({ id, x, y, value, label }: DigitalDispla
         <img src={leftDigits[leftDigit]} className="digit digit-left" alt={`Left ${leftDigit}`} />
         <img src={rightDigits[rightDigit]} className="digit digit-right" alt={`Right ${rightDigit}`} />
       </div>
-      {label && <div className="digital-display-label">{label}</div>}
     </div>
   );
 }

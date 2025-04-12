@@ -2,10 +2,26 @@ import ScramButton from '../components/ScramButton';
 import SliderControl from '../components/SliderControl';
 import VerticalMeter from '../components/VerticalMeter';
 import CircularGauge from '../components/CircularGauge';
+import DigitalDisplay from '../components/DigitalDisplay';
 
 export default function RightBlock() {
   return (
-    <div style={{ position: 'absolute', top: 0, left: 1250 }}>
+    <div style={{ position: 'absolute', top: 0, left: 1170 }}>
+       <DigitalDisplay
+            id='power_demand_4'
+            x={240}
+            y={400}
+        /> 
+        <DigitalDisplay
+            id='power_demand_5'
+            x={240}
+            y={620}
+        /> 
+       <DigitalDisplay
+            id='power_demand_6'
+            x={240}
+            y={840}
+        /> 
       <ScramButton x={60} y={400} />
       <SliderControl 
         id="pump_speed" 

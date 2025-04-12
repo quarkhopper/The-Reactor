@@ -1,15 +1,23 @@
 import ColorButton from '../components/ColorButton';
+import IndicatorLight from '../components/IndicatorLight';
 
 export default function CoreBlock() {
   const buttons: React.ReactElement[] = [];
+  const lights: React.ReactElement[] = [];
 
-  // 6x6 Fuel Rod Grid
-  const gridX = 750;
-  const gridY = 630;
-  const gridCols = 7;
-  const gridRows = 7;
-  const spacingX = 100;
-  const spacingY = 85;
+  const buttonGridX = 750;
+  const buttonGridY = 630;
+  const buttonGridCols = 7;
+  const buttonGridRows = 7;
+  const buttonSpacingX = 100;
+  const buttonSpacingY = 85;
+  const lightGridX = 750;
+  const lightGridY = 625;
+  const lightGridCols = 6;
+  const lightGridRows = 6;
+  const lightSpacingX = 100;
+  const lightSpacingY = 85;
+
 
   const excludePositions = [
     [0, 0],
@@ -19,10 +27,10 @@ export default function CoreBlock() {
   ];
 
 
-  for (let y = 0; y < gridRows; y++) {
-    for (let x = 0; x < gridCols; x++) {
-      const posX = gridX - (gridCols * spacingX) / 2 + spacingX * (x + 0.5);
-      const posY = gridY - (gridRows * spacingY) / 2 + spacingY * (y + 0.5);
+  for (let y = 0; y < buttonGridRows; y++) {
+    for (let x = 0; x < buttonGridCols; x++) {
+      const posX = buttonGridX - (buttonGridCols * buttonSpacingX) / 2 + buttonSpacingX * (x + 0.5);
+      const posY = buttonGridY - (buttonGridRows * buttonSpacingY) / 2 + buttonSpacingY * (y + 0.5);
       if (excludePositions.some(pos => pos[0] === x && pos[1] === y)) {
         continue; // Skip excluded positions
       }
@@ -50,5 +58,22 @@ export default function CoreBlock() {
       );
     }
   }
-  return <>{buttons}</>;
+
+  for (let y = 0; y < lightGridRows; y++) {
+    for (let x = 0; x < lightGridCols; x++) {
+      const posX = lightGridX - (lightGridCols * lightSpacingX) / 2 + lightSpacingX * (x + 0.5);
+      const posY = lightGridY - (lightGridRows * lightSpacingY) / 2 + lightSpacingY * (y + 0.5);
+      lights.push(
+        <IndicatorLight
+          id={`control_rod_light_${x}_${y}`}
+          x={posX}
+          y={posY}
+          gridX={x}
+          gridY={y}
+        />
+      );
+    }
+  }
+
+  return <>{buttons}{lights}</>;
 }
