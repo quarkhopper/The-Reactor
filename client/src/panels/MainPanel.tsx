@@ -11,7 +11,7 @@ export default function MainPanel() {
   return (
     <>
       <ConditionLightBlock />
-      <DigitalDisplayBlock />
+      {/* <DigitalDisplayBlock /> */}
       <SliderBlock />
       <FuelRodButtonBlock />
       <CircularGaugeBlock />

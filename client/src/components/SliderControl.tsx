@@ -8,12 +8,11 @@ interface SliderControlProps {
   id: string;
   x: number;
   y: number;
-  target: string;  // e.g., 'cooling', 'rod'
+  moveEvent: string; // event type to send on move
   index?: number;   // meaningful index within the target system
-  // onChange?: (value: number, target: string, index: number) => void;
 }
 
-const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, target, index }) => {
+const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, moveEvent, index }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
   const [value, setValue] = useState(0);
@@ -28,13 +27,9 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, target, index }
   }, []);
 
   const isValidMessage = (msg: Record<string, any>): boolean => {
-    return (
-      typeof msg.type === 'string' &&
-      (msg.type === 'state_change' ||
-        msg.type === 'process_begin' ||
-        (msg.type === 'control_rod_position_update' && msg.index === index) || 
-          (msg.type === 'pump_speed_update' && target === 'cooling'))
-      );
+    const validTypes = ['state_change', 'process_begin'];
+    return validTypes.includes(msg.type)
+    && (!msg.index || msg.index === index)
   }
 
   function handleMessage(msg: Record<string, any>) {
@@ -123,15 +118,10 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, target, index }
     const newValue = 1 - clamped / travelHeight;
     setValue(newValue);
 
-    // if (onChange) {
-    //   onChange(newValue, target, index);
-    // }
-
-    // Emit position update with new target-based ID format
+    // Emit the new value to the message bus
     MessageBus.emit({
-      type: 'slider_position_update',
+      type: moveEvent,
       id: id,
-      target: target,
       index: index,
       value: newValue
     });
