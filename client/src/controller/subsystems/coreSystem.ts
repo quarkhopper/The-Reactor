@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import MessageBus from '../../MessageBus';
 
 const GRID_SIZE = 6;
@@ -170,8 +169,8 @@ function tick() {
               type: 'fuel_rod_state_update',
               id: 'sysstem',
               state: newState,
-              x: x,
-              y: y
+              gridX: x,
+              gridY: y
             });
 
             // Schedule recalculation
@@ -277,20 +276,14 @@ function handleMessage (msg: Record<string, any>) {
       console.log('[coreSystem] Transitioning to startup state - re-engaging withdrawn fuel rods');
       for (let x = 0; x < GRID_SIZE; x++) {
         for (let y = 0; y < GRID_SIZE; y++) {
-          const rod = fuelRods[x][y];
-          if (rod.state === 'withdrawn') {
-            rod.previousState = rod.state;
-            rod.state = 'transitioning';
-            rod.transitionStartTime = Date.now();
-
-            MessageBus.emit({
-              type: 'fuel_rod_state_update',
-              id: `fuel_rod_button_${x}_${y}`,
-              state: 'transitioning',
-              x,
-              y
-            });
-          }
+          fuelRods[x][y].state = 'engaged';
+          MessageBus.emit({
+            type: 'fuel_rod_state_update',
+            id: `fuel_rod_button_${x}_${y}`,
+            state: 'engaged',
+            gridX: x,
+            gridY: y
+          });
         }
       }
     }
@@ -315,7 +308,7 @@ function handleMessage (msg: Record<string, any>) {
       controlRodPositions[rodIndex] = msg.value;
     }
   } else if (msg.type === 'fuel_rod_state_toggle') {
-    const { x, y } = msg;
+    const { gridX: x, gridY: y } = msg;
     if (x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
       const rod = fuelRods[x][y];
       if (rod.state !== 'transitioning') {
@@ -325,10 +318,10 @@ function handleMessage (msg: Record<string, any>) {
 
         MessageBus.emit({
           type: 'fuel_rod_state_update',
-          id: `fuel_rod_button_${x}_${y}`,
+          id: 'system',
           state: 'transitioning',
-          x: msg.x,
-          y: msg.y
+          gridX: msg.gridX,
+          gridY: msg.gridY
         });
       }
     }

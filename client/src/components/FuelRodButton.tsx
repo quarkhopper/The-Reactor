@@ -60,7 +60,9 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({ id, x, y, gridX, gridY })
       (msg.type === 'state_change' || 
         msg.type === 'process_begin' || 
         (msg.type === 'temperature_update' && msg.gridX === gridX && msg.gridY === gridY) || 
-        msg.type === 'fuel_rod_state_update'));
+        (msg.type === 'fuel_rod_state_update' && msg.gridX === gridX && msg.gridY === gridY)
+      )
+    );
   };
 
   // Centralized message handler
@@ -180,8 +182,8 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({ id, x, y, gridX, gridY })
     MessageBus.emit({
       type: 'fuel_rod_state_toggle',
       id,
-      x: gridX,
-      y: gridY,
+      gridX: gridX,
+      gridY: gridY,
     });
   };
 

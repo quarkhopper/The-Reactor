@@ -129,8 +129,10 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, target, index }
 
     // Emit position update with new target-based ID format
     MessageBus.emit({
-      type: 'position_update',
-      id: `${target}_${index}`,
+      type: 'slider_position_update',
+      id: id,
+      target: target,
+      index: index,
       value: newValue
     });
   };
