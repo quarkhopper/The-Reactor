@@ -94,15 +94,15 @@ function tick() {
     
     // Emit the new temperature for UI update
     MessageBus.emit({
-      type: 'set_indicator',
-      id: 'pump_temp_meter_primary',
+      type: 'set_meter',
+      id: 'pump-temp-meter',
       value: temperatures.primary
     });
 
     // Emit the new pressure for UI update
     MessageBus.emit({
-      type: 'set_indicator',
-      id: 'pump_pres_meter_primary',
+      type: 'set_meter',
+      id: 'pump-pres-meter',
       value: pressures.primary
     });
 
@@ -123,30 +123,36 @@ function getState() {
   };
 }
 
-function handleCoolInput(cmd: Record<string, any>) {
-  if (cmd.type === 'position_update' && cmd.id.startsWith('cooling_')) {
+function isValidMessage(msg: Record<string, any>): boolean {
+  return (
+    typeof msg.type === 'string' &&
+    (msg.type === 'slider_position_update' && msg.target === 'cooling') || 
+      msg.type === 'core_temp_update' || 
+      msg.type === 'state_change');
+}
+
+// Updated subscription to validate and filter messages
+MessageBus.subscribe(handleMessage);
+
+function handleMessage(msg: Record<string, any>) {
+  if (!isValidMessage(msg)) {return;} // Guard clause
+
+  if (msg.type === 'slider_position_update') {
     // Handle pump speed updates from cooling sliders
-    const index = parseInt(cmd.id.split('_')[1]); // Format: cooling_0 or cooling_1
-    if (index === 0) {
-      pumpSpeeds.primary = cmd.value;
-      COOLANT_PROPERTIES.flowRate = cmd.value; // Update flow rate with pump speed
+
+      pumpSpeeds.primary = msg.value;
+      COOLANT_PROPERTIES.flowRate = msg.value; // Update flow rate with pump speed
 
       // Emit flow rate update
       MessageBus.emit({
         type: 'flow_rate_update',
-        value: cmd.value
+        value: msg.value
       });
-    }
-    else if (index === 1) {
-      pumpSpeeds.secondary = cmd.value;
-    }
-  }
-  else if (cmd.type === 'core_temp_update') {
-    // Store the core temperature for use in our tick calculations
-    currentCoreTemp = cmd.value;
-  }
-  else if (cmd.type === 'state_change') {
-    if (cmd.state === 'startup') {
+  } else if (msg.type === 'core_temp_update') {
+      // Store the core temperature for use in our tick calculations
+      currentCoreTemp = msg.value;
+  } else if (msg.type === 'state_change') {
+    if (msg.state === 'startup') {
       // Set primary pump to 50% at startup
       pumpSpeeds.primary = 0.5;
       COOLANT_PROPERTIES.flowRate = 0.5;
@@ -154,8 +160,8 @@ function handleCoolInput(cmd: Record<string, any>) {
       
       // Update the pump slider position
       MessageBus.emit({
-        type: 'position_update',
-        id: 'cooling_0',
+        type: 'pump_speed_update',
+        id: 'system',
         value: 0.5
       });
 
@@ -164,8 +170,7 @@ function handleCoolInput(cmd: Record<string, any>) {
         type: 'flow_rate_update',
         value: 0.5
       });
-    }
-    else if (cmd.state === 'scram') {
+    } else if (msg.state === 'scram') {
       // Set primary pump to 100% during SCRAM
       pumpSpeeds.primary = 1.0;
       COOLANT_PROPERTIES.flowRate = 1.0;
@@ -173,8 +178,8 @@ function handleCoolInput(cmd: Record<string, any>) {
       
       // Update the pump slider position
       MessageBus.emit({
-        type: 'position_update',
-        id: 'cooling_0',
+        type: 'pump_speed_update',
+        id: 'system',
         value: 1.0
       });
 
@@ -186,22 +191,6 @@ function handleCoolInput(cmd: Record<string, any>) {
     }
   }
 }
-
-// Type guard to validate if a message is a Command
-function isCommand(msg: Record<string, any>): boolean {
-  return (
-    typeof msg.type === 'string' &&
-    (msg.type === 'position_update' || msg.type === 'core_temp_update' || msg.type === 'state_change') &&
-    typeof msg.id === 'string'
-  );
-}
-
-// Updated subscription to validate and filter messages
-MessageBus.subscribe((msg: Record<string, any>) => {
-  if (isCommand(msg)) {
-    handleCoolInput(msg);
-  }
-});
 
 const coolSystem: Subsystem = {
   tick,

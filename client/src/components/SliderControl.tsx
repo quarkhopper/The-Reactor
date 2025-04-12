@@ -32,7 +32,7 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, target, index }
       typeof msg.type === 'string' &&
       (msg.type === 'state_change' ||
         msg.type === 'process_begin' ||
-        (msg.type === 'control_rod_position_update' && msg.index === index) || 
+        (msg.type === 'control_rod_position_update' && msg.target === 'rod' && msg.index === index) || 
           (msg.type === 'pump_speed_update' && target === 'cooling'))
       );
   }
@@ -64,13 +64,10 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, target, index }
       } else if (msg.process === 'test') {
         handleTest();
       }
-    } else if (msg.type === 'control_rod_position_update' && 
-      target === 'rod' && 
-      index === msg.index) {
+    } else if (msg.type === 'control_rod_position_update' || msg.type === 'pump_speed_update') {
       setValue(msg.value);
     }
   } 
-
 
   // Handle test sequence
   function handleTest()   {
@@ -106,14 +103,6 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, target, index }
       }
 
       setValue(currentValue);
-      MessageBus.emit({
-        type: 'slider_position_update',
-        id: id,
-        target: target,
-        index: index,
-        value: currentValue,
-      });
-
       requestAnimationFrame(animate);
     };
 

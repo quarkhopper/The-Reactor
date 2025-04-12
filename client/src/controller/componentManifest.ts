@@ -27,8 +27,8 @@ export const COMPONENT_IDS = {
   [COMPONENT_CATEGORIES.INDICATORS]: [
     'core_temp_gauge',
     'turbine_rpm_gauge',
-    'pump_temp_meter_primary',
-    'pump_pres_meter_primary'
+    'pump_temp_meter',
+    'pump_pres_meter'
   ],
   
   // Displays

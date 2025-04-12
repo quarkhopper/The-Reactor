@@ -48,6 +48,7 @@ class StateMachine {
     startupManager.init(); 
     shutdownManager.init();
     
+    
     this.initialized = true;
     console.log('[StateMachine] Initialization complete');
   }

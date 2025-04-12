@@ -229,8 +229,8 @@ function tick() {
         // Emit temperature update command
         MessageBus.emit({
           type: 'temperature_update',
-          x: x,
-          y: y,
+          gridX: x,
+          gridY: y,
           id: 'system',
           value: rod.temperature
         });

@@ -2,12 +2,11 @@ import SliderControl from '../components/SliderControl';
 import VerticalMeter from '../components/VerticalMeter';
 
 interface CoolantPumpBlockProps {
-  idPrefix: string;  // 'primary' or 'secondary'
   x: number;
   y: number;
 }
 
-export default function CoolantPumpBlock({ idPrefix, x, y }: CoolantPumpBlockProps) {
+export default function CoolantPumpBlock({ x, y }: CoolantPumpBlockProps) {
   return (
     <div style={{ position: 'absolute', top: y, left: x }}>
       <SliderControl 
@@ -17,14 +16,14 @@ export default function CoolantPumpBlock({ idPrefix, x, y }: CoolantPumpBlockPro
         target="cooling" 
       />
       <VerticalMeter
-            key={`pump-temp-meter-${idPrefix}`}
-            id={`pump_temp_meter_${idPrefix}`}
+            key={`pump-temp-meter`}
+            id={`pump_temp_meter`}
             x={60}
             y={90}
           />
       <VerticalMeter
-            key={`pump-pres-meter-${idPrefix}`}
-            id={`pump_pres_meter_${idPrefix}`}
+            key={`pump-pres-meter`}
+            id={`pump_pres_meter`}
             x={120}
             y={90}
           />

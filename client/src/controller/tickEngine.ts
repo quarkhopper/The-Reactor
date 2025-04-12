@@ -68,20 +68,20 @@ export function isTicking(): boolean {
 // Initialize tick engine
 export function initTickEngine() {
   MessageBus.subscribe((msg: Record<string, any>) => {
-    if (isTickEngineMessage(msg)) {
-      handleTickEngineMessage(msg);
+    if (isValidMessage(msg)) {
+      handleMessage(msg);
     }
   });
 }
 
-function isTickEngineMessage(msg: Record<string, any>): boolean {
+function isValidMessage(msg: Record<string, any>): boolean {
   return (
     typeof msg.type === 'string' &&
     msg.type === 'state_change'
   );
 }
 
-function handleTickEngineMessage(msg: Record<string, any>) {
+function handleMessage(msg: Record<string, any>) {
   if (msg.type === 'state_change') {
     if (msg.state === 'on') {
       startTicking();

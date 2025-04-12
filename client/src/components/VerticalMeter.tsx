@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import MessageBus from '../MessageBus';
-
 import '../css/components/VerticalMeter.css';
-
 import bezel from '../images/meter_bezel.png';
 import centerOn from '../images/meter_center_on.png';
 import centerOff from '../images/meter_center_off.png';
@@ -28,7 +26,7 @@ export default function VerticalMeter({ id, x, y }: VerticalMeterProps) {
       typeof msg.type === 'string' &&
       (msg.type === 'state_change' ||
         msg.type === 'process_begin' ||
-        msg.type === 'set_meter')
+        (msg.type === 'set_meter' && msg.id === id)) 
     );
   };
 
@@ -58,8 +56,10 @@ export default function VerticalMeter({ id, x, y }: VerticalMeterProps) {
           process: 'shutdown',
         });
       } else if (msg.process === 'test') {
-        handleTest();    
+        handleTest();  
       }
+    } else if (msg.process === 'set_meter') {
+        setCurrentValue(msg.value);
     }
   }
 
