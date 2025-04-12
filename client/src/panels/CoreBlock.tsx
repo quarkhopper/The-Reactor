@@ -36,7 +36,6 @@ export default function CoreBlock() {
       }
       buttons.push(
         <ColorButton
-          key={`fuel-${x}-${y}`}
           id={`fuel_rod_button_${x}_${y}`}
           x={posX}
           y={posY}

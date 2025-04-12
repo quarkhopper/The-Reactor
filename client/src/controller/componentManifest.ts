@@ -25,22 +25,31 @@ export const COMPONENT_IDS = {
   
   // Indicators
   [COMPONENT_CATEGORIES.INDICATORS]: [
-    'core_temp_gauge',
-    'turbine_rpm_gauge',
-    'pump_temp_meter',
-    'pump_pres_meter'
+    'core_temp_gauge',    'turbine_rpm_gauge',    'pump_temp_meter',
+    'pump_pres_meter',    'target_temp_meter',    'core_reactivity_meter',
+    "control_rod_light_0_0",    "control_rod_light_1_0",    "control_rod_light_2_0",
+    "control_rod_light_3_0",    "control_rod_light_4_0",    "control_rod_light_5_0",
+    "control_rod_light_0_1",    "control_rod_light_1_1",    "control_rod_light_2_1",
+    "control_rod_light_3_1",    "control_rod_light_4_1",    "control_rod_light_5_1",
+    "control_rod_light_0_2",    "control_rod_light_1_2",    "control_rod_light_2_2",
+    "control_rod_light_3_2",    "control_rod_light_4_2",    "control_rod_light_5_2",
+    "control_rod_light_0_3",    "control_rod_light_1_3",    "control_rod_light_2_3",
+    "control_rod_light_3_3",    "control_rod_light_4_3",    "control_rod_light_5_3",
+    "control_rod_light_0_4",    "control_rod_light_1_4",    "control_rod_light_2_4",
+    "control_rod_light_3_4",    "control_rod_light_4_4",    "control_rod_light_5_4",
+    "control_rod_light_0_5",    "control_rod_light_1_5",    "control_rod_light_2_5",
+    "control_rod_light_3_5",    "control_rod_light_4_5",    "control_rod_light_5_5"
   ],
   
   // Displays
   [COMPONENT_CATEGORIES.DISPLAYS]: [
-    'digi_0', 'digi_1', 'digi_2', 'digi_3', 'digi_4', 'digi_5', 'digi_6', 'digi_7', 'digi_8',
-    'digi_9', 'digi_10', 'digi_11' 
+    'power_demand_1', 'power_demand_2', 'power_demand_3',
+    'power_demand_4', 'power_demand_5', 'power_demand_6'
   ],
   
   // Controls
   [COMPONENT_CATEGORIES.CONTROLS]: [
-    'pump_speed',
-    'slider_0', 'slider_1', 'slider_2', 'slider_3', 'slider_4', 'slider_5', 'slider_6', 'slider_7'
+    'pump_speed', 'target_power'
   ],
   
   // Condition lights
@@ -49,25 +58,19 @@ export const COMPONENT_IDS = {
     'sys_core', 'sys_cooling', 'sys_gen', 'sys_ctrl', 'sys_aux'
   ],
   
-  // Blink lights
-  // [COMPONENT_CATEGORIES.BLINK_LIGHTS]: [
-  // ],
-  
-  // Fuel rods
+
+  // Fuel rod buttons
   [COMPONENT_CATEGORIES.FUEL_RODS]: [
-    'fuel_rod_button_0_0', 'fuel_rod_button_1_0', 'fuel_rod_button_2_0', 'fuel_rod_button_3_0',
-    'fuel_rod_button_4_0', 'fuel_rod_button_5_0', 'fuel_rod_button_0_1', 'fuel_rod_button_1_1',
-    'fuel_rod_button_2_1', 'fuel_rod_button_3_1', 'fuel_rod_button_4_1', 'fuel_rod_button_5_1',
-    'fuel_rod_button_0_2', 'fuel_rod_button_1_2', 'fuel_rod_button_2_2', 'fuel_rod_button_3_2',
-    'fuel_rod_button_4_2', 'fuel_rod_button_5_2', 'fuel_rod_button_0_3', 'fuel_rod_button_1_3',
-    'fuel_rod_button_2_3', 'fuel_rod_button_3_3', 'fuel_rod_button_4_3', 'fuel_rod_button_5_3',
-    'fuel_rod_button_0_4', 'fuel_rod_button_1_4', 'fuel_rod_button_2_4', 'fuel_rod_button_3_4',
-    'fuel_rod_button_4_4', 'fuel_rod_button_5_4', 'fuel_rod_button_0_5', 'fuel_rod_button_1_5',
-    'fuel_rod_button_2_5', 'fuel_rod_button_3_5', 'fuel_rod_button_4_5', 'fuel_rod_button_5_5'
+  "fuel_rod_button_0_1",  "fuel_rod_button_0_2",  "fuel_rod_button_0_3",  "fuel_rod_button_0_4",  "fuel_rod_button_0_5",
+  "fuel_rod_button_1_0",  "fuel_rod_button_1_1",  "fuel_rod_button_1_2",  "fuel_rod_button_1_3",  "fuel_rod_button_1_4",
+  "fuel_rod_button_1_5",  "fuel_rod_button_1_6",  "fuel_rod_button_2_0",  "fuel_rod_button_2_1",  "fuel_rod_button_2_2",
+  "fuel_rod_button_2_3",  "fuel_rod_button_2_4",  "fuel_rod_button_2_5",  "fuel_rod_button_2_6",  "fuel_rod_button_3_0",
+  "fuel_rod_button_3_1",  "fuel_rod_button_3_2",  "fuel_rod_button_3_3",  "fuel_rod_button_3_4",  "fuel_rod_button_3_5",
+  "fuel_rod_button_3_6",  "fuel_rod_button_4_0",  "fuel_rod_button_4_1",  "fuel_rod_button_4_2",  "fuel_rod_button_4_3",
+  "fuel_rod_button_4_4",  "fuel_rod_button_4_5",  "fuel_rod_button_4_6",  "fuel_rod_button_5_0",  "fuel_rod_button_5_1",
+  "fuel_rod_button_5_2",  "fuel_rod_button_5_3",  "fuel_rod_button_5_4",  "fuel_rod_button_5_5",  "fuel_rod_button_5_6",
+  "fuel_rod_button_6_1",  "fuel_rod_button_6_2",  "fuel_rod_button_6_3",  "fuel_rod_button_6_4",  "fuel_rod_button_6_5"
   ],
-  
-  // Auxiliary components
-  [COMPONENT_CATEGORIES.AUXILIARY]: []
 };
 
 // Flatten all component IDs into a single array
@@ -110,4 +113,4 @@ export function getComponentIdsByCategory(category: string): string[] {
 // Export a function to get component metadata
 export function getComponentMetadata(id: string): ComponentMetadata | undefined {
   return COMPONENT_METADATA[id];
-} 
+}

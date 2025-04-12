@@ -69,10 +69,6 @@ class InitManager {
       if (this.acknowledgedComponents.size < this.componentIds.length) {
         console.error('[initManager] Initialization failed: timeout reached');
         console.log('[initManager] Uninitialized components:', this.componentIds.filter(id => !this.acknowledgedComponents.has(id)));
-        console.log('[initManager] Acknowledged components:', Array.from(this.acknowledgedComponents));
-        console.log('[initManager] manifest:', this.componentIds);
-        console.log('[initManager] number of manifests:', this.componentIds.length);
-        console.log('[initManager] number of acknowledged components:', this.acknowledgedComponents.size);
 
         MessageBus.emit({
           type: 'process_fault',

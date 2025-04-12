@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
-import '../css/components/MasterButton.css';
+import '../css/components/PowerButton.css';
 import bezel from '../images/master_button_bezel.png';
 import glowOff from '../images/master_button_off.png';
 import glowOn from '../images/master_button_on.png';
 import MessageBus from '../MessageBus';
 
-interface MasterButtonProps {
+interface PowerButtonProps {
   x: number;
   y: number;
 }
 
-export default function MasterButton({ x, y }: MasterButtonProps) {
+export default function PowerButton({ x, y }: PowerButtonProps) {
   const [lit, setLit] = useState(false);
   const [blinking, setBlinking] = useState(false);
 

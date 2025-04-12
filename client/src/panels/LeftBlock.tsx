@@ -1,4 +1,4 @@
-import MasterButton from '../components/MasterButton';
+import PowerButton from '../components/PowerButton';
 import SliderControl from '../components/SliderControl';
 import VerticalMeter from '../components/VerticalMeter';
 import CircularGauge from '../components/CircularGauge';
@@ -8,21 +8,21 @@ export default function LeftBlock() {
   return (
     <div style={{ position: 'absolute', top: 0, left: 90 }}>
         <DigitalDisplay
-            id='power_demand_4'
+            id='power_demand_1'
             x={0}
             y={400}
         /> 
         <DigitalDisplay
-            id='power_demand_5'
+            id='power_demand_2'
             x={0}
             y={620}
         /> 
         <DigitalDisplay
-            id='power_demand_6'
+            id='power_demand_3'
             x={0}
             y={840}
         /> 
-      <MasterButton x={180} y={400} />
+      <PowerButton x={180} y={400} />
       <SliderControl
         id='target_power'
         x={240}
