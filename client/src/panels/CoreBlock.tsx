@@ -1,16 +1,15 @@
-// import FuelRodButton from '../components/FuelRodButton';
 import ColorButton from '../components/ColorButton';
 
-export default function FuelRodButtonBlock() {
+export default function CoreBlock() {
   const buttons: React.ReactElement[] = [];
 
   // 6x6 Fuel Rod Grid
   const gridX = 750;
-  const gridY = 570;
+  const gridY = 630;
   const gridCols = 7;
   const gridRows = 7;
-  const spacingX = 90;
-  const spacingY = 60;
+  const spacingX = 100;
+  const spacingY = 85;
 
   const excludePositions = [
     [0, 0],
