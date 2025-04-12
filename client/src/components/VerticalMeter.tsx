@@ -39,8 +39,6 @@ export default function VerticalMeter({ id, x, y, event }: VerticalMeterProps) {
       if (state === 'startup' || state === 'on') {
         setCurrentValue(0);
       }
-    } else if (msg.type === 'set_meter' && msg.id === id) {
-      setCurrentValue(msg.value);
     } else if (msg.type === 'process_begin') {
       if (msg.process === 'init') {
         setCurrentValue(0);
@@ -59,8 +57,10 @@ export default function VerticalMeter({ id, x, y, event }: VerticalMeterProps) {
       } else if (msg.process === 'test') {
         handleTest();  
       }
-    } else if (msg.process === 'set_meter') {
-        setCurrentValue(msg.value);
+    } else if (msg.type === event) {
+      console.log(`[VerticalMeter] Received ${event} message:`, msg);
+      // Handle specific event messages
+      setCurrentValue(msg.value);
     }
   }
 

@@ -83,7 +83,7 @@ function isValidMessage(msg: Record<string, any>): boolean {
 
 function handleMessage(msg: Record<string, any>) {
   if (msg.type === 'state_change') {
-    if (msg.state === 'on') {
+    if (msg.state === 'startup') {
       startTicking();
     } else if (msg.state === 'off' || msg.state === 'shutdown') {
       stopTicking();

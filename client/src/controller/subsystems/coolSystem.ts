@@ -101,14 +101,15 @@ function tick() {
 
     // Emit the new pressure for UI update
     MessageBus.emit({
-      type: 'set_meter',
-      id: 'pump-pres-meter',
+      type: 'coolant-pressure-update',
+      id: 'system',
       value: pressures.primary
     });
 
     // Emit coolant temperature update for core cooling calculations
     MessageBus.emit({
-      type: 'coolant_temp_update',
+      type: 'coolant-temp-update',
+      id: 'system',
       value: temperatures.primary
     });
   }
