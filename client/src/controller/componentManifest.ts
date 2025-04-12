@@ -44,14 +44,14 @@ export const COMPONENT_IDS = {
   ],
   
   // Condition lights
-  [COMPONENT_CATEGORIES.CONDITION_LIGHTS]: [
-    'cond_POWER', 'cond_TRANS', 'cond_RUN', 'cond_FAULT', 'cond_SCRAM',
-    'cond_CORE', 'cond_COOLING', 'cond_LOAD', 'cond_CTRL', 'cond_AUX'
+  [COMPONENT_CATEGORIES.CONDITION_LIGHTS]: [ 
+    'cond_power', 'cond_trans', 'cond_fault', 'cond_scram', 'cond_aux', 
+    'sys_core', 'sys_cooling', 'sys_gen', 'sys_ctrl', 'sys_aux'
   ],
   
   // Blink lights
-  [COMPONENT_CATEGORIES.BLINK_LIGHTS]: [
-  ],
+  // [COMPONENT_CATEGORIES.BLINK_LIGHTS]: [
+  // ],
   
   // Fuel rods
   [COMPONENT_CATEGORIES.FUEL_RODS]: [

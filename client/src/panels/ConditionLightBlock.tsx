@@ -1,6 +1,4 @@
-import React from 'react';
 import ConditionLight from '../components/ConditionLight';
-import type { ConditionColor } from '../state/types';
 
 export default function ConditionLightBlock() {
   const x = 750;
@@ -9,18 +7,37 @@ export default function ConditionLightBlock() {
   const columns = 5;
   const rows = 2;
 
-  const values: { id: string; color: ConditionColor; label: string }[] = [
-    { id: 'cond_POWER', color: 'off', label: 'POWER' },
-    { id: 'cond_TRANS', color: 'off', label: 'TRANS' },
-    { id: 'cond_RUN', color: 'off', label: 'RUN' },
-    { id: 'cond_FAULT', color: 'off', label: 'FAULT' },
-    { id: 'cond_SCRAM', color: 'off', label: 'SCRAM' },
-
-    { id: 'cond_CORE', color: 'off', label: 'RUN' },
-    { id: 'cond_COOLING', color: 'off', label: 'COOLING' },
-    { id: 'cond_LOAD', color: 'off', label: 'LOAD' },
-    { id: 'cond_CTRL', color: 'off', label: 'CTRL' },
-    { id: 'cond_AUX', color: 'off', label: 'AUX' },
+  const values: { 
+    id: string; 
+    label: string; 
+    stateEvent?: Record<string, string[]>; 
+    conditionEvent?: Array<{type: string; value: string; color: string}> }[] = [
+    { id: 'cond_power', label: 'POWER', stateEvent: { 'green': ['on'], 'amber': ['init', 'startup', 'shutdown'], 'red': ['scram', 'fault'] } },
+    { id: 'cond_trans', label: 'TRANS', stateEvent: { 'amber': ['init', 'test', 'startup', 'shutdown'] } },
+    { id: 'cond_fault', label: 'FAULT', stateEvent: { 'red': ['fault'] } },
+    { id: 'cond_scram', label: 'SCRAM', stateEvent: { 'red': ['scram'] } },
+    { id: 'cond_aux', label: 'AUX' },
+    { id: 'sys_core', label: 'CORE', conditionEvent: [
+      {type: 'core_state_update', value: 'normal', color: 'green' },
+      {type: 'core_state_update', value: 'critical', color: 'red' },
+      {type: 'core_state_update', value: 'warning', color: 'amber' },
+    ] },
+    { id: 'sys_cooling', label: 'COOLING', conditionEvent: [
+        {type: 'cooling_state_update', value: 'normal', color: 'green' },
+        {type: 'cooling_state_update', value: 'critical', color: 'red' },
+        {type: 'cooling_state_update', value: 'warning', color: 'amber' },
+    ] },
+    { id: 'sys_gen', label: 'GEN', conditionEvent: [
+      {type: 'gen_state_update', value: 'normal', color: 'green' },
+      {type: 'gen_state_update', value: 'critical', color: 'red' },
+      {type: 'gen_state_update', value: 'warning', color: 'amber' },
+    ] },
+    { id: 'sys_ctrl', label: 'CTRL', conditionEvent: [
+      {type: 'ctrl_state_update', value: 'normal', color: 'green' },
+      {type: 'ctrl_state_update', value: 'critical', color: 'red' },
+      {type: 'ctrl_state_update', value: 'warning', color: 'amber' },
+    ] },
+    { id: 'sys_aux', label: 'AUX' },
   ];
 
   const lightWidth = width / columns;
@@ -44,8 +61,9 @@ export default function ConditionLightBlock() {
             x={cx}
             y={cy}
             width={lightWidth}
-            color={entry.color}
             label={entry.label}
+            stateEvent={entry.stateEvent}
+            conditionEvent={entry.conditionEvent}
           />
         );
       })}

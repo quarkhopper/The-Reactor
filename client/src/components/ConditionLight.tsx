@@ -20,27 +20,52 @@ const conditionImages: Record<ConditionColor, string> = {
 import MessageBus from '../MessageBus';
 
 type ConditionColor = 'off' | 'red' | 'green' | 'amber' | 'white';
-const ConditionLabels = ['POWER', 'SCRAM', 'TRANS', 'FAULT', 'TEST'];
 
 interface ConditionLightProps {
   id: string;
   x: number;
   y: number;
-  color?: ConditionColor;
   width?: number;
   label?: string;
+  stateEvent?: Record<string, string[]>;
+  conditionEvent?: {type: string, value: string, color: string}[];
 }
 
 const ConditionLight: React.FC<ConditionLightProps> = ({
   id,
   x,
   y,
-  color = 'off',
   width = 100,
   label,
+  stateEvent,
+  conditionEvent,
 }) => {
-  const [displayColor, setDisplayColor] = useState<ConditionColor>(color);
+  const [displayColor, setDisplayColor] = useState<ConditionColor>("off");
   const [isTestMode, setIsTestMode] = useState(false);
+
+  function getStateEventColor(state: string): ConditionColor {
+    if (stateEvent) {
+      for (const [color, states] of Object.entries(stateEvent)) {
+        if (states.includes(state)) {
+          return color as ConditionColor;
+        }
+      }
+    }
+    return 'off'; // Default color if no match found
+  }
+
+  function getConditionEventColor(type: string, value: string): ConditionColor {
+    if (conditionEvent) {
+      for (const event of conditionEvent) {
+        if (event.type === type && event.value === value) {
+          return event.color as ConditionColor;
+        }
+      }
+    }
+    return 'off'; // Default color if no match found
+  }
+
+  const conditionTypes = conditionEvent ? conditionEvent.map(event => event.type) : [];
 
   useEffect(() => {
     const unsubscribe = MessageBus.subscribe(handleMessage);
@@ -51,63 +76,16 @@ const ConditionLight: React.FC<ConditionLightProps> = ({
 
   // Guard function to filter relevant messages
   const isValidMessage = (msg: Record<string, any>): boolean => {
-    return (
-      typeof msg.type === 'string' &&
-      (msg.type === 'state_change' || 
-        msg.type === 'process_begin' || 
-        ConditionLabels.some(label => msg.type === label))
-    );
-  };
+    const validTypes = ['state_change', 'process_begin', ...conditionTypes]; 
+    return validTypes.includes(msg.type)
+   };
 
   function handleMessage(msg: Record<string, any>) {
     if (!isValidMessage(msg)) return; // Guard clause
     if (msg.type === 'state_change') {
-
-      if (msg.state === 'startup' || msg.state === 'on') {
-        setIsTestMode(false);
-      }
-
-      if (id.includes('POWER')) {
-        switch (msg.state) {
-          case 'off':
-          case 'shutdown':
-            setDisplayColor('off');
-            break;
-          case 'init':
-          case 'startup':
-            setDisplayColor('amber');
-            break;
-          case 'scram':
-            setDisplayColor('red');
-            break;
-          case 'on':
-            setDisplayColor('green');
-            break;
-        }
-      } else if (id.includes('TRANS')) {
-        switch (msg.state) {
-          case 'init':
-          case 'startup':
-            setDisplayColor('amber');
-            break;
-          case 'shutdown':
-          case 'off':
-            setDisplayColor('off');
-            break;
-          default:
-            setDisplayColor('off');
-            break;
-        }
-      } else if (id.includes('FAULT')) {
-        switch (msg.state) {
-          case 'fault':
-            setDisplayColor('red');
-            break;
-          default:
-            setDisplayColor('off');
-            break;
-        }
-      }
+      setDisplayColor(getStateEventColor(msg.state));
+    } else if(conditionTypes.includes(msg.type)) {
+      setDisplayColor(getConditionEventColor(msg.type, msg.value));
     } else if (msg.type === 'process_begin') {
       if (msg.process === 'init') {
         setDisplayColor('off');
@@ -138,7 +116,7 @@ const ConditionLight: React.FC<ConditionLightProps> = ({
           if (i >= sequence.length) {
             clearInterval(interval);
             setIsTestMode(false);
-            setDisplayColor(color);
+            setDisplayColor('off');
             // Emit test_result message
             MessageBus.emit({
               type: 'test_result',
@@ -154,9 +132,9 @@ const ConditionLight: React.FC<ConditionLightProps> = ({
   // Update display color when color prop changes (but not during test mode)
   useEffect(() => {
     if (!isTestMode) {
-      setDisplayColor(color);
+      setDisplayColor('off');
     }
-  }, [color, isTestMode]);
+  }, [isTestMode]);
 
   return (
     <div
