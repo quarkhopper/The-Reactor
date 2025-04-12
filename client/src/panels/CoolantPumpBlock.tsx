@@ -20,12 +20,14 @@ export default function CoolantPumpBlock({ x, y }: CoolantPumpBlockProps) {
             id={`pump_temp_meter`}
             x={60}
             y={90}
+            event='coolant-temp-update'
           />
       <VerticalMeter
             key={`pump-pres-meter`}
             id={`pump_pres_meter`}
             x={120}
             y={90}
+            event='coolant-pressure-update'
           />
     </div>
   );

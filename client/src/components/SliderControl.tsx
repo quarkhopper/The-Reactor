@@ -32,7 +32,7 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, target, index }
       typeof msg.type === 'string' &&
       (msg.type === 'state_change' ||
         msg.type === 'process_begin' ||
-        (msg.type === 'control_rod_position_update' && msg.target === 'rod' && msg.index === index) || 
+        (msg.type === 'control_rod_position_update' && msg.index === index) || 
           (msg.type === 'pump_speed_update' && target === 'cooling'))
       );
   }

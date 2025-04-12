@@ -9,9 +9,10 @@ interface VerticalMeterProps {
   id: string;
   x: number;
   y: number;
+  event: string;
 }
 
-export default function VerticalMeter({ id, x, y }: VerticalMeterProps) {
+export default function VerticalMeter({ id, x, y, event }: VerticalMeterProps) {
   const [currentValue, setCurrentValue] = useState(0);
 
   useEffect(() => {
@@ -26,7 +27,7 @@ export default function VerticalMeter({ id, x, y }: VerticalMeterProps) {
       typeof msg.type === 'string' &&
       (msg.type === 'state_change' ||
         msg.type === 'process_begin' ||
-        (msg.type === 'set_meter' && msg.id === id)) 
+        (msg.type === event)) 
     );
   };
 

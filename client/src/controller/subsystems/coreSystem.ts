@@ -293,7 +293,8 @@ function handleMessage (msg: Record<string, any>) {
         controlRodPositions[i] = 0;
         MessageBus.emit({
           type: 'control_rod_position_update',
-          id: i,
+          id: 'system',
+          index: i,
           value: 0
         });
       }

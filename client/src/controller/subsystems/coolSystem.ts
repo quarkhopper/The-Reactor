@@ -94,7 +94,7 @@ function tick() {
     
     // Emit the new temperature for UI update
     MessageBus.emit({
-      type: 'set_meter',
+      type: 'pump',
       id: 'pump-temp-meter',
       value: temperatures.primary
     });
