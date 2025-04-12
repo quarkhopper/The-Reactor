@@ -1,7 +1,7 @@
 import MessageBus from '../../MessageBus';
 
-const GRID_SIZE = 6;
-const ROD_COUNT = 8;
+const FUEL_GRID_SIZE = 7; // Size of the grid (7x7) with corners removed
+const CONTROL_GRID_SIZE = 6; // Size of the control rod grid (6x6) between fuel rods
 
 // Add a debounce timer for recalculations
 let recalculationTimer: NodeJS.Timeout | null = null;
@@ -9,38 +9,63 @@ const RECALCULATION_DELAY = 1000; // 1 second delay
 
 interface FuelRod {
   temperature: number; // Normalized temperature (0 to 1)
-  state: 'engaged' | 'withdrawn' | 'transitioning';
+  state: 'engaged' | 'withdrawn' | 'transitioning'; // State of the fuel rod
   transitionStartTime?: number; // Optional transition start time
   previousState?: 'engaged' | 'withdrawn'; // Optional previous state
 }
 
-const fuelRods: FuelRod[][] = Array.from({ length: GRID_SIZE }, () =>
-  Array.from({ length: GRID_SIZE }, () => ({
+interface ControlRod {
+  position: number; // 0 = fully inserted, 1 = fully withdrawn
+}
+
+const fuelRods: FuelRod[][] = Array.from({ length: FUEL_GRID_SIZE }, () =>
+  Array.from({ length: FUEL_GRID_SIZE }, () => ({
     temperature: 0.02, // Initial temperature normalized to 0.02
     state: 'engaged' // All rods start engaged
   }))
 );
 
-let controlRodPositions: number[] = Array(ROD_COUNT).fill(0); // 0 = fully inserted, 1 = fully withdrawn
-let controlRodCoords: [number, number][] = []; // Store random positions for control rods
-let reactivity: number[][] = Array.from({ length: GRID_SIZE }, () =>
-  Array(GRID_SIZE).fill(0)
+function isCorner(x: number, y: number): boolean {
+  return (
+    (x === 0 && y === 0) ||
+    (x === 0 && y === FUEL_GRID_SIZE - 1) ||
+    (x === FUEL_GRID_SIZE - 1 && y === 0) ||
+    (x === FUEL_GRID_SIZE - 1 && y === FUEL_GRID_SIZE - 1)
+  );
+}
+
+// Control rods are represented in a 6x6 grid (in the gaps between fuel rods)
+const controlRods: ControlRod[][] = Array.from({ length: CONTROL_GRID_SIZE }, () =>
+  Array.from({ length: CONTROL_GRID_SIZE }, () => ({
+    position: 0, // 0 = fully inserted, 1 = fully withdrawn
+  }))
 );
 
-let baseReactivityGrid: number[][] = Array.from({ length: GRID_SIZE }, () =>
-  Array(GRID_SIZE).fill(0)
+let reactivity: number[][] = Array.from({ length: FUEL_GRID_SIZE }, () =>
+  Array(FUEL_GRID_SIZE).fill(0)
 );
 
-let distanceGrid: number[][][] = Array.from({ length: GRID_SIZE }, () =>
-  Array.from({ length: GRID_SIZE }, () => Array(ROD_COUNT).fill(0))
+let baseReactivityGrid: number[][] = Array.from({ length: FUEL_GRID_SIZE }, () =>
+  Array(FUEL_GRID_SIZE).fill(0)
 );
 
 // Add a new grid for fuel rod distances
-let fuelRodDistanceGrid: number[][][] = Array.from({ length: GRID_SIZE }, () =>
-  Array.from({ length: GRID_SIZE }, () => 
-    Array.from({ length: GRID_SIZE * GRID_SIZE }, () => 0)
+let distanceGrid: number[][][][] = Array.from({ length: FUEL_GRID_SIZE }, () =>
+  Array.from({ length: FUEL_GRID_SIZE }, () =>
+    Array.from({ length: CONTROL_GRID_SIZE }, () =>
+      Array(CONTROL_GRID_SIZE).fill(0)
+    )
   )
 );
+
+let fuelRodDistanceGrid : number[][][][] = Array.from({ length: FUEL_GRID_SIZE }, () =>
+  Array.from({ length: FUEL_GRID_SIZE }, () =>
+    Array.from({ length: FUEL_GRID_SIZE }, () =>
+      Array(FUEL_GRID_SIZE).fill(1000000)
+    )
+  )
+);
+
 
 // Variables for tuning (locked values)
 const HEAT_GAIN_SCALING_FACTOR = 0.018; // Keep increased value for critical temperatures
@@ -57,27 +82,19 @@ let coolantState = {
   flowRate: 0.5 // Default to 50% flow
 };
 
-function assignStructuredControlRodPositions() {
-  controlRodCoords = [
-    // Main diagonal
-    [0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5],
-    // Anti-diagonal
-    [0, 5], [1, 4], [2, 3], [3, 2], [4, 1], [5, 0],
-  ];
-
-  // Exclude the middle four cells
-  controlRodCoords = controlRodCoords.filter(([x, y]) => !(x >= 2 && x <= 3 && y >= 2 && y <= 3));
-}
-
 function precalculateDistances() {
   // Calculate distances between fuel rods and control rods ONLY
   // This is used for control rod interference calculations
-  for (let x = 0; x < GRID_SIZE; x++) {
-    for (let y = 0; y < GRID_SIZE; y++) {
-      for (let i = 0; i < ROD_COUNT; i++) {
-        const [rx, ry] = controlRodCoords[i];
-        const distance = Math.sqrt((rx - x) ** 2 + (ry - y) ** 2);
-        distanceGrid[x][y][i] = distance;
+  for (let x = 0; x < FUEL_GRID_SIZE; x++) {
+    for (let y = 0; y < FUEL_GRID_SIZE; y++) {
+      if (isCorner(x, y)) {
+        continue; // Skip corners
+      }
+      for (let cx = 0; cx < CONTROL_GRID_SIZE; cx++) {
+        for (let cy = 0; cy < CONTROL_GRID_SIZE; cy++) {
+          const distance = Math.sqrt((cx + 0.5 - x) ** 2 + (cy + 0.5 - y) ** 2);
+          distanceGrid[x][y][cx][cy] = distance;
+        }
       }
     }
   }
@@ -87,23 +104,27 @@ function precalculateDistances() {
 function precalculateFuelRodDistances() {
   // Calculate distances between each fuel rod position and every other fuel rod
   // IMPORTANT: This is where withdrawn fuel rods are handled
-  for (let x = 0; x < GRID_SIZE; x++) {
-    for (let y = 0; y < GRID_SIZE; y++) {
+  for (let x = 0; x < FUEL_GRID_SIZE; x++) {
+    for (let y = 0; y < FUEL_GRID_SIZE; y++) {
+      if (isCorner(x, y)) {
+        continue; // Skip corners
+      }
       // Calculate distance to every other fuel rod position
-      let idx = 0;
-      for (let fx = 0; fx < GRID_SIZE; fx++) {
-        for (let fy = 0; fy < GRID_SIZE; fy++) {
+      for (let fx = 0; fx < FUEL_GRID_SIZE; fx++) {
+        for (let fy = 0; fy < FUEL_GRID_SIZE; fy++) {
+          if (isCorner(fx, fy)) {
+            continue; // Skip corners
+          }
           if (fx === x && fy === y) {
             // Distance to self is infinite (no self-contribution)
-            fuelRodDistanceGrid[x][y][idx] = 1000000;
+            fuelRodDistanceGrid[x][y][fx][fy] = 1000000;
           } else {
             // CRITICAL: If the rod is withdrawn, set distance to effectively infinity
             // This completely removes its contribution to the reactivity calculation
-            fuelRodDistanceGrid[x][y][idx] = fuelRods[fx][fy].state === 'withdrawn'
+            fuelRodDistanceGrid[x][y][fx][fy] = fuelRods[fx][fy].state === 'withdrawn'
               ? 1000000  // Effectively infinite distance
               : Math.sqrt((fx - x) ** 2 + (fy - y) ** 2);
           }
-          idx++;
         }
       }
     }
@@ -115,21 +136,26 @@ function precalculateBaseReactivities() {
   precalculateFuelRodDistances();
   
   // Then calculate base reactivity using those distances
-  for (let x = 0; x < GRID_SIZE; x++) {
-    for (let y = 0; y < GRID_SIZE; y++) {
+  for (let x = 0; x < FUEL_GRID_SIZE; x++) {
+    for (let y = 0; y < FUEL_GRID_SIZE; y++) {
+      if (isCorner(x, y)) {
+        continue; // Skip corners
+      }
       let baseReactivity = 0;
-
       // Calculate base reactivity from all other fuel rods using pre-calculated distances
       let idx = 0;
-      for (let fx = 0; fx < GRID_SIZE; fx++) {
-        for (let fy = 0; fy < GRID_SIZE; fy++) {
+      for (let fx = 0; fx < FUEL_GRID_SIZE; fx++) {
+        for (let fy = 0; fy < FUEL_GRID_SIZE; fy++) {
+          if (isCorner(fx, fy)) {
+            continue; // Skip corners
+          }
           // Skip self (already handled with infinite distance)
           if (fx === x && fy === y) {
             idx++;
             continue;
           }
-          
-          const distance = fuelRodDistanceGrid[x][y][idx];
+        
+          const distance = fuelRodDistanceGrid[x][y][fx][fy];
           baseReactivity += 1 / (1 + distance);
           idx++;
         }
@@ -151,12 +177,12 @@ function tick() {
     let warning = false;
 
     // Create a 2D array to store temperatures for this tick
-    const tempGrid = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
+    const tempGrid = Array(FUEL_GRID_SIZE).fill(0).map(() => Array(FUEL_GRID_SIZE).fill(0));
 
     // Check for completed transitions
     const now = Date.now();
-    for (let x = 0; x < GRID_SIZE; x++) {
-      for (let y = 0; y < GRID_SIZE; y++) {
+    for (let x = 0; x < FUEL_GRID_SIZE; x++) {
+      for (let y = 0; y < FUEL_GRID_SIZE; y++) {
         const rod = fuelRods[x][y];
         if (rod.state === 'transitioning' && rod.transitionStartTime) {
           if (now - rod.transitionStartTime >= 5000) { // 5 seconds
@@ -182,8 +208,8 @@ function tick() {
       }
     }
 
-    for (let x = 0; x < GRID_SIZE; x++) {
-      for (let y = 0; y < GRID_SIZE; y++) {
+    for (let x = 0; x < FUEL_GRID_SIZE; x++) {
+      for (let y = 0; y < FUEL_GRID_SIZE; y++) {
         const rod = fuelRods[x][y];
 
         // Skip temperature updates for withdrawn rods
@@ -195,10 +221,13 @@ function tick() {
 
         // Calculate control rod interference
         let controlInterference = 0;
-        for (let i = 0; i < ROD_COUNT; i++) {
-          const distance = distanceGrid[x][y][i];
-          const influence = 1 / (1 + distance);
-          controlInterference += (1 - controlRodPositions[i]) * influence * INTERFERENCE_SCALING_FACTOR;
+        
+        for (let cx = 0; cx < CONTROL_GRID_SIZE; cx++) {
+          for (let cy = 0; cy < CONTROL_GRID_SIZE; cy++) {
+            const distance = distanceGrid[x][y][cx][cy];
+            const influence = 1 / (1 + distance);
+            controlInterference += (1 - controlRods[cx][cy].position) * influence * INTERFERENCE_SCALING_FACTOR;
+          }
         }
 
         // Final reactivity is base reactivity minus control interference
@@ -246,7 +275,7 @@ function tick() {
     }
 
     // Calculate and log average temperature
-    const avgTemp = totalTemp / (GRID_SIZE * GRID_SIZE);
+    const avgTemp = totalTemp / (FUEL_GRID_SIZE * FUEL_GRID_SIZE);
     
     // Emit average temperature to update the circular gauge
     MessageBus.emit({
@@ -299,13 +328,12 @@ function handleMessage (msg: Record<string, any>) {
 
   if (msg.type === 'state_change') {
     if (msg.state === 'startup') {
-      assignStructuredControlRodPositions();
       precalculateDistances();
       precalculateBaseReactivities();
 
       console.log('[coreSystem] Transitioning to startup state - re-engaging withdrawn fuel rods');
-      for (let x = 0; x < GRID_SIZE; x++) {
-        for (let y = 0; y < GRID_SIZE; y++) {
+      for (let x = 0; x < FUEL_GRID_SIZE; x++) {
+        for (let y = 0; y < FUEL_GRID_SIZE; y++) {
           fuelRods[x][y].state = 'engaged';
           MessageBus.emit({
             type: 'fuel_rod_state_update',
@@ -319,28 +347,31 @@ function handleMessage (msg: Record<string, any>) {
     }
     if (msg.state === 'scram') {
       console.log('[coreSystem] SCRAM initiated - inserting control rods');
-      for (let i = 0; i < controlRodPositions.length; i++) {
-        controlRodPositions[i] = 0;
-        MessageBus.emit({
-          type: 'control_rod_position_update',
-          id: 'system',
-          index: i,
-          value: 0
-        });
+      for (let x = 0; x < CONTROL_GRID_SIZE; x++) {
+        for (let y = 0; y < CONTROL_GRID_SIZE; y++) {
+          controlRods[x][y].position = 0;
+          MessageBus.emit({
+        type: 'control_rod_position_update',
+        id: 'system',
+        gridX: x,
+        gridY: y,
+        value: 0
+          });
+        }
       }
     }
   } else if (msg.type === 'coolant_temp_update') {
     coolantState.temperature = msg.value;
   } else if (msg.type === 'flow_rate_update') {
     coolantState.flowRate = msg.value;
-  } else if (msg.type === 'slider_position_update') {
-    const rodIndex = msg.index;
-    if (!isNaN(rodIndex) && rodIndex >= 0 && rodIndex < controlRodPositions.length) {
-      controlRodPositions[rodIndex] = msg.value;
-    }
+  // } else if (msg.type === 'slider_position_update') {
+  //   const rodIndex = msg.index;
+  //   if (!isNaN(rodIndex) && rodIndex >= 0 && rodIndex < controlRodPositions.length) {
+  //     controlRodPositions[rodIndex] = msg.value;
+  //   }
   } else if (msg.type === 'fuel_rod_state_toggle') {
     const { gridX: x, gridY: y } = msg;
-    if (x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
+    if (x >= 0 && x < FUEL_GRID_SIZE && y >= 0 && y < FUEL_GRID_SIZE) {
       const rod = fuelRods[x][y];
       if (rod.state !== 'transitioning') {
         rod.previousState = rod.state;
@@ -360,13 +391,16 @@ function handleMessage (msg: Record<string, any>) {
 }
 
 // Export the core system as a subsystem
+// Initialize controlRodPositions as an array representing the positions of control rods
+const controlRodPositions = Array.from({ length: CONTROL_GRID_SIZE * CONTROL_GRID_SIZE }, () => 0);
+
 const coreSystem = {
   tick,
   getState: () => ({
-    controlRodCoords,
+    controlRods,
+    fuelRods,
     controlRodPositions,
-    reactivity,
-    fuelRods
+    reactivity
   })
 };
 
@@ -383,8 +417,8 @@ function scheduleRecalculation() {
   recalculationTimer = setTimeout(() => {
     // Count withdrawn rods for debugging
     let withdrawnCount = 0;
-    for (let x = 0; x < GRID_SIZE; x++) {
-      for (let y = 0; y < GRID_SIZE; y++) {
+    for (let x = 0; x < FUEL_GRID_SIZE; x++) {
+      for (let y = 0; y < FUEL_GRID_SIZE; y++) {
         if (fuelRods[x][y].state === 'withdrawn') {
           withdrawnCount++;
         }
