@@ -9,27 +9,37 @@ import glow_white from '../images/button_glow_white.png';
 
 import '../css/components/PanelButton.css';
 
-interface FuelRodButtonProps {
+
+interface ColorButtonProps {
   id: string;
   x: number;  // Screen X coordinate
   y: number;  // Screen Y coordinate
-  gridX: number;  // Grid X coordinate
-  gridY: number;  // Grid Y coordinate
+  gridX?: number;  // Grid X coordinate
+  gridY?: number;  // Grid Y coordinate
+  index?: number;  // Index for the button
+  toggleSendEvent: string; // Event type to use for sending a toggle message
+  colorMap?: { range: [number, number]; color: string }[]; // Optional prop for custom temperature-to-color mapping
+  colorEvent?: { type: string }; // JSON object indicating the values that must be present for this to be true
+  litEvent?: { type: string; value: string }; // JSON object indicating the values that must be present for this to be true
+  dimEvent?: {type: string; value: string } // JSON object indicating the values that must be present for this to be true
+  blinkEvent?: {type: string; value: string } // JSON object indicating the values that must be present for this to be true
 }
 
-type ButtonColor = 'off' | 'green' | 'amber' | 'red' | 'white';
-type FuelRodState = 'engaged' | 'withdrawn' | 'transitioning';
+function getColorFromMap(temp: number, colorMap?: { range: [number, number]; color: string }[]): string {
+  if (!colorMap || colorMap.length === 0) {
+    console.warn('Color map is undefined or empty. Defaulting to white.');
+    return 'white';
+  }
 
-// Helper function to map temperature to color
-function getColorFromTemperature(temp: number): ButtonColor {
-  if (temp <= 0) return 'off';
-  if (temp < 0.2) return 'green';
-  if (temp < 0.5) return 'amber';
-  if (temp < 0.8) return 'red';
-  return 'white';
+  const mapping = colorMap.find(({ range }) => temp >= range[0] && temp <= range[1]);
+  if (!mapping) {
+    console.warn(`No color mapping found for temperature: ${temp}. Defaulting to white.`);
+  }
+
+  return mapping ? mapping.color : 'white'; // Default to white if no mapping found
 }
 
-const glowMap: Record<ButtonColor, string> = {
+const glowMap: Record<string, string> = {
   off: glow_off,
   green: glow_green,
   amber: glow_amber,
@@ -37,13 +47,11 @@ const glowMap: Record<ButtonColor, string> = {
   white: glow_white,
 };
 
-const FuelRodButton: React.FC<FuelRodButtonProps> = ({ id, x, y, gridX, gridY }) => {
-  const [state, setState] = useState<FuelRodState>('engaged');
-  const [activeColor, setActiveColor] = useState<ButtonColor>('off');
+const FuelRodButton: React.FC<ColorButtonProps> = ({ id, x, y, gridX, gridY, index, toggleSendEvent, colorMap, colorEvent, litEvent, dimEvent, blinkEvent }) => {
+  const [activeColor, setActiveColor] = useState<string>('off');
   const [isTestMode, setIsTestMode] = useState(false);
   const [isHeld, setIsHeld] = useState(false);
   const [isBlinking, setIsBlinking] = useState(false);
-  const [isPulsing, setIsPulsing] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
 
   useEffect(() => {
@@ -55,28 +63,35 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({ id, x, y, gridX, gridY })
 
   // Guard function to filter relevant messages
   const isValidMessage = (msg: Record<string, any>): boolean => {
-    return (
-      typeof msg.type === 'string' &&
-      (msg.type === 'state_change' || 
-        msg.type === 'process_begin' || 
-        (msg.type === 'temperature_update' && msg.gridX === gridX && msg.gridY === gridY) || 
-        (msg.type === 'fuel_rod_state_update' && msg.gridX === gridX && msg.gridY === gridY)
-      )
-    );
+    const validTypes = ['state_change', 
+      'process_begin', 
+      colorEvent?.type, 
+      litEvent?.type, 
+      dimEvent?.type, 
+      blinkEvent?.type];
+    return validTypes.includes(msg.type) &&
+      (!msg.index || msg.index === index) &&
+      (!msg.gridX || msg.gridX === gridX) &&
+      (!msg.gridY || msg.gridY === gridY);
   };
 
   // Centralized message handler
   const handleMessage = (msg: Record<string, any>) => {
     if (!isValidMessage(msg)) return; // Guard clause
-
     if (msg.type === 'state_change') {
       handleStateChange(msg.state);
     } else if (msg.type === 'process_begin') {
       handleProcessBegin(msg);
-    } else if (msg.type === 'temperature_update') {
-      handleTemperatureUpdate(msg.value);
-    } else if (msg.type === 'fuel_rod_state_update') {
-      handleFuelRodStateUpdate(msg.state);
+    } else if (msg.type === colorEvent?.type) {
+      handleColorUpdate(msg.value);
+    } else if (msg.type === litEvent?.type && msg.value === litEvent?.value) {
+      setIsBlinking(false);
+      setShowOverlay(false);
+    } else if (msg.type === dimEvent?.type && msg.value === dimEvent?.value) {
+      setIsBlinking(false);
+      setShowOverlay(true);
+    } else if (msg.type === blinkEvent?.type && msg.value === blinkEvent?.value) {
+      setIsBlinking(true);
     }
   };
 
@@ -86,34 +101,28 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({ id, x, y, gridX, gridY })
       setIsTestMode(false);
       setIsHeld(false);
       setIsBlinking(false);
-      setIsPulsing(false);
     } else if (state === 'init') {
       setIsTestMode(false);
     } else if (state === 'shutdown') {
       setActiveColor('off');
       setIsBlinking(false);
-      setIsPulsing(false);
     }
   };
 
   const handleProcessBegin = (cmd: Record<string, any>) => {
     if (cmd.process === 'init') {
-      setState('engaged');
       setIsTestMode(false);
       setIsHeld(false);
       setIsBlinking(false);
-      setIsPulsing(false);
       MessageBus.emit({
         type: 'acknowledge',
         id,
         process: 'init',
       });
     } else if (cmd.process === 'shutdown') {
-      setState('engaged');
       setIsTestMode(false);
       setIsHeld(false);
       setIsBlinking(false);
-      setIsPulsing(false);
       MessageBus.emit({
         type: 'acknowledge',
         id,
@@ -124,29 +133,15 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({ id, x, y, gridX, gridY })
     }
   };
 
-  const handleTemperatureUpdate = (temp: number) => {
-    if (!isTestMode && state !== 'withdrawn') {
-      setActiveColor(getColorFromTemperature(temp));
-    }
-  };
-
-  const handleFuelRodStateUpdate = (newState: FuelRodState) => {
-    setState(newState);
-    if (newState === 'transitioning') {
-      setIsBlinking(true);
-      setIsPulsing(false);
-    } else if (newState === 'withdrawn') {
-      setIsBlinking(false);
-      setIsPulsing(true);
-    } else {
-      setIsBlinking(false);
-      setIsPulsing(false);
+  const handleColorUpdate = (value: number) => {
+    if (!isTestMode) {
+      setActiveColor(getColorFromMap(value, colorMap));
     }
   };
 
   const handleTestSequence = () => {
     setIsTestMode(true);
-    const sequence: ButtonColor[] = ['red', 'amber', 'green', 'white', 'off'];
+    const sequence: string[] = ['red', 'amber', 'green', 'white', 'off'];
     let i = 0;
     const interval = setInterval(() => {
       setActiveColor(sequence[i]);
@@ -180,7 +175,7 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({ id, x, y, gridX, gridY })
     if (!isHeld) return;
     setIsHeld(false);
     MessageBus.emit({
-      type: 'fuel_rod_state_toggle',
+      type: toggleSendEvent,
       id,
       gridX: gridX,
       gridY: gridY,
@@ -207,7 +202,7 @@ const FuelRodButton: React.FC<FuelRodButtonProps> = ({ id, x, y, gridX, gridY })
           alt=""
           style={{ position: 'absolute' }}
         />
-        {(isPulsing || (isBlinking && showOverlay)) && (
+        {(showOverlay) && (
           <img
             src={glow_off}
             className={`panel-button-img ${isHeld ? 'pressed' : ''} ${isTestMode ? 'test-mode' : ''}`}

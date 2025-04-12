@@ -1,7 +1,7 @@
 import ConditionLightBlock from './ConditionLightBlock';
 import DigitalDisplayBlock from './PowerDemandBlock';
 import SliderBlock from './SliderBlock';
-import PanelButtonBlock from './FuelRodCtrlBlock';
+import FuelRodButtonBlock from './FuelRodCtrlBlock';
 import CircularGaugeBlock from './CircularGaugeBlock';
 import MasterButtonBlock from './MasterButtonBlock';
 import ScramButtonBlock from './ScramButtonBlock';
@@ -13,7 +13,7 @@ export default function MainPanel() {
       <ConditionLightBlock />
       <DigitalDisplayBlock />
       <SliderBlock />
-      <PanelButtonBlock />
+      <FuelRodButtonBlock />
       <CircularGaugeBlock />
       <MasterButtonBlock />
       <ScramButtonBlock />

@@ -167,8 +167,8 @@ function tick() {
             // Emit state change
             MessageBus.emit({
               type: 'fuel_rod_state_update',
-              id: 'sysstem',
-              state: newState,
+              id: 'system',
+              value: newState,
               gridX: x,
               gridY: y
             });
@@ -280,7 +280,7 @@ function handleMessage (msg: Record<string, any>) {
           MessageBus.emit({
             type: 'fuel_rod_state_update',
             id: `fuel_rod_button_${x}_${y}`,
-            state: 'engaged',
+            value: 'engaged',
             gridX: x,
             gridY: y
           });
@@ -320,7 +320,7 @@ function handleMessage (msg: Record<string, any>) {
         MessageBus.emit({
           type: 'fuel_rod_state_update',
           id: 'system',
-          state: 'transitioning',
+          value: 'transitioning',
           gridX: msg.gridX,
           gridY: msg.gridY
         });
