@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-
 import '../css/components/MasterButton.css';
 import bezel from '../images/master_button_bezel.png';
 import glowOff from '../images/master_button_off.png';
@@ -14,7 +13,6 @@ interface MasterButtonProps {
 export default function MasterButton({ x, y }: MasterButtonProps) {
   const [lit, setLit] = useState(false);
   const [blinking, setBlinking] = useState(false);
-  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     const unsubscribe = MessageBus.subscribe(handleMessage);
@@ -36,43 +34,11 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
     
     if (msg.type === 'state_change') {
       const state = msg.state;
-      if (state === 'on' || state === 'scram') {
-        setLit(true);
+      if (state === 'on') {
         setBlinking(false);
-        setVisible(true);
-      } else if (state === 'startup') {
         setLit(true);
+      } else if (state === 'test') {
         setBlinking(true);
-      } else if (state === 'shutdown') {
-        setLit(false);
-        setBlinking(false);
-        setVisible(false);
-      } else {
-        setLit(false);
-        setBlinking(false);
-        setVisible(false);
-      }
-    } else if (msg.type === 'process_begin') {
-      if (msg.process === 'init') {
-        setLit(false);
-        setBlinking(false);
-        setVisible(false);
-        MessageBus.emit({
-          type: 'acknowledge',
-          id: 'master',
-          process: 'init',
-        });
-      } else if (msg.process === 'shutdown') {
-        setLit(false);
-        setBlinking(false);
-        setVisible(false);
-        MessageBus.emit({
-          type: 'acknowledge',
-          id: 'master',
-          process: 'shutdown',
-        });
-      } else if (msg.process === 'test') {
-        setLit(true);
         setTimeout(() => {
           MessageBus.emit({
             type: 'test_result',
@@ -80,23 +46,47 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
             passed: true
           });
         }, 500);
+      } else if (state === 'scram') {
+        setBlinking(true);
+      } else if (state === 'startup') {
+        setBlinking(true);
+      } else if (state === 'shutdown') {
+        setBlinking(false);
+        setLit(false);
+      } 
+    } else if (msg.type === 'process_begin') {
+      if (msg.process === 'init') {
+        MessageBus.emit({
+          type: 'acknowledge',
+          id: 'master',
+          process: 'init',
+        });
+      } else if (msg.process === 'shutdown') {
+        MessageBus.emit({
+          type: 'acknowledge',
+          id: 'master',
+          process: 'shutdown',
+        });
+      } else if (msg.process === 'test') {
+        setTimeout(() => {
+        MessageBus.emit({
+          type: 'test_result',
+          id: 'master',
+          passed: true
+        });
+        }, 500);
       }
     }
   }
 
-
-
-
-
   // Blinking animation loop
   useEffect(() => {
     if (!blinking) {
-      setVisible(lit);
       return;
     }
 
     const interval = setInterval(() => {
-      setVisible((v) => !v);
+      setLit((l) => !l);
     }, 200);
 
     return () => clearInterval(interval);
@@ -119,9 +109,9 @@ export default function MasterButton({ x, y }: MasterButtonProps) {
     >
       <img src={bezel} className="master-button-img" alt="Bezel" draggable={false} />
       <img
-        src={visible ? glowOn : glowOff}
+        src={lit ? glowOn : glowOff}
         className="master-button-overlay"
-        alt={visible ? 'On glow' : 'Off glow'}
+        alt={lit ? 'On glow' : 'Off glow'}
         draggable={false}
       />
     </div>

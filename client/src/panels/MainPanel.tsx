@@ -17,7 +17,7 @@ export default function MainPanel() {
       <CircularGaugeBlock />
       <MasterButtonBlock />
       <ScramButtonBlock />
-      <CoolantPumpBlock idPrefix="primary" x={990} y={410} />
+      <CoolantPumpBlock x={990} y={410} />
     </>
   );
 }
