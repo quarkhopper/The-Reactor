@@ -58,7 +58,6 @@ export default function VerticalMeter({ id, x, y, event }: VerticalMeterProps) {
         handleTest();  
       }
     } else if (msg.type === event) {
-      console.log(`[VerticalMeter] Received ${event} message:`, msg);
       // Handle specific event messages
       setCurrentValue(msg.value);
     }

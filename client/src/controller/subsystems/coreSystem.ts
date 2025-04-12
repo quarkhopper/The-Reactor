@@ -49,7 +49,7 @@ const INTERFERENCE_SCALING_FACTOR = 3.5; // Increased to better suppress reactiv
 const NORMALIZATION_FACTOR = 1.3; // Keep current value
 
 // Add coolant-related constants
-const COOLANT_COOLING_FACTOR = 0.5; // Increased from 0.015 to make cooling effect very obvious
+const COOLANT_COOLING_FACTOR = 0.03; 
 
 // Add coolant state
 let coolantState = {
