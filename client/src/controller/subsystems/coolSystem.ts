@@ -82,7 +82,7 @@ function tick() {
   const now = Date.now();
   const deltaTime = (now - lastUpdateTime) / 1000; // Convert to seconds
   lastUpdateTime = now;
-  
+
   // Only update if we have a valid time delta
   if (deltaTime > 0 && deltaTime < 1) {
     // Temperature changes based on current conditions
@@ -112,6 +112,24 @@ function tick() {
       id: 'system',
       value: temperatures.primary
     });
+
+    if (temperatures.primary > 0.9 || pressures.primary > 0.9) {
+      MessageBus.emit({
+        type: 'cooling_state_update',
+        value: 'critical'
+      });
+    } else if (temperatures.primary > 0.7 || pressures.primary > 0.7) {
+      MessageBus.emit({
+        type: 'cooling_state_update',
+        value: 'warning'
+      });
+    } else {
+      MessageBus.emit({
+        type: 'cooling_state_update',
+        value: 'normal'
+      });
+    }
+
   }
 }
 

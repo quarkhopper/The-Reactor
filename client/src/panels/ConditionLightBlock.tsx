@@ -12,8 +12,8 @@ export default function ConditionLightBlock() {
     label: string; 
     stateEvent?: Record<string, string[]>; 
     conditionEvent?: Array<{type: string; value: string; color: string}> }[] = [
-    { id: 'cond_power', label: 'POWER', stateEvent: { 'green': ['on'], 'amber': ['init', 'startup', 'shutdown'], 'red': ['scram', 'fault'] } },
-    { id: 'cond_trans', label: 'TRANS', stateEvent: { 'amber': ['init', 'test', 'startup', 'shutdown'] } },
+    { id: 'cond_power', label: 'POWER', stateEvent: { 'green': ['on'], 'amber': ['init', 'startup'], 'red': ['scram', 'fault'] } },
+    { id: 'cond_trans', label: 'TRANS', stateEvent: { 'amber': ['init', 'test', 'startup'] } },
     { id: 'cond_fault', label: 'FAULT', stateEvent: { 'red': ['fault'] } },
     { id: 'cond_scram', label: 'SCRAM', stateEvent: { 'red': ['scram'] } },
     { id: 'cond_aux', label: 'AUX' },

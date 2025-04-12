@@ -147,6 +147,8 @@ function tick() {
     let totalTemp = 0;
     let minTemp = 1;
     let maxTemp = 0;
+    let critical = false;
+    let warning = false;
 
     // Create a 2D array to store temperatures for this tick
     const tempGrid = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
@@ -233,6 +235,13 @@ function tick() {
           id: 'system',
           value: rod.temperature
         });
+
+        if (rod.temperature > 0.9) {
+          critical = true;
+        }
+        if (rod.temperature > 0.7) {
+          warning = true;
+        }
       }
     }
 
@@ -244,6 +253,27 @@ function tick() {
       type: 'core_temp_update',
       value: avgTemp
     });
+
+
+    if (critical) {
+      MessageBus.emit({
+      type: 'core_state_update',
+      id: 'system',
+      value: 'critical'
+      });
+    } else if (warning) {
+      MessageBus.emit({
+      type: 'core_state_update',
+      id: 'system',
+      value: 'warning'
+      });
+    } else {
+      MessageBus.emit({
+      type: 'core_state_update',
+      id: 'system',
+      value: 'normal'
+      });
+    }
 
   } catch (error) {
     console.error('[coreSystem] Error in tick:', error);

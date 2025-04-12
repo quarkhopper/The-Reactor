@@ -1,3 +1,4 @@
+import MessageBus from '../../MessageBus';
 import { Subsystem } from '../types';
 
 // Generation system properties
@@ -31,6 +32,11 @@ function tick() {
   indicators.condenserTemperature = 1 - GEN_SYSTEM_PROPERTIES.condenserFanSpeed;
   indicators.capacitorCharge = Math.max(0, Math.min(1, indicators.generatorVoltage - 0.1));
   indicators.turbineRPM = GEN_SYSTEM_PROPERTIES.turbinePitch * 0.8;
+
+  MessageBus.emit({
+    type: 'gen_state_update',
+    value: 'normal',
+  });
 }
 
 function getState() {
