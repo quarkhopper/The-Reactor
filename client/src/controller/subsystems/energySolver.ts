@@ -1,6 +1,6 @@
 import MessageBus from '../../MessageBus';
 import coreSystem from './coreSystem';
-import coolSystem from './coolSystem';
+import xferSystem from './xferSystem';
 
 // Updated constants for more realistic simulation
 const STEAM_HEAT_CAPACITY = 0.2; // Heat capacity of the steam
@@ -19,7 +19,7 @@ const HEAT_LOSS_SCALING_FACTOR = 0.1; // Matches coreSystem
 
 // Access reactivity and coolant properties
 const { reactivity } = coreSystem.getState();
-const { coolantProperties } = coolSystem.getState();
+const { coolantProperties } = xferSystem.getState();
 
 // State variables
 let fuelRodTemperatures = Array(NUM_FUEL_RODS).fill(0.02); // Initial temperature normalized to 0.02
@@ -81,22 +81,7 @@ function tick() {
   console.log('Steam Temperature:', steamTemperature);
   console.log('Steam Pressure:', steamPressure);
 
-  // Emit updated temperatures to the MessageBus
-  const coreTemperature = fuelRodTemperatures.reduce((sum, temp) => sum + temp, 0) / NUM_FUEL_RODS;
-  MessageBus.emit({
-    type: 'core-temperature-update',
-    value: coreTemperature,
-  });
 
-  MessageBus.emit({
-    type: 'primary-coolant-temperature-update',
-    value: primaryCoolantTemperature,
-  });
-
-  MessageBus.emit({
-    type: 'steam-temperature-update',
-    value: steamTemperature,
-  });
 }
 
 // Register the solver with the tick engine

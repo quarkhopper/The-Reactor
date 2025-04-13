@@ -1,4 +1,7 @@
 import MessageBus from '../../MessageBus';
+import xferSystem from './xferSystem';
+
+const { coolantProperties } = xferSystem.getState();
 
 const FUEL_GRID_SIZE = 7; // Size of the grid (7x7) with corners removed
 const CONTROL_GRID_SIZE = 6; // Size of the control rod grid (6x6) between fuel rods
@@ -73,9 +76,9 @@ const HEAT_LOSS_SCALING_FACTOR = 0.1; // Keep original for stability
 const INTERFERENCE_SCALING_FACTOR = 1 // 3.5;
 const NORMALIZATION_FACTOR = 1.3; // Keep current value
 const TEMP_INSTABILITY_FACTOR = 0.02;
-
-// Add coolant-related constants
-const COOLANT_COOLING_FACTOR = 0.06; 
+const HEAT_TRANSFER_COEFFICIENT_ROD_TO_COOLANT = 0.05; // Adjusted for realistic heat transfer efficiency
+const FUEL_ROD_SURFACE_AREA = 0.8; // Normalized surface area affecting heat transfer
+const COOLANT_FLOW_RATE_SCALING = 1.2; // Scaling factor for coolant flow rate effect
 
 // Add coolant state
 let coolantState = {
@@ -205,9 +208,6 @@ function tick() {
     let warning = false;
     let totalInstability = 0;
 
-    // Create a 2D array to store temperatures for this tick
-    const tempGrid = Array(FUEL_GRID_SIZE).fill(0).map(() => Array(FUEL_GRID_SIZE).fill(0));
-
     // Check for completed transitions
     const now = Date.now();
     for (let x = 0; x < FUEL_GRID_SIZE; x++) {
@@ -267,29 +267,9 @@ function tick() {
         const finalReactivity = Math.max(0, baseReactivity - controlInterference);
         reactivity[x][y] = finalReactivity;
 
-        // Update temperature based on reactivity
-        const heatGain = HEAT_GAIN_SCALING_FACTOR * finalReactivity;
-        rod.temperature += heatGain;
+        updateFuelRodTemperature(rod, x, y);
 
-        // Apply proportional heat loss (natural cooling)
-        rod.temperature -= HEAT_LOSS_SCALING_FACTOR * rod.temperature;
 
-        // Apply coolant-based cooling
-        const tempDiff = rod.temperature - coolantState.temperature;
-        const coolantEffect = COOLANT_COOLING_FACTOR * coolantState.flowRate * tempDiff;
-        rod.temperature -= coolantEffect;
-
-        // Add random instability to the temperature
-        const instability = (Math.random() * 2 - 1) * TEMP_INSTABILITY_FACTOR * rod.temperature * reactivity[x][y];
-        rod.temperature += instability;
-        // Calculate total instability for this tick
-        totalInstability += Math.abs(instability);
-
-        // Clamp temperature to [0, 1] again after instability
-        rod.temperature = Math.max(0, Math.min(1, rod.temperature));
-
-        // Store temperature in grid
-        tempGrid[x][y] = rod.temperature;
 
         totalTemp += rod.temperature;
         minTemp = Math.min(minTemp, rod.temperature);
@@ -382,7 +362,7 @@ function tick() {
 
 // Type guard to validate if a message is relevant to coreSystem
 function isValidMessage(msg: Record<string, any>): boolean {
-  const validTypes = ['state_change', 'coolant_temp_update', 'flow_rate_update', 'fuel_rod_state_toggle', 'control_rod_delta'];
+  const validTypes = ['state_change', 'fuel_rod_state_toggle', 'control_rod_delta'];
   return validTypes.includes(msg.type);
 }
 
@@ -425,10 +405,6 @@ function handleMessage (msg: Record<string, any>) {
       }
     }
 
-  } else if (msg.type === 'coolant_temp_update') {
-    coolantState.temperature = msg.value;
-  } else if (msg.type === 'flow_rate_update') {
-    coolantState.flowRate = msg.value;
   } else if (msg.type === 'fuel_rod_state_toggle') {
     const { gridX: x, gridY: y } = msg;
     if (x >= 0 && x < FUEL_GRID_SIZE && y >= 0 && y < FUEL_GRID_SIZE) {
@@ -502,4 +478,28 @@ function scheduleRecalculation() {
     precalculateBaseReactivities();
     recalculationTimer = null;
   }, RECALCULATION_DELAY);
+}
+
+// Updated fuel rod temperature calculation to match energySolver
+function updateFuelRodTemperature(rod: FuelRod, x: number, y: number) {
+  const heatGenerated = reactivity[x][y] * HEAT_GAIN_SCALING_FACTOR;
+  const heatTransferToCoolant =
+    HEAT_TRANSFER_COEFFICIENT_ROD_TO_COOLANT * FUEL_ROD_SURFACE_AREA * coolantProperties.flowRate * COOLANT_FLOW_RATE_SCALING * (rod.temperature - coolantState.temperature);
+  const naturalCooling = HEAT_LOSS_SCALING_FACTOR * rod.temperature;
+
+  rod.temperature = clamp(rod.temperature + heatGenerated - heatTransferToCoolant - naturalCooling);
+
+  // Emit temperature update command
+  MessageBus.emit({
+    type: 'temperature_update',
+    gridX: x,
+    gridY: y,
+    id: 'system',
+    value: rod.temperature
+  });
+}
+
+// Utility function to clamp values between 0 and 1
+function clamp(value: number): number {
+  return Math.max(0, Math.min(1, value));
 }
