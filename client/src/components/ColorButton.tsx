@@ -70,9 +70,9 @@ const FuelRodButton: React.FC<ColorButtonProps> = ({ id, x, y, gridX, gridY, ind
       dimEvent?.type, 
       blinkEvent?.type];
     return validTypes.includes(msg.type) &&
-      (!msg.index || msg.index === index) &&
-      (!msg.gridX || msg.gridX === gridX) &&
-      (!msg.gridY || msg.gridY === gridY);
+      ((msg.index == null) || msg.index === index) &&
+      ((msg.gridX == null) || msg.gridX === gridX) &&
+      ((msg.gridY == null) || msg.gridY === gridY);
   };
 
   // Centralized message handler
@@ -91,6 +91,7 @@ const FuelRodButton: React.FC<ColorButtonProps> = ({ id, x, y, gridX, gridY, ind
       setIsBlinking(false);
       setShowOverlay(true);
     } else if (msg.type === blinkEvent?.type && msg.value === blinkEvent?.value) {
+      console.log('Blinking event received: ', msg);
       setIsBlinking(true);
     }
   };
@@ -176,9 +177,10 @@ const FuelRodButton: React.FC<ColorButtonProps> = ({ id, x, y, gridX, gridY, ind
     setIsHeld(false);
     MessageBus.emit({
       type: toggleSendEvent,
-      id,
+      id: id,
       gridX: gridX,
       gridY: gridY,
+      index: index,
     });
   };
 

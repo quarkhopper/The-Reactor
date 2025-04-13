@@ -10,9 +10,10 @@ interface SliderControlProps {
   y: number;
   moveEvent: string; // event type to send on move
   index?: number;   // meaningful index within the target system
+  initvalue?: number; // initial value of the slider
 }
 
-const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, moveEvent, index }) => {
+const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, moveEvent, index, initvalue }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
   const [value, setValue] = useState(0);
@@ -29,19 +30,19 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, moveEvent, inde
   const isValidMessage = (msg: Record<string, any>): boolean => {
     const validTypes = ['state_change', 'process_begin'];
     return validTypes.includes(msg.type)
-    && (!msg.index || msg.index === index)
+    && ((msg.index == null) || msg.index === index)
   }
 
   function handleMessage(msg: Record<string, any>) {
     if (!isValidMessage(msg)) return;
 
     if (msg.type === 'state_change') {
-      if (msg.state === 'startup' || msg.state === 'on') {
+      if (msg.state === 'startup') {
+        setValue(initvalue || 0);
         setIsTestMode(false);
       }
     } else if (msg.type === 'process_begin') {
       if (msg.process === 'init') {
-        setValue(0);
         setIsTestMode(false);
         MessageBus.emit({
           type: 'acknowledge',

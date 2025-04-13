@@ -8,7 +8,6 @@ import white from '../images/indicator_white.png';
 
 import '../css/components/IndicatorLight.css';
 import MessageBus from '../MessageBus';
-import { get } from 'http';
 
 interface IndicatorLightProps {
   id: string;
@@ -82,9 +81,9 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
   const isValidMessage = (msg: Record<string, any>): boolean => {
     const validTypes = ['state_change', 'process_begin', colorEvent?.type, ...conditionTypes];
     return validTypes.includes(msg.type) &&
-      (!msg.index || msg.index === index) &&
-      (!msg.gridX || msg.gridX === gridX) &&
-      (!msg.gridY || msg.gridY === gridY);
+    ((msg.index == null) || msg.index === index) &&
+    ((msg.gridX == null) || msg.gridX === gridX) &&
+    ((msg.gridY == null) || msg.gridY === gridY);
   };
 
   function handleMessage(msg: Record<string, any>) {
@@ -133,7 +132,6 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
         });
       }
     } else if (msg.type === colorEvent?.type) {
-
       setDisplayColor(getColorFromMap(msg.value, colorMap));
     } else if (conditionTypes.includes(msg.type)) {
       setDisplayColor(getConditionEventColor(msg.type, msg.value));

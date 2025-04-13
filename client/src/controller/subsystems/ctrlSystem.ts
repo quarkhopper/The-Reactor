@@ -1,8 +1,8 @@
 import MessageBus from '../../MessageBus';
 import { Subsystem } from '../types';
-import { findClosestControlRod } from './coreSystem';
+import { findClosestControlRods } from './coreSystem';
 
-const STANDARD_CONTROL_ROD_DELTA = 0.02;
+const STANDARD_CONTROL_ROD_DELTA = 0.01;
 
 let currentCoreTemp = 0; // Track the last received core temperature
 let targetCoreTemp = 0.0
@@ -20,7 +20,7 @@ function tick() {
 
 // Type guard to validate if a message is relevant to this subsystem
 function isValidMessage(msg: Record<string, any>): boolean {
-  const validTypes = ['state_change', 'target_power_update', 'core_temp_update', 'temperature_update'];
+  const validTypes = ['state_change', 'target_temp_update', 'core_temp_update', 'temperature_update'];
   return validTypes.includes(msg.type);
 }
 
@@ -39,7 +39,7 @@ function handleMessage (msg: Record<string, any>) {
       console.log('[ctrlSystem] Received scram command - setting target core temperature to 0');
       scram = true;
     }
-  } else if (msg.type === 'target_power_update') {
+  } else if (msg.type === 'target_temp_update') {
     // Update target power based on message value
     targetCoreTemp = msg.value;
   } else if (msg.type === 'core_temp_update') {
@@ -47,25 +47,20 @@ function handleMessage (msg: Record<string, any>) {
     currentCoreTemp = msg.value;
   } else if (msg.type === 'temperature_update') {
     if (scram) {
-      console.log('[ctrlSystem] sending message for control rods to engage');
-      MessageBus.emit({
-        type: 'control_rod_delta',
-        gridX: 0,
-        gridY: 0,
-        value: -STANDARD_CONTROL_ROD_DELTA
-      });
       return; // Ignore temperature updates during scram state
     }
     // Update temperature based on message value
     const { gridX, gridY, value } = msg;
-    const rodIndex = findClosestControlRod(gridX, gridY);
-    if (rodIndex) {
+    const rodIndices = findClosestControlRods(gridX, gridY);
+    if (rodIndices && rodIndices.length > 0) {
       const delta = value > targetCoreTemp ? -STANDARD_CONTROL_ROD_DELTA : STANDARD_CONTROL_ROD_DELTA;
+      rodIndices.forEach(rod => {
       MessageBus.emit({
-      type: 'control_rod_delta',
-      gridX: rodIndex.cx,
-      gridY: rodIndex.cy,
-      value: delta,
+        type: 'control_rod_delta',
+        gridX: rod.cx,
+        gridY: rod.cy,
+        value: delta,
+      });
       });
     }
   }

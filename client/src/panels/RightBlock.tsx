@@ -28,6 +28,7 @@ export default function RightBlock() {
         x={0} 
         y={620} 
         moveEvent='pump_speed_adjust'
+        initvalue={0.5}
       />
       <VerticalMeter
             id='pump_temp_meter'

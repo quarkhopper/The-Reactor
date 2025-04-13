@@ -101,23 +101,31 @@ function precalculateDistances() {
   }
 }
 
-function findClosestControlRod(x: number, y: number): { cx: number; cy: number; distance: number } | null {
+function findClosestControlRods(x: number, y: number): { cx: number; cy: number; distance: number }[] {
   if (isCorner(x, y)) {
-    return null; // No control rods near corners
+    return []; // No control rods near corners
   }
 
-  let closestRod = { cx: -1, cy: -1, distance: Infinity };
+  const rods: { cx: number; cy: number; distance: number }[] = [];
 
+  // Iterate over control rods located at the corners of fuel rods
   for (let cx = 0; cx < CONTROL_GRID_SIZE; cx++) {
     for (let cy = 0; cy < CONTROL_GRID_SIZE; cy++) {
-      const distance = distanceGrid[x][y][cx][cy];
-      if (distance < closestRod.distance) {
-        closestRod = { cx, cy, distance };
+      // Control rods are located at the corners of fuel rods
+      const isAtCorner = 
+        (cx === x - 1 && cy === y - 1) || 
+        (cx === x - 1 && cy === y) || 
+        (cx === x && cy === y - 1) || 
+        (cx === x && cy === y);
+
+      if (isAtCorner) {
+        const distance = distanceGrid[x][y][cx][cy];
+        rods.push({ cx, cy, distance });
       }
     }
   }
 
-  return closestRod.distance === Infinity ? null : closestRod;
+  return rods;
 }
 
 // New function for fuel rod distance calculations
@@ -212,6 +220,10 @@ function tick() {
             delete rod.transitionStartTime;
             delete rod.previousState;
             
+            if (newState === 'withdrawn') {
+              rod.temperature = 0; // Reset temperature for withdrawn rods
+            }
+
             // Emit state change
             MessageBus.emit({
               type: 'fuel_rod_state_update',
@@ -324,10 +336,10 @@ function tick() {
 
     for (let x = 0; x < FUEL_GRID_SIZE; x++) {
       for (let y = 0; y < FUEL_GRID_SIZE; y++) {
-      if (!isCorner(x, y) && fuelRods[x][y].state === 'engaged') {
-        totalReactivity += reactivity[x][y];
-        activeRodCount++;
-      }
+        if (!isCorner(x, y) && fuelRods[x][y].state === 'engaged') {
+          totalReactivity += reactivity[x][y];
+          activeRodCount++;
+        }
       }
     }
 
@@ -338,7 +350,6 @@ function tick() {
       type: 'core_reactivity_update',
       value: avgReactivity
     });
-    console.log(`[coreSystem] Average reactivity: ${avgReactivity}`);
 
 
     if (critical) {
@@ -392,6 +403,20 @@ function handleMessage (msg: Record<string, any>) {
             value: 'engaged',
             gridX: x,
             gridY: y
+          });
+        }
+      }
+    } else if (msg.state === 'scram') {
+      console.log('[coreSystem] Received scram command - setting target core temperature to 0');
+      for (let x = 0; x < CONTROL_GRID_SIZE; x++) {
+        for (let y = 0; y < CONTROL_GRID_SIZE; y++) {
+          controlRods[x][y].position = 0;
+          MessageBus.emit({
+            type: 'control_rod_position_update',
+            id: 'system',
+            gridX: x,
+            gridY: y,
+            value: 0
           });
         }
       }
@@ -449,7 +474,7 @@ const coreSystem = {
 };
 
 export default coreSystem;
-export { findClosestControlRod };
+export { findClosestControlRods };
 
 // Debounced function to schedule recalculations
 function scheduleRecalculation() {

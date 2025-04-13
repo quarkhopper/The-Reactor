@@ -44,11 +44,10 @@ export default function CoreBlock() {
           gridY={y}
           toggleSendEvent='fuel_rod_state_toggle'
           colorMap={[
-            { range: [-Infinity, 0], color: 'off' },
             { range: [0, 0.2], color: 'green' },
             { range: [0.2, 0.5], color: 'amber' },
             { range: [0.5, 0.8], color: 'red' },
-            { range: [0.8, Infinity], color: 'white' },
+            { range: [0.8, 1.0], color: 'white' },
           ]}
           colorEvent={{ type: 'temperature_update'}}
           litEvent={{ type: 'fuel_rod_state_update', value: 'engaged' }}
@@ -72,11 +71,10 @@ export default function CoreBlock() {
           gridX={x}
           gridY={y}
           colorMap={[
-            { range: [-Infinity, 0], color: 'off' },
             { range: [0, 0.5], color: 'green' },
             { range: [0.5, 0.8], color: 'amber' },
-            { range: [0.8, 9.9], color: 'red' },
-            { range: [9.9, Infinity], color: 'white' },
+            { range: [0.8, 9.0], color: 'red' },
+            { range: [9.0, 1.0], color: 'white' },
           ]}
           colorEvent={{ type: 'control_rod_position_update'}}
         />
