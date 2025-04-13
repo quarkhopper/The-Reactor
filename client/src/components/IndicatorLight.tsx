@@ -27,7 +27,10 @@ function getColorFromMap(temp: number, colorMap?: { range: [number, number]; col
     return 'white';
   }
 
+
   const mapping = colorMap.find(({ range }) => temp >= range[0] && temp <= range[1]);
+
+
   if (!mapping) {
     console.warn(`No color mapping found for temperature: ${temp}. Defaulting to white.`);
   }
@@ -37,8 +40,8 @@ function getColorFromMap(temp: number, colorMap?: { range: [number, number]; col
 
 const glowMap: Record<string, string> = {
   off: off,
-  green: amber,
-  amber: green,
+  green: green,
+  amber: amber,
   red: red,
   white: white,
 };
@@ -92,7 +95,6 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
     if (msg.type === 'state_change') {
       const state = msg.state;
       if (state === 'startup' || state === 'on') {
-        setDisplayColor('off'); // Reset display color on state change
       } else if (state === 'shutdown') {
         setDisplayColor('off'); // Reset display color during shutdown
       }

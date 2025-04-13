@@ -12,9 +12,9 @@ interface CoolantProperties {
 
 // System constants
 const COOLANT_PROPERTIES: CoolantProperties = {
-  heatCapacity: 0.7,      // High value = more energy needed to change temp
-  flowRate: 0.5,          // Initial flow rate at 50%
-  thermalMass: 0.6,       // High value = more resistance to temperature change
+  heatCapacity: 0.8,      // High value = more energy needed to change temp
+  flowRate: 0.0,          
+  thermalMass: 0.8,       // High value = more resistance to temperature change
   heatTransfer: 0.8       // How efficiently heat moves between core and coolant
 };
 
@@ -26,23 +26,20 @@ const TURBULENCE_MAGNITUDE = 0.05;   // Size of pressure oscillations
 // State variables
 const temperatures = {
   primary: 0,             // Primary loop temperature (0-1)
-  secondary: 0            // Secondary loop temperature (0-1)
 };
 
 const pumpSpeeds = {
   primary: 0.5,           // Initial pump speed 50%
-  secondary: 0
 };
 
 const pressures = {
   primary: 0,             // Primary loop pressure (0-1)
-  secondary: 0            // Secondary loop pressure (0-1)
 };
 
 let lastUpdateTime = Date.now();
 
 // Initialize a 2D array to store temperatures of each fuel rod
-const fuelRodTemperatures: number[][] = Array.from({ length: 10 }, () => Array(10).fill(0));
+const fuelRodTemperatures: number[][] = Array.from({ length: 7 }, () => Array(7).fill(0));
 
 function calculateTemperatureChange(deltaTime: number): number {
   // Calculate the average temperature of all fuel rods
@@ -52,7 +49,7 @@ function calculateTemperatureChange(deltaTime: number): number {
 
   // Normalized heat transfer calculation
   const tempDiff = averageFuelRodTemp - temperatures.primary;
-
+  
   // Heat transfer rate affected by:
   // - Temperature difference
   // - Flow rate (pump speed)
@@ -95,19 +92,12 @@ function tick() {
 
     // Temperature changes based on current conditions
     const deltaTemp = calculateTemperatureChange(deltaTime);
-    
+    console.log(`[coolSystem] Temperature change: ${deltaTemp}`);
     temperatures.primary = Math.max(0, Math.min(1, temperatures.primary + deltaTemp));
     
     // Calculate new pressure
     pressures.primary = calculatePressure();
     
-    // // Emit the new temperature for UI update
-    // MessageBus.emit({
-    //   type: 'pump',
-    //   id: 'pump-temp-meter',
-    //   value: temperatures.primary
-    // });
-
     // Emit the new pressure for UI update
     MessageBus.emit({
       type: 'coolant-pressure-update',
@@ -164,44 +154,25 @@ function handleMessage(msg: Record<string, any>) {
 
   if (msg.type === 'pump_speed_adjust') {
     // Handle pump speed updates from cooling sliders
+    console.log(`[coolSystem] Pump speed adjusted: ${msg.value}`);
+    pumpSpeeds.primary = msg.value;
+    COOLANT_PROPERTIES.flowRate = msg.value; // Update flow rate with pump speed
 
-      pumpSpeeds.primary = msg.value;
-      COOLANT_PROPERTIES.flowRate = msg.value; // Update flow rate with pump speed
-
-      // Emit flow rate update
-      MessageBus.emit({
-        type: 'flow_rate_update',
-        value: msg.value
-      });
+    // Emit flow rate update
+    MessageBus.emit({
+      type: 'flow_rate_update',
+      value: msg.value
+    });
   } else if (msg.type === 'temperature_update') {
-    console.log(`[coolSystem] Received temperature update for rod (${msg.gridX}, ${msg.gridY})`);
     // Update temperature of a specific fuel rod based on grid coordinates
     const { gridX, gridY, value } = msg;
     if (gridX >= 0 && gridX < fuelRodTemperatures.length && 
         gridY >= 0 && gridY < fuelRodTemperatures[0].length) {
       fuelRodTemperatures[gridX][gridY] = value;
-      console.log(`[coolSystem] Updated temperature of rod (${gridX}, ${gridY}) to ${value}`);
     }
   } else if (msg.type === 'state_change') {
     if (msg.state === 'startup') {
     } else if (msg.state === 'scram') {
-      // Set primary pump to 100% during SCRAM
-      pumpSpeeds.primary = 1.0;
-      COOLANT_PROPERTIES.flowRate = 1.0;
-      console.log('[coolSystem] SCRAM initiated - setting primary pump to 100%');
-      
-      // Update the pump slider position
-      MessageBus.emit({
-        type: 'pump_speed_update',
-        id: 'system',
-        value: 1.0
-      });
-
-      // Emit flow rate update
-      MessageBus.emit({
-        type: 'flow_rate_update',
-        value: 1.0
-      });
     }
   }
 }

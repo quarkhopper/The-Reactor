@@ -16,7 +16,7 @@ interface SliderControlProps {
 const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, moveEvent, index, initvalue }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
-  const [value, setValue] = useState(0);
+  const [currentValue, setCurrentValue] = useState(0);
   const [isTestMode, setIsTestMode] = useState(false);
   const knobTravelRatio = 0.68;
 
@@ -38,8 +38,15 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, moveEvent, inde
 
     if (msg.type === 'state_change') {
       if (msg.state === 'startup') {
-        setValue(initvalue || 0);
         setIsTestMode(false);
+        let newvalue = initvalue || 0
+        setCurrentValue(newvalue);
+        MessageBus.emit({
+          type: moveEvent,
+          id: id,
+          index: index,
+          value: newvalue
+        });
       }
     } else if (msg.type === 'process_begin') {
       if (msg.process === 'init') {
@@ -50,8 +57,8 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, moveEvent, inde
           process: 'init',
         });
       } else if (msg.process === 'shutdown') {
-        setValue(0);
         setIsTestMode(false);
+        setCurrentValue(0);
         MessageBus.emit({
           type: 'acknowledge',
           id,
@@ -60,15 +67,13 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, moveEvent, inde
       } else if (msg.process === 'test') {
         handleTest();
       }
-    } else if (msg.type === 'control_rod_position_update' || msg.type === 'pump_speed_update') {
-      setValue(msg.value);
     }
   } 
 
   // Handle test sequence
   function handleTest()   {
     setIsTestMode(true);
-    setValue(0);
+    setCurrentValue(0);
 
     let startTime = Date.now();
     const totalDuration = 2000;
@@ -79,7 +84,7 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, moveEvent, inde
       const progress = Math.min(elapsed / totalDuration, 1);
 
       if (progress >= 1) {
-        setValue(0);
+        setCurrentValue(0);
         setIsTestMode(false);
         MessageBus.emit({
           type: 'test_result',
@@ -98,7 +103,7 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, moveEvent, inde
         currentValue = 1 - p;
       }
 
-      setValue(currentValue);
+      setCurrentValue(currentValue);
       requestAnimationFrame(animate);
     };
 
@@ -117,7 +122,7 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, moveEvent, inde
     const clamped = Math.min(Math.max(relY, 0), travelHeight);
     // Value mapping: 0 = fully inserted (bottom), 1 = fully withdrawn (top)
     const newValue = 1 - clamped / travelHeight;
-    setValue(newValue);
+    setCurrentValue(newValue);
 
     // Emit the new value to the message bus
     MessageBus.emit({
@@ -152,7 +157,7 @@ const SliderControl: React.FC<SliderControlProps> = ({ id, x, y, moveEvent, inde
     ? containerRef.current.clientHeight * knobTravelRatio
     : 0;
 
-  const knobOffset = -value * travelHeight;
+  const knobOffset = -currentValue * travelHeight;
 
   return (
     <div

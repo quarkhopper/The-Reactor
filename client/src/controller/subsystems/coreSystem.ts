@@ -72,15 +72,15 @@ const HEAT_GAIN_SCALING_FACTOR = 0.018; // Keep increased value for critical tem
 const HEAT_LOSS_SCALING_FACTOR = 0.1; // Keep original for stability
 const INTERFERENCE_SCALING_FACTOR = 1 // 3.5;
 const NORMALIZATION_FACTOR = 1.3; // Keep current value
-const TEMP_INSTABILITY_FACTOR = 0.1;
+const TEMP_INSTABILITY_FACTOR = 0.02;
 
 // Add coolant-related constants
-const COOLANT_COOLING_FACTOR = 0.03; 
+const COOLANT_COOLING_FACTOR = 0.06; 
 
 // Add coolant state
 let coolantState = {
   temperature: 0,
-  flowRate: 0.5 // Default to 50% flow
+  flowRate: 0.0 // Default to 50% flow
 };
 
 function precalculateDistances() {
@@ -203,6 +203,7 @@ function tick() {
     let maxTemp = 0;
     let critical = false;
     let warning = false;
+    let totalInstability = 0;
 
     // Create a 2D array to store temperatures for this tick
     const tempGrid = Array(FUEL_GRID_SIZE).fill(0).map(() => Array(FUEL_GRID_SIZE).fill(0));
@@ -240,7 +241,6 @@ function tick() {
       }
     }
     
-    let totalInstability = 0;
     for (let x = 0; x < FUEL_GRID_SIZE; x++) {
       for (let y = 0; y < FUEL_GRID_SIZE; y++) {
         const rod = fuelRods[x][y];
@@ -279,14 +279,14 @@ function tick() {
         const coolantEffect = COOLANT_COOLING_FACTOR * coolantState.flowRate * tempDiff;
         rod.temperature -= coolantEffect;
 
-        // Clamp temperature to [0, 1]
-        rod.temperature = Math.max(0, Math.min(1, rod.temperature));
-
         // Add random instability to the temperature
-        const instability = Math.random() * TEMP_INSTABILITY_FACTOR * rod.temperature * reactivity[x][y];
+        const instability = (Math.random() * 2 - 1) * TEMP_INSTABILITY_FACTOR * rod.temperature * reactivity[x][y];
         rod.temperature += instability;
         // Calculate total instability for this tick
-        totalInstability += instability;
+        totalInstability += Math.abs(instability);
+
+        // Clamp temperature to [0, 1] again after instability
+        rod.temperature = Math.max(0, Math.min(1, rod.temperature));
 
         // Store temperature in grid
         tempGrid[x][y] = rod.temperature;
@@ -294,6 +294,8 @@ function tick() {
         totalTemp += rod.temperature;
         minTemp = Math.min(minTemp, rod.temperature);
         maxTemp = Math.max(maxTemp, rod.temperature);
+
+        
 
         // Emit temperature update command
         MessageBus.emit({
@@ -323,7 +325,8 @@ function tick() {
     });
 
     // Emit total absolute instability to update the circular gauge
-    const averageInstability = (totalInstability / (FUEL_GRID_SIZE * FUEL_GRID_SIZE)) / TEMP_INSTABILITY_FACTOR;
+    let averageInstability = (totalInstability / (FUEL_GRID_SIZE * FUEL_GRID_SIZE)) / TEMP_INSTABILITY_FACTOR;
+    averageInstability = Math.max(0, Math.min(1, averageInstability)); // Clamp to [0, 1]
 
     MessageBus.emit({
       type: 'core_instability_update',
