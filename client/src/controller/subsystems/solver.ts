@@ -2,23 +2,28 @@ import MessageBus from '../../MessageBus';
 import coreSystem from './coreSystem';
 import coolSystem from './coolSystem';
 
-// Constants for heat transfer and time simulation
-const FUEL_ROD_HEAT_CAPACITY = 0.05; // Heat capacity of each fuel rod
+// Updated constants for more realistic simulation
 const STEAM_HEAT_CAPACITY = 0.2; // Heat capacity of the steam
-const HEAT_TRANSFER_COEFFICIENT_ROD_TO_COOLANT = 0.08;
+const HEAT_TRANSFER_COEFFICIENT_ROD_TO_COOLANT = 0.05; // Adjusted for realistic heat transfer efficiency
 const HEAT_TRANSFER_COEFFICIENT_COOLANT_TO_STEAM = 0.06;
+const COOLANT_FLOW_RATE_SCALING = 1.2; // Scaling factor for coolant flow rate effect
+const FUEL_ROD_SURFACE_AREA = 0.8; // Normalized surface area affecting heat transfer
 const NUM_FUEL_RODS = 49; // Assuming a 7x7 grid of fuel rods
 
 // Constants for steam pressure calculation
 const STEAM_PRESSURE_COEFFICIENT = 1.5; // Coefficient to scale steam temperature to pressure
+
+// Adjusted constants for tuning
+const HEAT_GAIN_SCALING_FACTOR = 0.018; // Matches coreSystem
+const HEAT_LOSS_SCALING_FACTOR = 0.1; // Matches coreSystem
 
 // Access reactivity and coolant properties
 const { reactivity } = coreSystem.getState();
 const { coolantProperties } = coolSystem.getState();
 
 // State variables
-let fuelRodTemperatures = Array(NUM_FUEL_RODS).fill(0.5); // Normalized temperatures (0-1)
-let primaryCoolantTemperature = 0.3; // Normalized primary coolant temperature (0-1)
+let fuelRodTemperatures = Array(NUM_FUEL_RODS).fill(0.02); // Initial temperature normalized to 0.02
+let primaryCoolantTemperature = 0.0; // Matches coolantState.temperature in coreSystem
 let steamTemperature = 0.2; // Normalized steam temperature (0-1)
 let steamPressure = 0.0; // Normalized steam pressure (0-1)
 
@@ -47,15 +52,16 @@ function clamp(value: number): number {
 function tick() {
   // Update fuel rod temperatures based on reactivity
   fuelRodTemperatures = fuelRodTemperatures.map((temp, i) => {
-    const heatGenerated = reactivity[Math.floor(i / 7)][i % 7] * FUEL_ROD_HEAT_CAPACITY;
+    const heatGenerated = reactivity[Math.floor(i / 7)][i % 7] * HEAT_GAIN_SCALING_FACTOR;
     const heatTransferToCoolant =
-      HEAT_TRANSFER_COEFFICIENT_ROD_TO_COOLANT * (temp - primaryCoolantTemperature);
-    return clamp(temp + heatGenerated - heatTransferToCoolant);
+      HEAT_TRANSFER_COEFFICIENT_ROD_TO_COOLANT * FUEL_ROD_SURFACE_AREA * coolantProperties.flowRate * COOLANT_FLOW_RATE_SCALING * (temp - primaryCoolantTemperature);
+    const naturalCooling = HEAT_LOSS_SCALING_FACTOR * temp;
+    return clamp(temp + heatGenerated - heatTransferToCoolant - naturalCooling);
   });
 
   // Update primary coolant temperature based on heat from fuel rods
   const totalHeatFromRods = fuelRodTemperatures.reduce((sum, temp) => {
-    return sum + HEAT_TRANSFER_COEFFICIENT_ROD_TO_COOLANT * (temp - primaryCoolantTemperature);
+    return sum + HEAT_TRANSFER_COEFFICIENT_ROD_TO_COOLANT * FUEL_ROD_SURFACE_AREA * coolantProperties.flowRate * COOLANT_FLOW_RATE_SCALING * (temp - primaryCoolantTemperature);
   }, 0);
   const heatTransferToSteam =
     HEAT_TRANSFER_COEFFICIENT_COOLANT_TO_STEAM * (primaryCoolantTemperature - steamTemperature);
@@ -74,6 +80,23 @@ function tick() {
   console.log('Primary Coolant Temperature:', primaryCoolantTemperature);
   console.log('Steam Temperature:', steamTemperature);
   console.log('Steam Pressure:', steamPressure);
+
+  // Emit updated temperatures to the MessageBus
+  const coreTemperature = fuelRodTemperatures.reduce((sum, temp) => sum + temp, 0) / NUM_FUEL_RODS;
+  MessageBus.emit({
+    type: 'core-temperature-update',
+    value: coreTemperature,
+  });
+
+  MessageBus.emit({
+    type: 'primary-coolant-temperature-update',
+    value: primaryCoolantTemperature,
+  });
+
+  MessageBus.emit({
+    type: 'steam-temperature-update',
+    value: steamTemperature,
+  });
 }
 
 // Register the solver with the tick engine
