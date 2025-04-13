@@ -14,8 +14,8 @@ interface CoolantProperties {
 const COOLANT_PROPERTIES: CoolantProperties = {
   heatCapacity: 0.7,      // High value = more energy needed to change temp
   flowRate: 0.5,          // Initial flow rate at 50%
-  thermalMass: 0.8,       // High value = more resistance to temperature change
-  heatTransfer: 0.6       // How efficiently heat moves between core and coolant
+  thermalMass: 0.6,       // High value = more resistance to temperature change
+  heatTransfer: 0.8       // How efficiently heat moves between core and coolant
 };
 
 // Pressure calculation constants
@@ -40,12 +40,19 @@ const pressures = {
 };
 
 let lastUpdateTime = Date.now();
-let currentCoreTemp = 0;  // Track the last received core temperature
 
-function calculateTemperatureChange(coreTemp: number, deltaTime: number): number {
+// Initialize a 2D array to store temperatures of each fuel rod
+const fuelRodTemperatures: number[][] = Array.from({ length: 10 }, () => Array(10).fill(0));
+
+function calculateTemperatureChange(deltaTime: number): number {
+  // Calculate the average temperature of all fuel rods
+  const totalFuelRodTemp = fuelRodTemperatures.reduce((sum, row) => 
+    sum + row.reduce((rowSum, temp) => rowSum + temp, 0), 0);
+  const averageFuelRodTemp = totalFuelRodTemp / (fuelRodTemperatures.length * fuelRodTemperatures[0].length);
+
   // Normalized heat transfer calculation
-  const tempDiff = coreTemp - temperatures.primary;
-  
+  const tempDiff = averageFuelRodTemp - temperatures.primary;
+
   // Heat transfer rate affected by:
   // - Temperature difference
   // - Flow rate (pump speed)
@@ -53,14 +60,14 @@ function calculateTemperatureChange(coreTemp: number, deltaTime: number): number
   const heatTransferRate = tempDiff * 
     pumpSpeeds.primary * 
     COOLANT_PROPERTIES.heatTransfer;
-  
+
   // Temperature change based on:
   // - Heat transfer rate
   // - Thermal mass
   // - Heat capacity
   const deltaTemp = (heatTransferRate * deltaTime) / 
     (COOLANT_PROPERTIES.thermalMass * COOLANT_PROPERTIES.heatCapacity);
-  
+
   return deltaTemp;
 }
 
@@ -85,19 +92,21 @@ function tick() {
 
   // Only update if we have a valid time delta
   if (deltaTime > 0 && deltaTime < 1) {
+
     // Temperature changes based on current conditions
-    const deltaTemp = calculateTemperatureChange(currentCoreTemp, deltaTime);
+    const deltaTemp = calculateTemperatureChange(deltaTime);
+    
     temperatures.primary = Math.max(0, Math.min(1, temperatures.primary + deltaTemp));
     
     // Calculate new pressure
     pressures.primary = calculatePressure();
     
-    // Emit the new temperature for UI update
-    MessageBus.emit({
-      type: 'pump',
-      id: 'pump-temp-meter',
-      value: temperatures.primary
-    });
+    // // Emit the new temperature for UI update
+    // MessageBus.emit({
+    //   type: 'pump',
+    //   id: 'pump-temp-meter',
+    //   value: temperatures.primary
+    // });
 
     // Emit the new pressure for UI update
     MessageBus.emit({
@@ -143,11 +152,8 @@ function getState() {
 }
 
 function isValidMessage(msg: Record<string, any>): boolean {
-  return (
-    typeof msg.type === 'string' &&
-    (msg.type === 'slider_position_update' && msg.target === 'cooling') || 
-      msg.type === 'core_temp_update' || 
-      msg.type === 'state_change');
+  const validTypes = ['core_temp_update', 'state_change', 'temperature_update', 'pump_speed_adjust'];
+  return validTypes.includes(msg.type);
 }
 
 // Updated subscription to validate and filter messages
@@ -156,7 +162,7 @@ MessageBus.subscribe(handleMessage);
 function handleMessage(msg: Record<string, any>) {
   if (!isValidMessage(msg)) {return;} // Guard clause
 
-  if (msg.type === 'slider_position_update') {
+  if (msg.type === 'pump_speed_adjust') {
     // Handle pump speed updates from cooling sliders
 
       pumpSpeeds.primary = msg.value;
@@ -167,28 +173,17 @@ function handleMessage(msg: Record<string, any>) {
         type: 'flow_rate_update',
         value: msg.value
       });
-  } else if (msg.type === 'core_temp_update') {
-      // Store the core temperature for use in our tick calculations
-      currentCoreTemp = msg.value;
+  } else if (msg.type === 'temperature_update') {
+    console.log(`[coolSystem] Received temperature update for rod (${msg.gridX}, ${msg.gridY})`);
+    // Update temperature of a specific fuel rod based on grid coordinates
+    const { gridX, gridY, value } = msg;
+    if (gridX >= 0 && gridX < fuelRodTemperatures.length && 
+        gridY >= 0 && gridY < fuelRodTemperatures[0].length) {
+      fuelRodTemperatures[gridX][gridY] = value;
+      console.log(`[coolSystem] Updated temperature of rod (${gridX}, ${gridY}) to ${value}`);
+    }
   } else if (msg.type === 'state_change') {
     if (msg.state === 'startup') {
-      // Set primary pump to 50% at startup
-      pumpSpeeds.primary = 0.5;
-      COOLANT_PROPERTIES.flowRate = 0.5;
-      console.log('[coolSystem] Startup initiated - setting primary pump to 50%');
-      
-      // Update the pump slider position
-      MessageBus.emit({
-        type: 'pump_speed_update',
-        id: 'system',
-        value: 0.5
-      });
-
-      // Emit flow rate update
-      MessageBus.emit({
-        type: 'flow_rate_update',
-        value: 0.5
-      });
     } else if (msg.state === 'scram') {
       // Set primary pump to 100% during SCRAM
       pumpSpeeds.primary = 1.0;
