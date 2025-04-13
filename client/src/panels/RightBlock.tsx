@@ -37,16 +37,16 @@ export default function RightBlock() {
         initvalue={0.0}
       />
       <VerticalMeter
-            id='pump_temp_meter'
+            id='coolant_temp_meter'
             x={60}
             y={620}
             event='coolant_temp_update'
           />
       <VerticalMeter
-            id='pump_pres_meter'
+            id='steam_pressure_meter'
             x={120}
             y={620}
-            event='coolant_pressure_update'
+            event='steam_pressure_update'
           />
       <CircularGauge
         id="turbine_rpm_gauge"

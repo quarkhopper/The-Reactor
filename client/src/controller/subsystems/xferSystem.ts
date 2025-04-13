@@ -69,6 +69,11 @@ function tick() {
       id: 'system',
       value: coolantTemperature
     });
+    MessageBus.emit({
+      type: 'steam_pressure_update',
+      id: 'system',
+      value: steamPressure
+    });
 
     if (coolantTemperature > 0.9) {
       MessageBus.emit({
@@ -116,12 +121,6 @@ function handleMessage(msg: Record<string, any>) {
   if (msg.type === 'pump_speed_adjust') {
     // Handle pump speed updates from cooling sliders
     flowRate = msg.value;
-
-    // Emit flow rate update
-    MessageBus.emit({
-      type: 'flow_rate_update',
-      value: msg.value
-    });
   } 
 }
 

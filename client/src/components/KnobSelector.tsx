@@ -9,6 +9,7 @@ interface KnobSelectorProps {
   y: number;
   leftLabel: string;
   rightLabel: string;
+  selectEvent: { type: string; valueL: number; valueR: number };
 }
 
 export default function KnobSelector({ id, x, y, leftLabel, rightLabel }: KnobSelectorProps) {
@@ -23,9 +24,8 @@ export default function KnobSelector({ id, x, y, leftLabel, rightLabel }: KnobSe
   }, []);
 
   const isValidMessage = (msg: Record<string, any>): boolean => {
-    return (    
-      typeof msg.type === 'string' &&
-      (msg.type === 'process_begin'));
+    const validTypes = ['process_begin', 'state_change'];
+    return validTypes.includes(msg.type);
   };
 
   function handleMessage(msg: Record<string, any>) {

@@ -22,6 +22,12 @@ function tick() {
       closestRods.forEach(({ cx, cy }) => {
         const controlRod = coreProperties.controlRods[cx][cy];
         controlRod.position = Math.max(0, Math.min(1, controlRod.position + delta));
+        MessageBus.emit({
+          type: 'control_rod_update',
+          gridX: cx,
+          gridY: cy,
+          value: controlRod.position,
+        });
       });
     });
   });

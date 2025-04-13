@@ -109,12 +109,12 @@ function tick() {
   }
 
   // Emit the generator rpm
-  if (indicators.turbineRPM > 0.8) {
+  if (indicators.turbineRPM > 0.9) {
     MessageBus.emit({
       type: 'gen_state_update',
       value: 'critical'
     });
-  } else if (indicators.turbineRPM > 0.5) {
+  } else if (indicators.turbineRPM > 0.75) {
     MessageBus.emit({
       type: 'gen_state_update',
       value: 'warning'

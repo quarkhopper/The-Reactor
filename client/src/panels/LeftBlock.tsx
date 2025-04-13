@@ -3,6 +3,7 @@ import SliderControl from '../components/SliderControl';
 import VerticalMeter from '../components/VerticalMeter';
 import CircularGauge from '../components/CircularGauge';
 import DigitalDisplay from '../components/DigitalDisplay';
+import KnobSelector from '../components/KnobSelector';
 
 export default function LeftBlock() {
   return (
@@ -30,6 +31,22 @@ export default function LeftBlock() {
             index={1}
         /> 
       <PowerButton x={180} y={400} />
+      <KnobSelector
+        id='control_rod_group_a_sel'
+        x={180}
+        y={840}
+        leftLabel='OFF'
+        rightLabel='ON'
+        selectEvent={{ type: 'use_control_rod_group', valueL: 0, valueR: 1 }}
+      />
+      <KnobSelector
+        id='control_rod_group_a_sel'
+        x={180}
+        y={840}
+        leftLabel='OFF'
+        rightLabel='ON'
+        selectEvent={{ type: 'use_control_rod_group', valueL: 0, valueR: 1 }}
+      />
       <SliderControl
         id='target_power'
         x={240}
