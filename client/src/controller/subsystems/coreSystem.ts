@@ -17,7 +17,14 @@ interface FuelRod {
 
 interface ControlRod {
   position: number; // 0 = fully inserted, 1 = fully withdrawn
+  group: number;
 }
+
+// record to store control rod group selections
+const controlRodGroupSelections: Record<number,  boolean> = {
+  0: true,
+  1: true,
+};
 
 const fuelRods: FuelRod[][] = Array.from({ length: FUEL_GRID_SIZE }, () =>
   Array.from({ length: FUEL_GRID_SIZE }, () => ({
@@ -36,9 +43,10 @@ function isCorner(x: number, y: number): boolean {
 }
 
 // Control rods are represented in a 6x6 grid (in the gaps between fuel rods)
-const controlRods: ControlRod[][] = Array.from({ length: CONTROL_GRID_SIZE }, () =>
-  Array.from({ length: CONTROL_GRID_SIZE }, () => ({
+const controlRods: ControlRod[][] = Array.from({ length: CONTROL_GRID_SIZE }, (_, rowIndex) =>
+  Array.from({ length: CONTROL_GRID_SIZE }, (_, colIndex) => ({
     position: 0, // 0 = fully inserted, 1 = fully withdrawn
+    group: (rowIndex + colIndex) % 2 // Alternate between 0 and 1
   }))
 );
 
@@ -96,31 +104,25 @@ function precalculateDistances() {
   }
 }
 
-function findClosestControlRods(x: number, y: number): { cx: number; cy: number; distance: number }[] {
+function findClosestControlRods(x: number, y: number, get: number): { cx: number; cy: number; distance: number }[] {
   if (isCorner(x, y)) {
     return []; // No control rods near corners
   }
 
   const rods: { cx: number; cy: number; distance: number }[] = [];
 
-  // Iterate over control rods located at the corners of fuel rods
+  // Iterate over all control rods
   for (let cx = 0; cx < CONTROL_GRID_SIZE; cx++) {
     for (let cy = 0; cy < CONTROL_GRID_SIZE; cy++) {
-      // Control rods are located at the corners of fuel rods
-      const isAtCorner = 
-        (cx === x - 1 && cy === y - 1) || 
-        (cx === x - 1 && cy === y) || 
-        (cx === x && cy === y - 1) || 
-        (cx === x && cy === y);
-
-      if (isAtCorner) {
+      if (controlRodGroupSelections[controlRods[cx][cy].group] === true) {
         const distance = distanceGrid[x][y][cx][cy];
         rods.push({ cx, cy, distance });
       }
     }
   }
 
-  return rods;
+  // Sort by distance and return the closest "get" rods
+  return rods.sort((a, b) => a.distance - b.distance).slice(0, get);
 }
 
 // New function for fuel rod distance calculations
@@ -354,7 +356,7 @@ function tick() {
 
 // Type guard to validate if a message is relevant to coreSystem
 function isValidMessage(msg: Record<string, any>): boolean {
-  const validTypes = ['state_change', 'fuel_rod_state_toggle', 'control_rod_delta'];
+  const validTypes = ['state_change', 'fuel_rod_state_toggle', 'use_control_rod_group', 'control_rod_group_b_select'];
   return validTypes.includes(msg.type);
 }
 
@@ -415,16 +417,31 @@ function handleMessage (msg: Record<string, any>) {
         });
       }
     }
-  } else if (msg.type === 'control_rod_delta') {
-    const { gridX: x, gridY: y, value } = msg;
-    if (x >= 0 && x < CONTROL_GRID_SIZE && y >= 0 && y < CONTROL_GRID_SIZE) {
-      controlRods[x][y].position = Math.max(0, Math.min(1, controlRods[x][y].position + value));
-      MessageBus.emit({
-        type: 'control_rod_position_update',
-        id: 'system',
-        gridX: x,
-        gridY: y,
-        value: controlRods[x][y].position
+  } else if (msg.type === 'use_control_rod_group') {
+    // Handle control rod group selection messages
+    console.log(`[coreSystem] Received control rod group selection: ${msg.index} - ${msg.value}`);
+    controlRodGroupSelections[msg.index] = msg.value;
+    if (msg.value === false) {
+      // Update control rod positions based on group selection
+      //  get all the control rods of the same group as msg.index
+      const groupedRods = controlRods.flatMap((row, rowIndex) =>
+        row.map((rod, colIndex) => {
+          if (rod.group === msg.index) {
+            return { cx: rowIndex, cy: colIndex };
+          }
+          return null;
+        })
+      ).filter(Boolean) as { cx: number; cy: number }[];
+      // Set the positions of the grouped control rods to 1 (fully withdrawn)
+      groupedRods.forEach(({ cx, cy }) => {
+        controlRods[cx][cy].position = 1;
+        MessageBus.emit({
+          type: 'control_rod_update',
+          id: 'system',
+          gridX: cx,
+          gridY: cy,
+          value: 1
+        });
       });
     }
   }
@@ -436,6 +453,7 @@ const coreSystem = {
   tick,
   getState: () => ({
     controlRods,
+    controlRodGroupSelections,
     fuelRods,
     reactivity
   })

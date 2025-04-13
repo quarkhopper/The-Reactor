@@ -18,10 +18,10 @@ function tick() {
   coreProperties.fuelRods.forEach((row, gridX) => {
     row.forEach((rod, gridY) => {
       const delta = rod.temperature > targetCoreTemp ? -STANDARD_CONTROL_ROD_DELTA : STANDARD_CONTROL_ROD_DELTA;
-      const closestRods = findClosestControlRods(gridX, gridY);
+      const closestRods = findClosestControlRods(gridX, gridY, 4);
       closestRods.forEach(({ cx, cy }) => {
         const controlRod = coreProperties.controlRods[cx][cy];
-        controlRod.position = Math.max(0, Math.min(1, controlRod.position + delta));
+        controlRod.position = Math.max(0, Math.min(1, controlRod.position + delta))
         MessageBus.emit({
           type: 'control_rod_update',
           gridX: cx,

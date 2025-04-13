@@ -9,10 +9,10 @@ interface KnobSelectorProps {
   y: number;
   leftLabel: string;
   rightLabel: string;
-  selectEvent: { type: string; valueL: number; valueR: number };
+  selectEvent: { type: string; index: number; };
 }
 
-export default function KnobSelector({ id, x, y, leftLabel, rightLabel }: KnobSelectorProps) {
+export default function KnobSelector({ id, x, y, leftLabel, rightLabel, selectEvent }: KnobSelectorProps) {
   const [toggled, setToggled] = useState(false);
   const rotation = toggled ? 45 : -45;
 
@@ -33,13 +33,13 @@ export default function KnobSelector({ id, x, y, leftLabel, rightLabel }: KnobSe
 
     if (msg.type === 'process_begin') {
       if (msg.process === 'init') {
+        setToggled(true);
         MessageBus.emit({
           type: 'acknowledge',
           id,
           process: 'init',
         });
       } else if (msg.process === 'shutdown') {
-        setToggled(false);
         MessageBus.emit({
           type: 'acknowledge',
           id,
@@ -58,11 +58,11 @@ export default function KnobSelector({ id, x, y, leftLabel, rightLabel }: KnobSe
   const handleClick = () => {
     const newToggled = !toggled;
     setToggled(newToggled);
-
     MessageBus.emit({
-      type: 'knob_change',
+      type: selectEvent.type,
       id,
-      value: newToggled ? 'right' : 'left',
+      index: selectEvent.index,
+      value: newToggled
     });
   }
 

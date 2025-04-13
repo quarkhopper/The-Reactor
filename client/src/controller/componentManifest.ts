@@ -50,7 +50,8 @@ export const COMPONENT_IDS = {
   
   // Controls
   [COMPONENT_CATEGORIES.CONTROLS]: [
-    'pump_speed', 'target_power'
+    'pump_speed', 'target_power',
+    'control_rod_group_a_sel', 'control_rod_group_b_sel',
   ],
   
   // Condition lights

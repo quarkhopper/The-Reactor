@@ -33,19 +33,19 @@ export default function LeftBlock() {
       <PowerButton x={180} y={400} />
       <KnobSelector
         id='control_rod_group_a_sel'
-        x={180}
-        y={840}
+        x={110}
+        y={565}
         leftLabel='OFF'
         rightLabel='ON'
-        selectEvent={{ type: 'use_control_rod_group', valueL: 0, valueR: 1 }}
+        selectEvent={{ type: 'use_control_rod_group', index: 0 }}
       />
       <KnobSelector
-        id='control_rod_group_a_sel'
-        x={180}
-        y={840}
+        id='control_rod_group_b_sel'
+        x={110}
+        y={680}
         leftLabel='OFF'
         rightLabel='ON'
-        selectEvent={{ type: 'use_control_rod_group', valueL: 0, valueR: 1 }}
+        selectEvent={{ type: 'use_control_rod_group', index: 1 }}
       />
       <SliderControl
         id='target_power'
