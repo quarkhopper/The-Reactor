@@ -8,15 +8,7 @@ import white from '../images/indicator_white.png';
 
 import '../css/components/IndicatorLight.css';
 import MessageBus from '../MessageBus';
-
-const colorImageMap: Record<string, string> = {
-  'off': off,
-  'amber': amber,
-  'green': green,
-  'red': red,
-  'white': white,
-};
-
+import { get } from 'http';
 
 interface IndicatorLightProps {
   id: string;
@@ -27,7 +19,30 @@ interface IndicatorLightProps {
   index?: number;
   colorMap?: { range: [number, number]; color: string }[]; // Color mapping for temperature ranges
   colorEvent?: { type: string }; 
+  conditionEvent?: { type: string; value: string; color: string }[];
 }
+
+function getColorFromMap(temp: number, colorMap?: { range: [number, number]; color: string }[]): string {
+  if (!colorMap || colorMap.length === 0) {
+    console.warn('Color map is undefined or empty. Defaulting to white.');
+    return 'white';
+  }
+
+  const mapping = colorMap.find(({ range }) => temp >= range[0] && temp <= range[1]);
+  if (!mapping) {
+    console.warn(`No color mapping found for temperature: ${temp}. Defaulting to white.`);
+  }
+
+  return mapping ? mapping.color : 'white'; // Default to white if no mapping found
+}
+
+const glowMap: Record<string, string> = {
+  off: off,
+  green: amber,
+  amber: green,
+  red: red,
+  white: white,
+};
 
 const IndicatorLight: React.FC<IndicatorLightProps> = ({
   id,
@@ -38,9 +53,23 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
   index,
   colorMap,
   colorEvent,
+  conditionEvent,
 }) => {
   const [displayColor, setDisplayColor] = useState<string>('off');
   
+  function getConditionEventColor(type: string, value: string): string {
+    if (conditionEvent) {
+      for (const event of conditionEvent) {
+        if (event.type === type && event.value === value) {
+          return event.color;
+        }
+      }
+    }
+    return 'off'; // Default color if no match found
+  }
+
+  const conditionTypes = conditionEvent ? conditionEvent.map(event => event.type) : [];
+
   useEffect(() => {
     const unsubscribe = MessageBus.subscribe(handleMessage);
     return () => {
@@ -51,7 +80,7 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
 
   // Guard function to filter relevant messages
   const isValidMessage = (msg: Record<string, any>): boolean => {
-    const validTypes = ['state_change', 'process_begin', colorEvent?.type];
+    const validTypes = ['state_change', 'process_begin', colorEvent?.type, ...conditionTypes];
     return validTypes.includes(msg.type) &&
       (!msg.index || msg.index === index) &&
       (!msg.gridX || msg.gridX === gridX) &&
@@ -103,15 +132,18 @@ const IndicatorLight: React.FC<IndicatorLightProps> = ({
           process: 'shutdown',
         });
       }
-    } else if (msg.type === 'set_indicator') {
-      setDisplayColor(msg.color);
+    } else if (msg.type === colorEvent?.type) {
+
+      setDisplayColor(getColorFromMap(msg.value, colorMap));
+    } else if (conditionTypes.includes(msg.type)) {
+      setDisplayColor(getConditionEventColor(msg.type, msg.value));
     }
   }
 
   // Render
   return (
     <div className="indicator-light-wrapper" style={{ top: y, left: x }}>
-      <img src={colorImageMap[displayColor]} className="indicator-light-img" />
+      <img src={glowMap[displayColor]} className="indicator-light-img" />
     </div>
   );
 };

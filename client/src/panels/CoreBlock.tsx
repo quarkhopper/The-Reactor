@@ -36,6 +36,7 @@ export default function CoreBlock() {
       }
       buttons.push(
         <ColorButton
+          key={`fuel_rod_button_${x}_${y}`}
           id={`fuel_rod_button_${x}_${y}`}
           x={posX}
           y={posY}
@@ -64,11 +65,20 @@ export default function CoreBlock() {
       const posY = lightGridY - (lightGridRows * lightSpacingY) / 2 + lightSpacingY * (y + 0.5);
       lights.push(
         <IndicatorLight
+          key={`control_rod_light_${x}_${y}`}
           id={`control_rod_light_${x}_${y}`}
           x={posX}
           y={posY}
           gridX={x}
           gridY={y}
+          colorMap={[
+            { range: [-Infinity, 0], color: 'off' },
+            { range: [0, 0.5], color: 'green' },
+            { range: [0.5, 0.8], color: 'amber' },
+            { range: [0.8, 9.9], color: 'red' },
+            { range: [9.9, Infinity], color: 'white' },
+          ]}
+          colorEvent={{ type: 'control_rod_position_update'}}
         />
       );
     }

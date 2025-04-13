@@ -70,8 +70,9 @@ let fuelRodDistanceGrid : number[][][][] = Array.from({ length: FUEL_GRID_SIZE }
 // Variables for tuning (locked values)
 const HEAT_GAIN_SCALING_FACTOR = 0.018; // Keep increased value for critical temperatures
 const HEAT_LOSS_SCALING_FACTOR = 0.1; // Keep original for stability
-const INTERFERENCE_SCALING_FACTOR = 3.5; // Increased to better suppress reactivity
+const INTERFERENCE_SCALING_FACTOR = 1 // 3.5;
 const NORMALIZATION_FACTOR = 1.3; // Keep current value
+const TEMP_INSTABILITY_FACTOR = 0.1;
 
 // Add coolant-related constants
 const COOLANT_COOLING_FACTOR = 0.03; 
@@ -98,6 +99,25 @@ function precalculateDistances() {
       }
     }
   }
+}
+
+function findClosestControlRod(x: number, y: number): { cx: number; cy: number; distance: number } | null {
+  if (isCorner(x, y)) {
+    return null; // No control rods near corners
+  }
+
+  let closestRod = { cx: -1, cy: -1, distance: Infinity };
+
+  for (let cx = 0; cx < CONTROL_GRID_SIZE; cx++) {
+    for (let cy = 0; cy < CONTROL_GRID_SIZE; cy++) {
+      const distance = distanceGrid[x][y][cx][cy];
+      if (distance < closestRod.distance) {
+        closestRod = { cx, cy, distance };
+      }
+    }
+  }
+
+  return closestRod.distance === Infinity ? null : closestRod;
 }
 
 // New function for fuel rod distance calculations
@@ -191,7 +211,7 @@ function tick() {
             rod.state = newState;
             delete rod.transitionStartTime;
             delete rod.previousState;
-           
+            
             // Emit state change
             MessageBus.emit({
               type: 'fuel_rod_state_update',
@@ -200,14 +220,15 @@ function tick() {
               gridX: x,
               gridY: y
             });
-
+            
             // Schedule recalculation
             scheduleRecalculation();                      
           }
         }
       }
     }
-
+    
+    let totalInstability = 0;
     for (let x = 0; x < FUEL_GRID_SIZE; x++) {
       for (let y = 0; y < FUEL_GRID_SIZE; y++) {
         const rod = fuelRods[x][y];
@@ -249,6 +270,12 @@ function tick() {
         // Clamp temperature to [0, 1]
         rod.temperature = Math.max(0, Math.min(1, rod.temperature));
 
+        // Add random instability to the temperature
+        const instability = Math.random() * TEMP_INSTABILITY_FACTOR * rod.temperature * reactivity[x][y];
+        rod.temperature += instability;
+        // Calculate total instability for this tick
+        totalInstability += instability;
+
         // Store temperature in grid
         tempGrid[x][y] = rod.temperature;
 
@@ -274,14 +301,44 @@ function tick() {
       }
     }
 
-    // Calculate and log average temperature
+
+    // Calculate average temperature
     const avgTemp = totalTemp / (FUEL_GRID_SIZE * FUEL_GRID_SIZE);
-    
-    // Emit average temperature to update the circular gauge
+    // Emit average temperature to update the digital display
     MessageBus.emit({
       type: 'core_temp_update',
       value: avgTemp
     });
+
+    // Emit total absolute instability to update the circular gauge
+    const averageInstability = (totalInstability / (FUEL_GRID_SIZE * FUEL_GRID_SIZE)) / TEMP_INSTABILITY_FACTOR;
+
+    MessageBus.emit({
+      type: 'core_instability_update',
+      value: averageInstability
+    });
+
+    // Calculate and log average reactivity
+    let totalReactivity = 0;
+    let activeRodCount = 0;
+
+    for (let x = 0; x < FUEL_GRID_SIZE; x++) {
+      for (let y = 0; y < FUEL_GRID_SIZE; y++) {
+      if (!isCorner(x, y) && fuelRods[x][y].state === 'engaged') {
+        totalReactivity += reactivity[x][y];
+        activeRodCount++;
+      }
+      }
+    }
+
+    const avgReactivity = activeRodCount > 0 ? totalReactivity / activeRodCount : 0;
+
+    // Emit average reactivity to update meter
+    MessageBus.emit({
+      type: 'core_reactivity_update',
+      value: avgReactivity
+    });
+    console.log(`[coreSystem] Average reactivity: ${avgReactivity}`);
 
 
     if (critical) {
@@ -311,14 +368,8 @@ function tick() {
 
 // Type guard to validate if a message is relevant to coreSystem
 function isValidMessage(msg: Record<string, any>): boolean {
-  return (
-    typeof msg.type === 'string' &&
-    (msg.type === 'state_change' ||
-     msg.type === 'coolant_temp_update' ||
-     msg.type === 'flow_rate_update' ||
-     (msg.type === 'slider_position_update' && msg.target === 'rod') ||
-     msg.type === 'fuel_rod_state_toggle' )
-  );
+  const validTypes = ['state_change', 'coolant_temp_update', 'flow_rate_update', 'fuel_rod_state_toggle', 'control_rod_delta'];
+  return validTypes.includes(msg.type);
 }
 
 MessageBus.subscribe(handleMessage);
@@ -345,30 +396,11 @@ function handleMessage (msg: Record<string, any>) {
         }
       }
     }
-    if (msg.state === 'scram') {
-      console.log('[coreSystem] SCRAM initiated - inserting control rods');
-      for (let x = 0; x < CONTROL_GRID_SIZE; x++) {
-        for (let y = 0; y < CONTROL_GRID_SIZE; y++) {
-          controlRods[x][y].position = 0;
-          MessageBus.emit({
-        type: 'control_rod_position_update',
-        id: 'system',
-        gridX: x,
-        gridY: y,
-        value: 0
-          });
-        }
-      }
-    }
+
   } else if (msg.type === 'coolant_temp_update') {
     coolantState.temperature = msg.value;
   } else if (msg.type === 'flow_rate_update') {
     coolantState.flowRate = msg.value;
-  // } else if (msg.type === 'slider_position_update') {
-  //   const rodIndex = msg.index;
-  //   if (!isNaN(rodIndex) && rodIndex >= 0 && rodIndex < controlRodPositions.length) {
-  //     controlRodPositions[rodIndex] = msg.value;
-  //   }
   } else if (msg.type === 'fuel_rod_state_toggle') {
     const { gridX: x, gridY: y } = msg;
     if (x >= 0 && x < FUEL_GRID_SIZE && y >= 0 && y < FUEL_GRID_SIZE) {
@@ -387,7 +419,19 @@ function handleMessage (msg: Record<string, any>) {
         });
       }
     }
-  } 
+  } else if (msg.type === 'control_rod_delta') {
+    const { gridX: x, gridY: y, value } = msg;
+    if (x >= 0 && x < CONTROL_GRID_SIZE && y >= 0 && y < CONTROL_GRID_SIZE) {
+      controlRods[x][y].position = Math.max(0, Math.min(1, controlRods[x][y].position + value));
+      MessageBus.emit({
+        type: 'control_rod_position_update',
+        id: 'system',
+        gridX: x,
+        gridY: y,
+        value: controlRods[x][y].position
+      });
+    }
+  }
 }
 
 // Export the core system as a subsystem
@@ -405,6 +449,7 @@ const coreSystem = {
 };
 
 export default coreSystem;
+export { findClosestControlRod };
 
 // Debounced function to schedule recalculations
 function scheduleRecalculation() {

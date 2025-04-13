@@ -30,16 +30,16 @@ export default function LeftBlock() {
         moveEvent='target_power_update'
       />
       <VerticalMeter
-            id='target_temp_meter'
-            x={120}
+            id='core_instability_meter'
+            x={180}
             y={620}
-            event='target_power_update'
+            event='core_instability_update'
           />
       <VerticalMeter
             id='core_reactivity_meter'
-            x={180}
+            x={120}
             y={620}
-            event='core_avg_reactivity_update'
+            event='core_reactivity_update'
           />
       <CircularGauge
         id="core_temp_gauge"

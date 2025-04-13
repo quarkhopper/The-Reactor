@@ -26,7 +26,7 @@ export const COMPONENT_IDS = {
   // Indicators
   [COMPONENT_CATEGORIES.INDICATORS]: [
     'core_temp_gauge',    'turbine_rpm_gauge',    'pump_temp_meter',
-    'pump_pres_meter',    'target_temp_meter',    'core_reactivity_meter',
+    'pump_pres_meter',    'core_instability_meter',    'core_reactivity_meter',
     "control_rod_light_0_0",    "control_rod_light_1_0",    "control_rod_light_2_0",
     "control_rod_light_3_0",    "control_rod_light_4_0",    "control_rod_light_5_0",
     "control_rod_light_0_1",    "control_rod_light_1_1",    "control_rod_light_2_1",
