@@ -1,8 +1,6 @@
 import MessageBus from '../../MessageBus';
 import xferSystem from './xferSystem';
 
-const { coolantProperties } = xferSystem.getState();
-
 const FUEL_GRID_SIZE = 7; // Size of the grid (7x7) with corners removed
 const CONTROL_GRID_SIZE = 6; // Size of the control rod grid (6x6) between fuel rods
 
@@ -79,12 +77,6 @@ const TEMP_INSTABILITY_FACTOR = 0.02;
 const HEAT_TRANSFER_COEFFICIENT_ROD_TO_COOLANT = 0.05; // Adjusted for realistic heat transfer efficiency
 const FUEL_ROD_SURFACE_AREA = 0.8; // Normalized surface area affecting heat transfer
 const COOLANT_FLOW_RATE_SCALING = 1.2; // Scaling factor for coolant flow rate effect
-
-// Add coolant state
-let coolantState = {
-  temperature: 0,
-  flowRate: 0.0 // Default to 50% flow
-};
 
 function precalculateDistances() {
   // Calculate distances between fuel rods and control rods ONLY
@@ -439,15 +431,12 @@ function handleMessage (msg: Record<string, any>) {
 }
 
 // Export the core system as a subsystem
-// Initialize controlRodPositions as an array representing the positions of control rods
-const controlRodPositions = Array.from({ length: CONTROL_GRID_SIZE * CONTROL_GRID_SIZE }, () => 0);
 
 const coreSystem = {
   tick,
   getState: () => ({
     controlRods,
     fuelRods,
-    controlRodPositions,
     reactivity
   })
 };
@@ -482,9 +471,10 @@ function scheduleRecalculation() {
 
 // Updated fuel rod temperature calculation to match energySolver
 function updateFuelRodTemperature(rod: FuelRod, x: number, y: number) {
+  const xferProperties = xferSystem.getState();
   const heatGenerated = reactivity[x][y] * HEAT_GAIN_SCALING_FACTOR;
   const heatTransferToCoolant =
-    HEAT_TRANSFER_COEFFICIENT_ROD_TO_COOLANT * FUEL_ROD_SURFACE_AREA * coolantProperties.flowRate * COOLANT_FLOW_RATE_SCALING * (rod.temperature - coolantState.temperature);
+    HEAT_TRANSFER_COEFFICIENT_ROD_TO_COOLANT * FUEL_ROD_SURFACE_AREA * xferProperties.flowRate * COOLANT_FLOW_RATE_SCALING * (rod.temperature - xferProperties.coolantTemperature);
   const naturalCooling = HEAT_LOSS_SCALING_FACTOR * rod.temperature;
 
   rod.temperature = clamp(rod.temperature + heatGenerated - heatTransferToCoolant - naturalCooling);

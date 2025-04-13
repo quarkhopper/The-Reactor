@@ -40,13 +40,13 @@ export default function RightBlock() {
             id='pump_temp_meter'
             x={60}
             y={620}
-            event='coolant-temp-update'
+            event='coolant_temp_update'
           />
       <VerticalMeter
             id='pump_pres_meter'
             x={120}
             y={620}
-            event='coolant-pressure-update'
+            event='coolant_pressure_update'
           />
       <CircularGauge
         id="turbine_rpm_gauge"
@@ -58,4 +58,4 @@ export default function RightBlock() {
         />
     </div>
   );
-} 
+}

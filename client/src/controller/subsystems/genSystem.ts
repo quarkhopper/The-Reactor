@@ -1,18 +1,12 @@
 import MessageBus from '../../MessageBus';
 import { Subsystem } from '../types';
+import xferSystem from './xferSystem';
 
-// Generation system properties
-interface GenSystemProperties {
-}
 
-// Initial properties
-const GEN_SYSTEM_PROPERTIES: GenSystemProperties = {
-};
 
 // State variables
 const indicators = {
   generatorVoltage: 0, // Normalized generator output voltage (0-1)
-  steamTemperature: 0, // Normalized steam temperature (0-1)
   capacitor1Charge: 0, // Normalized charge for capacitor 1 (0-1)
   capacitor2Charge: 0, // Normalized charge for capacitor 2 (0-1)
   turbineRPM: 0, // Normalized turbine RPM (0-1)
@@ -24,6 +18,7 @@ const gridLoadFrequencies = [0.02, 0.03, 0.06, 0.08]; // Frequencies for each gr
 const gridLoadNoiseAmplitude = 0.05; // Amplitude of noise added to the sinusoidal functions
 
 function tick() {
+  const xferProperties = xferSystem.getState();
   const time = Date.now() / 1000; // Current time in seconds
 
   // Calculate grid loads based on noisy sinusoidal functions
@@ -34,7 +29,7 @@ function tick() {
   }
 
   // Target turbine RPM is proportional to coolant temperature
-  const targetTurbineRPM = indicators.steamTemperature * 0.9;
+  const targetTurbineRPM = xferProperties.steamPressure * 0.9;
 
   // Gradually adjust turbine RPM toward the target value based on inertia
   indicators.turbineRPM += (targetTurbineRPM - indicators.turbineRPM) * TURBINE_INERTIA;
@@ -54,10 +49,6 @@ function tick() {
   MessageBus.emit({
     type: 'turbine_rpm_update',
     value: indicators.turbineRPM,
-  });
-  MessageBus.emit({
-    type: 'steam_temp_update',
-    value: indicators.steamTemperature,
   });
   MessageBus.emit({
     type: 'capacitor_charge_update',
@@ -136,25 +127,8 @@ function tick() {
   }
 }
 
-function isValidMessage(msg: Record<string, any>): boolean {
-  const validTypes = ['coolant-temp-update'];
-  return validTypes.includes(msg.type);
-}
-
-MessageBus.subscribe(handleMessage);
-
-function handleMessage(msg: Record<string, any>) {
-  if (!isValidMessage(msg)) return; // Guard clause
-
-  if (msg.type === 'coolant-temp-update') {
-    // Update coolant temperature based on message value
-    indicators.steamTemperature = msg.value * 0.9; // Scale to 0-1 range
-    }
-}
-
 function getState() {
   return {
-    properties: GEN_SYSTEM_PROPERTIES,
     indicators,
   };
 }

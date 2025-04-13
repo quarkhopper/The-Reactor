@@ -1,9 +1,7 @@
 import { Subsystem } from '../types';
 import MessageBus from '../../MessageBus';
-import { registerSubsystem } from '../tickEngine';
 import coreSystem from './coreSystem';
 
-const coreProperties = coreSystem.getState(); // Access fuel rod temperatures from coreSystem
 
 // Heat transfer system properties
 let heatCapacity = 1.0;      // High value = more energy needed to change temp
@@ -22,49 +20,52 @@ const COOLANT_FLOW_RATE_SCALING = 1.2; // Scaling factor for coolant flow rate e
 const STEAM_PRESSURE_COEFFICIENT = 1.5; // Coefficient to scale steam temperature to pressure
 const STEAM_HEAT_CAPACITY = 0.2; // Heat capacity of the steam
 
+
 // Utility function to clamp values between 0 and 1
 function clamp(value: number): number {
   return Math.max(0, Math.min(1, value));
 }
 
 function updateTemperatureAndPressure() {
+  const coreProperties = coreSystem.getState(); // Access fuel rod temperatures from coreSystem
   const totalHeatFromRods = coreProperties.fuelRods.reduce((sum, row) => {
     return sum + row.reduce((rowSum, rod) => {
       return rowSum + HEAT_TRANSFER_COEFFICIENT_ROD_TO_COOLANT * FUEL_ROD_SURFACE_AREA * flowRate * COOLANT_FLOW_RATE_SCALING * (rod.temperature - coolantTemperature);
     }, 0);
   }, 0);
-
+  
   const heatTransferToSteam =
-    flowRate > 0
-      ? HEAT_TRANSFER_COEFFICIENT_COOLANT_TO_STEAM * (coolantTemperature - steamTemperature)
-      : 0; // No heat transfer to steam if flow rate is 0
-
+  flowRate > 0
+  ? HEAT_TRANSFER_COEFFICIENT_COOLANT_TO_STEAM * (coolantTemperature - steamTemperature)
+  : 0; // No heat transfer to steam if flow rate is 0
+  
   coolantTemperature = clamp(
     coolantTemperature + (totalHeatFromRods - heatTransferToSteam) / heatCapacity
   );
-
+  
   // Update steam temperature based on heat from primary coolant only if flow rate > 0
   if (flowRate > 0) {
     steamTemperature = clamp(steamTemperature + heatTransferToSteam / STEAM_HEAT_CAPACITY);
-
+    
     // Calculate steam pressure based on steam temperature
     steamPressure = clamp(STEAM_PRESSURE_COEFFICIENT * steamTemperature);
   }
 }
 
+// Updated strings to use underscores instead of dashes
 function tick() {
   const now = Date.now();
   const deltaTime = (now - lastUpdateTime) / 1000; // Convert to seconds
   lastUpdateTime = now;
-
+  
   // Only update if we have a valid time delta
   if (deltaTime > 0 && deltaTime < 1) {
-
+    
     updateTemperatureAndPressure();
-
+    
     // Emit coolant temperature update for core cooling calculations
     MessageBus.emit({
-      type: 'coolant-temp-update',
+      type: 'coolant_temp_update',
       id: 'system',
       value: coolantTemperature
     });

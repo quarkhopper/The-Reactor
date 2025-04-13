@@ -37,15 +37,15 @@ export default function LeftBlock() {
         moveEvent='target_temp_update'
         initvalue={0.0}
       />
-      <VerticalMeter
+      {/* <VerticalMeter
             id='core_instability_meter'
-            x={180}
+            x={120}
             y={620}
             event='core_instability_update'
-          />
+          /> */}
       <VerticalMeter
             id='core_reactivity_meter'
-            x={120}
+            x={180}
             y={620}
             event='core_reactivity_update'
           />
