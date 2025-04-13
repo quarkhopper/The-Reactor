@@ -12,16 +12,16 @@ interface CoolantProperties {
 
 // System constants
 const COOLANT_PROPERTIES: CoolantProperties = {
-  heatCapacity: 0.8,      // High value = more energy needed to change temp
+  heatCapacity: 1.0,      // High value = more energy needed to change temp
   flowRate: 0.0,          
-  thermalMass: 0.8,       // High value = more resistance to temperature change
-  heatTransfer: 0.8       // How efficiently heat moves between core and coolant
+  thermalMass: 1.5,       // High value = more resistance to temperature change
+  heatTransfer: 0.9       // How efficiently heat moves between core and coolant
 };
 
 // Pressure calculation constants
 const TEMP_PRESSURE_FACTOR = 0.6;    // How much temperature affects pressure
 const PUMP_PRESSURE_FACTOR = 0.4;    // How much pump speed affects pressure
-const TURBULENCE_MAGNITUDE = 0.05;   // Size of pressure oscillations
+const TURBULENCE_MAGNITUDE = 0.03;   // Size of pressure oscillations
 
 // State variables
 const temperatures = {
@@ -92,7 +92,6 @@ function tick() {
 
     // Temperature changes based on current conditions
     const deltaTemp = calculateTemperatureChange(deltaTime);
-    console.log(`[coolSystem] Temperature change: ${deltaTemp}`);
     temperatures.primary = Math.max(0, Math.min(1, temperatures.primary + deltaTemp));
     
     // Calculate new pressure
@@ -142,7 +141,7 @@ function getState() {
 }
 
 function isValidMessage(msg: Record<string, any>): boolean {
-  const validTypes = ['core_temp_update', 'state_change', 'temperature_update', 'pump_speed_adjust'];
+  const validTypes = ['core_temp_update', 'state_change', 'temperature_update', 'pump_speed_adjust', 'steam_temp_update'];
   return validTypes.includes(msg.type);
 }
 
@@ -154,7 +153,6 @@ function handleMessage(msg: Record<string, any>) {
 
   if (msg.type === 'pump_speed_adjust') {
     // Handle pump speed updates from cooling sliders
-    console.log(`[coolSystem] Pump speed adjusted: ${msg.value}`);
     pumpSpeeds.primary = msg.value;
     COOLANT_PROPERTIES.flowRate = msg.value; // Update flow rate with pump speed
 

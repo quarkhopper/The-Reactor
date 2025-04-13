@@ -18,16 +18,26 @@ const indicators = {
   turbineRPM: 0, // Normalized turbine RPM (0-1)
 };
 
-const gridLoads = [0.2, 0.3, 0.4, 0.5]; // Initial grid loads (normalized 0-1)
+const gridLoads = [0.4, 0.4, 0.4, 0.4]; // Initial grid loads (normalized 0-1)
+const TURBINE_INERTIA = 0.1; // Inertia factor for turbine RPM adjustment
+const gridLoadFrequencies = [0.02, 0.03, 0.06, 0.08]; // Frequencies for each grid load (in Hz)
+const gridLoadNoiseAmplitude = 0.05; // Amplitude of noise added to the sinusoidal functions
 
 function tick() {
-  // Simulate random fluctuation in grid loads
+  const time = Date.now() / 1000; // Current time in seconds
+
+  // Calculate grid loads based on noisy sinusoidal functions
   for (let i = 0; i < gridLoads.length; i++) {
-    gridLoads[i] = Math.max(0, Math.min(1, gridLoads[i] + (Math.random() - 0.5) * 0.05));
+    const baseLoad = 0.4 + 0.1 * Math.sin(2 * Math.PI * gridLoadFrequencies[i] * time); // Sinusoidal function
+    const noise = (Math.random() - 0.5) * gridLoadNoiseAmplitude; // Add noise
+    gridLoads[i] = Math.max(0, Math.min(1, baseLoad + noise)); // Clamp to [0, 1]
   }
 
-  // Turbine RPM is proportional to coolant temperature
-  indicators.turbineRPM = indicators.steamTemperature * 0.8;
+  // Target turbine RPM is proportional to coolant temperature
+  const targetTurbineRPM = indicators.steamTemperature * 0.9;
+
+  // Gradually adjust turbine RPM toward the target value based on inertia
+  indicators.turbineRPM += (targetTurbineRPM - indicators.turbineRPM) * TURBINE_INERTIA;
 
   // Generator voltage is proportional to turbine RPM
   indicators.generatorVoltage = indicators.turbineRPM * 0.9;
@@ -46,13 +56,84 @@ function tick() {
     value: indicators.turbineRPM,
   });
   MessageBus.emit({
-    type: 'capacitor1_charge_update',
-    value: indicators.capacitor1Charge,
+    type: 'steam_temp_update',
+    value: indicators.steamTemperature,
   });
   MessageBus.emit({
-    type: 'capacitor2_charge_update',
-    value: indicators.capacitor2Charge,
+    type: 'capacitor_charge_update',
+    value: indicators.capacitor1Charge,
+    index: 0,
   });
+  MessageBus.emit({
+    type: 'capacitor_charge_update',
+    value: indicators.capacitor2Charge,
+    index: 1,
+  });
+  for (let i = 0; i < gridLoads.length; i++) {
+    MessageBus.emit({
+      type: `grid_load_update`,
+      value: gridLoads[i],
+      index: i,
+    });
+  }
+  
+  const averageGridLoad = gridLoads.reduce((acc, load) => acc + load, 0) / gridLoads.length;
+  if (averageGridLoad < 0.5) {
+    MessageBus.emit({
+      type: 'load_state_update',
+      value: 'normal'
+    });
+  } else if (averageGridLoad < 0.8) {
+    MessageBus.emit({
+      type: 'load_state_update',
+      value: 'warning'
+    });
+  } else {
+    MessageBus.emit({
+      type: 'load_state_update',
+      value: 'critical'
+    });
+  }
+
+  const averageCapacitorCharge = (indicators.capacitor1Charge + indicators.capacitor2Charge) / 2;
+
+  // Emit the average grid load and capacitor charge
+  const loadRatio = averageCapacitorCharge / averageGridLoad;
+  // Emit the load ratio
+  if (loadRatio > 0.5) {
+    MessageBus.emit({
+      type: 'volt_state_update',
+      value: 'normal'
+    });
+  } else if (loadRatio > 0.2) {
+    MessageBus.emit({
+      type: 'volt_state_update',
+      value: 'warning'
+    });
+  } else {
+    MessageBus.emit({
+      type: 'volt_state_update',
+      value: 'critical'
+    });
+  }
+
+  // Emit the generator rpm
+  if (indicators.turbineRPM > 0.8) {
+    MessageBus.emit({
+      type: 'gen_state_update',
+      value: 'critical'
+    });
+  } else if (indicators.turbineRPM > 0.5) {
+    MessageBus.emit({
+      type: 'gen_state_update',
+      value: 'warning'
+    });
+  } else {
+    MessageBus.emit({
+      type: 'gen_state_update',
+      value: 'normal'
+    });
+  }
 }
 
 function isValidMessage(msg: Record<string, any>): boolean {
@@ -67,8 +148,8 @@ function handleMessage(msg: Record<string, any>) {
 
   if (msg.type === 'coolant-temp-update') {
     // Update coolant temperature based on message value
-    indicators.steamTemperature = msg.value;
-  }
+    indicators.steamTemperature = msg.value * 0.9; // Scale to 0-1 range
+    }
 }
 
 function getState() {

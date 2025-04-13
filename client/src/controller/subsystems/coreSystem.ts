@@ -325,7 +325,7 @@ function tick() {
     });
 
     // Emit total absolute instability to update the circular gauge
-    let averageInstability = (totalInstability / (FUEL_GRID_SIZE * FUEL_GRID_SIZE)) / TEMP_INSTABILITY_FACTOR;
+    let averageInstability = (totalInstability / (FUEL_GRID_SIZE * FUEL_GRID_SIZE)) / (2 * TEMP_INSTABILITY_FACTOR);
     averageInstability = Math.max(0, Math.min(1, averageInstability)); // Clamp to [0, 1]
 
     MessageBus.emit({
@@ -335,6 +335,7 @@ function tick() {
 
     // Calculate and log average reactivity
     let totalReactivity = 0;
+    let maxReactivity = 0;
     let activeRodCount = 0;
 
     for (let x = 0; x < FUEL_GRID_SIZE; x++) {
@@ -342,6 +343,7 @@ function tick() {
         if (!isCorner(x, y) && fuelRods[x][y].state === 'engaged') {
           totalReactivity += reactivity[x][y];
           activeRodCount++;
+          maxReactivity = Math.max(maxReactivity, reactivity[x][y]);
         }
       }
     }
@@ -351,9 +353,8 @@ function tick() {
     // Emit average reactivity to update meter
     MessageBus.emit({
       type: 'core_reactivity_update',
-      value: avgReactivity
+      value: avgReactivity / maxReactivity // Normalize to max reactivity
     });
-
 
     if (critical) {
       MessageBus.emit({
@@ -374,7 +375,6 @@ function tick() {
       value: 'normal'
       });
     }
-
   } catch (error) {
     console.error('[coreSystem] Error in tick:', error);
   }

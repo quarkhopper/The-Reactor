@@ -63,7 +63,7 @@ export default function DigitalDisplay({ id, x, y, valueEvent, index }: DigitalD
   const isValidMessage = (msg: Record<string, any>): boolean => {
     const validTypes = ['state_change', 'process_begin', valueEvent];
     return validTypes.includes(msg.type) && 
-    (!index || msg.index === index);
+    ((msg.index == null) || msg.index === index);
   };
 
   function handleMessage(msg: Record<string, any>) {
@@ -79,6 +79,7 @@ export default function DigitalDisplay({ id, x, y, valueEvent, index }: DigitalD
       if (msg.process === 'init') {
         setDisplayValue(0);
         setIsTestMode(false);
+        console.log 
         MessageBus.emit({
           type: 'acknowledge',
           id,
@@ -111,8 +112,8 @@ export default function DigitalDisplay({ id, x, y, valueEvent, index }: DigitalD
           }, 1000);
         }, 100);
       }
-    } else if (msg.type == 'digital_display_update') {
-      if (msg.id === id || !isTestMode) {
+    } else if (msg.type == valueEvent) {
+      if (!isTestMode) {
         setDisplayValue(msg.value);
       }
     }

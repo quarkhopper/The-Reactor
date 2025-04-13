@@ -16,7 +16,11 @@ export default function ConditionLightBlock() {
     { id: 'cond_trans', label: 'TRANS', stateEvent: { 'amber': ['init', 'test', 'startup'] } },
     { id: 'cond_fault', label: 'FAULT', stateEvent: { 'red': ['fault'] } },
     { id: 'cond_scram', label: 'SCRAM', stateEvent: { 'red': ['scram'] } },
-    { id: 'cond_aux', label: 'AUX' },
+    { id: 'cond_volt', label: 'VOLT', conditionEvent: [
+      {type: 'volt_state_update', value: 'normal', color: 'green' },
+      {type: 'volt_state_update', value: 'critical', color: 'red' },
+      {type: 'volt_state_update', value: 'warning', color: 'amber' },
+    ] },
     { id: 'sys_core', label: 'CORE', conditionEvent: [
       {type: 'core_state_update', value: 'normal', color: 'green' },
       {type: 'core_state_update', value: 'critical', color: 'red' },
@@ -37,7 +41,11 @@ export default function ConditionLightBlock() {
       {type: 'ctrl_state_update', value: 'critical', color: 'red' },
       {type: 'ctrl_state_update', value: 'warning', color: 'amber' },
     ] },
-    { id: 'sys_aux', label: 'AUX' },
+    { id: 'sys_load', label: 'LOAD', conditionEvent: [
+      {type: 'load_state_update', value: 'normal', color: 'green' },
+      {type: 'load_state_update', value: 'critical', color: 'red' },
+      {type: 'load_state_update', value: 'warning', color: 'amber' },
+    ] },
   ];
 
   const lightWidth = width / columns;

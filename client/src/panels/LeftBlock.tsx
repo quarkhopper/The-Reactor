@@ -11,16 +11,23 @@ export default function LeftBlock() {
             id='power_demand_1'
             x={0}
             y={400}
+            valueEvent='grid_load_update'
+            index={0}
+        /> 
+        <DigitalDisplay
+            id='power_cap_1'
+            x={0}
+            y={620}
+            valueEvent='capacitor_charge_update'
+            index={0}
+
         /> 
         <DigitalDisplay
             id='power_demand_2'
             x={0}
-            y={620}
-        /> 
-        <DigitalDisplay
-            id='power_demand_3'
-            x={0}
             y={840}
+            valueEvent='grid_load_update'
+            index={1}
         /> 
       <PowerButton x={180} y={400} />
       <SliderControl
@@ -48,6 +55,7 @@ export default function LeftBlock() {
         y={840}
         value={0}
         limit={0.8}
+        valueEvent='core_temp_update'
       />
     </div>
   )

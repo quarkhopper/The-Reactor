@@ -43,8 +43,8 @@ export const COMPONENT_IDS = {
   
   // Displays
   [COMPONENT_CATEGORIES.DISPLAYS]: [
-    'power_demand_1', 'power_demand_2', 'power_demand_3',
-    'power_demand_4', 'power_demand_5', 'power_demand_6'
+    'power_demand_1', 'power_cap_1', 'power_demand_2',
+    'power_demand_3', 'power_cap_2', 'power_demand_4'
   ],
   
   // Controls
@@ -54,8 +54,8 @@ export const COMPONENT_IDS = {
   
   // Condition lights
   [COMPONENT_CATEGORIES.CONDITION_LIGHTS]: [ 
-    'cond_power', 'cond_trans', 'cond_fault', 'cond_scram', 'cond_aux', 
-    'sys_core', 'sys_cooling', 'sys_gen', 'sys_ctrl', 'sys_aux'
+    'cond_power', 'cond_trans', 'cond_fault', 'cond_scram', 'cond_volt', 
+    'sys_core', 'sys_cooling', 'sys_gen', 'sys_ctrl', 'sys_load'
   ],
   
 
