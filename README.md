@@ -41,7 +41,7 @@ The core idea revolves around:
 - A grid-based **control panel** with:
   - Light-up **buttons** and **toggles**
   - Flickering **indicator lights**
-  - Potential **sliders**, **knobs**, or **rotating gauges**
+  - **Sliders**, **knobs**, and **rotating gauges**
 - Dynamic lighting to simulate:
   - System pressure
   - Load levels
@@ -74,7 +74,7 @@ The system computes a solution each tick based on these interacting tensors, aff
 - **Centralized Component Registry**: Single source of truth for all component IDs and metadata
 - **State Transition Manager**: Handles all state transitions with validation and timing
 - **Event Bus System**: Facilitates communication between components and the core system
-- **Test Sequence Handler**: Manages component testing and validation
+- **Process Managers**: Manage initialization, testing, startup, and shutdown sequences
 
 ### Backend (Future Phase)
 
@@ -116,10 +116,10 @@ The system computes a solution each tick based on these interacting tensors, aff
 
 ### Phase 4 – Polish & Expansion
 
-- [ ] Add sound effects and audio feedback
+- [x] Add sound effects and audio feedback
 - [ ] Implement multiplayer features
 - [ ] Add Discord integration
-- [ ] Create documentation and tutorials
+- [x] Create updated documentation and tutorials
 
 ---
 
@@ -127,8 +127,9 @@ The system computes a solution each tick based on these interacting tensors, aff
 
 Detailed documentation can be found in the `docs` directory:
 
-- `docs/patterns/`: Component patterns and best practices
-- `docs/notes/`: Development notes and design decisions
+- `docs/state_machine.md`: State machine architecture and principles
+- `docs/process_manager_pattern.md`: Process manager design and implementation
+- `docs/bus_subscriber.md`: MessageBus subscription and handling pattern
 
 ---
 

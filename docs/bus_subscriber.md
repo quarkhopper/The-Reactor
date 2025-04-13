@@ -42,8 +42,9 @@ The guard function validates whether a message is relevant to the subscriber. Th
 function isRelevantMessage(msg: Record<string, any>): boolean {
   return (
     typeof msg.type === 'string' &&
-    (msg.type === 'example_type_1' ||
-     msg.type === 'example_type_2')
+    (msg.type === 'state_change' ||
+     msg.type === 'process_complete' ||
+     msg.type === 'scram_button_press')
   );
 }
 ```
@@ -53,10 +54,12 @@ The message handling function processes the relevant messages. This function con
 
 ```typescript
 function handleMessage(msg: Record<string, any>) {
-  if (msg.type === 'example_type_1') {
-    // Handle example_type_1
-  } else if (msg.type === 'example_type_2') {
-    // Handle example_type_2
+  if (msg.type === 'state_change') {
+    // Handle state change messages
+  } else if (msg.type === 'process_complete') {
+    // Handle process completion
+  } else if (msg.type === 'scram_button_press') {
+    // Handle SCRAM button press
   }
 }
 ```

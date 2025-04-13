@@ -9,7 +9,7 @@ The Process Manager Pattern is a design approach used in The Reactor application
 
 2. **StateMachine**: Coordinates the overall application state and validates state transitions. It interacts with process managers to ensure proper sequencing.
 
-3. **Process Managers**: Dedicated classes (e.g., `InitManager`, `TestManager`) that handle specific processes. Each manager is responsible for:
+3. **Process Managers**: Dedicated classes (e.g., `InitManager`, `TestManager`, `StartupManager`, `ShutdownManager`) that handle specific processes. Each manager is responsible for:
    - Subscribing to relevant messages.
    - Emitting `process_begin` and `process_complete` events.
    - Managing the lifecycle of its process.
@@ -59,6 +59,36 @@ The `TestManager` handles the "test" process:
 
 - **Process Completion**:
   - Emits `process_complete` when all components complete their test sequence.
+
+## Example: StartupManager
+
+The `StartupManager` handles the "startup" process:
+
+- **Initialization**:
+  - Subscribes to the `MessageBus`.
+  - Tracks startup progress and ensures all components are ready.
+
+- **Message Handling**:
+  - Listens for `state_change` and `acknowledge` messages.
+  - Emits `process_begin` when entering the "startup" state.
+
+- **Process Completion**:
+  - Emits `process_complete` when all components are ready for operation.
+
+## Example: ShutdownManager
+
+The `ShutdownManager` handles the "shutdown" process:
+
+- **Initialization**:
+  - Subscribes to the `MessageBus`.
+  - Tracks shutdown progress and ensures all components are safely powered down.
+
+- **Message Handling**:
+  - Listens for `state_change` and `acknowledge` messages.
+  - Emits `process_begin` when entering the "shutdown" state.
+
+- **Process Completion**:
+  - Emits `process_complete` when all components are safely powered down.
 
 ## Benefits of the Pattern
 
