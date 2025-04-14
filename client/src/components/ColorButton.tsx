@@ -63,8 +63,7 @@ const FuelRodButton: React.FC<ColorButtonProps> = ({ id, x, y, gridX, gridY, ind
 
   // Guard function to filter relevant messages
   const isValidMessage = (msg: Record<string, any>): boolean => {
-    const validTypes = ['state_change', 
-      'process_begin', 
+    const validTypes = ['state_change', 'process_begin', 
       colorEvent?.type, 
       litEvent?.type, 
       dimEvent?.type, 
@@ -91,7 +90,6 @@ const FuelRodButton: React.FC<ColorButtonProps> = ({ id, x, y, gridX, gridY, ind
       setIsBlinking(false);
       setShowOverlay(true);
     } else if (msg.type === blinkEvent?.type && msg.value === blinkEvent?.value) {
-      console.log('Blinking event received: ', msg);
       setIsBlinking(true);
     }
   };
