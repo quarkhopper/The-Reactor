@@ -21,6 +21,7 @@ function tick() {
   // Adjust the nearest control rods based on the findClosestControlRods function
   coreProperties.fuelRods.forEach((row, gridX) => {
     row.forEach((rod, gridY) => {
+      if (rod.state === 'withdrawn') return; // Skip withdrawn rods
       const delta = rod.temperature > targetCoreTemp ? -STANDARD_CONTROL_ROD_DELTA : STANDARD_CONTROL_ROD_DELTA;
       const closestRods = findClosestControlRods(gridX, gridY, 4);
       closestRods.forEach(({ cx, cy }) => {
