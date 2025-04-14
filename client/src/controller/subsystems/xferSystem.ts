@@ -6,7 +6,7 @@ import coreSystem from './coreSystem';
 let flowRate = 0.0;          
 let heatTransferred = 0.0; // Total heat from fuel rods (0-1)
 
-const HEAT_TRANSFER_COEFFICIENT_ROD_TO_COOLANT = 0.05; // Adjusted for realistic heat transfer efficiency
+const HEAT_TRANSFER_COEFFICIENT_ROD_TO_COOLANT = 0.03; // Adjusted for realistic heat transfer efficiency
 
 // Add rate of change limiter for damping
 function applyDamping(current: number, target: number, maxDelta: number): number {
@@ -23,13 +23,15 @@ function thermalTick() {
 
   // for each condenser we're using (true) increase the condensation rate.
   
-  const targetTotalHeatFromRods = coreProperties.fuelRods.reduce((sum, row) => {
-    return sum + row.reduce((rowSum, rod) => {
-      return rowSum + HEAT_TRANSFER_COEFFICIENT_ROD_TO_COOLANT * flowRate;
+  const heatOfAllRods = coreProperties.fuelRods.reduce((sum, row) => {
+    return sum + row.reduce((rowSum: number, rod: { temperature: number }) => {
+      return rowSum + rod.temperature; // Assuming temperature is a proxy for heat
     }, 0);
   }, 0);
-  
-  heatTransferred = applyDamping(heatTransferred, targetTotalHeatFromRods, 0.01); // Damping for heat transfer
+
+  const targetTotalHeatFromRods = heatOfAllRods * HEAT_TRANSFER_COEFFICIENT_ROD_TO_COOLANT * flowRate; // Adjusted for realistic heat transfer efficiency
+    
+  heatTransferred = applyDamping(heatTransferred, targetTotalHeatFromRods, 0.05); // Damping for heat transfer
   
   console.log(`Total Heat from Rods: ${heatTransferred}`);
 }

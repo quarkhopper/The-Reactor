@@ -54,10 +54,10 @@ export default function RightBlock() {
         initvalue={0.0}
       />
       <VerticalMeter
-            id='coolant_temp_meter'
+            id='target_turbine_rpm'
             x={60}
             y={620}
-            event='coolant_temp_update'
+            event='target_turbine_rpm'
           />
       {/* <VerticalMeter
             id='steam_pressure_meter'

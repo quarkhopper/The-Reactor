@@ -17,10 +17,12 @@ const capacitors: Array<{ charge: number; used: boolean }> = [
 const indicators = {
   generatorVoltage: 0, // Normalized generator output voltage (0-1)
   turbineRPM: 0, // Normalized turbine RPM (0-1)
+  targetTurbineRPM: 0, // Target turbine RPM (0-1)
 };
 
 const gridLoads = [0.4, 0.4, 0.4, 0.4]; // Initial grid loads (normalized 0-1)
-const TURBINE_INERTIA = 0.1; // Inertia factor for turbine RPM adjustment
+const TURBINE_INERTIA = 0.05; // Inertia factor for turbine RPM adjustment
+const TURBINE_FRICTION = 0.05; // Friction factor for turbine RPM adjustment
 const gridLoadFrequencies = [0.02, 0.03, 0.06, 0.08]; // Frequencies for each grid load (in Hz)
 const gridLoadNoiseAmplitude = 0.05; // Amplitude of noise added to the sinusoidal functions
 
@@ -35,11 +37,15 @@ function tick() {
     gridLoads[i] = Math.max(0, Math.min(1, baseLoad + noise)); // Clamp to [0, 1]
   }
 
-  // Target turbine RPM is proportional to coolant temperature
-  const targetTurbineRPM = xferProperties.heatTransferred * 0.9; // must be a differential or there's no flow
-
-  // Gradually adjust turbine RPM toward the target value based on inertia
-  indicators.turbineRPM += (targetTurbineRPM - indicators.turbineRPM) * TURBINE_INERTIA;
+  // Calculate target turbine RPM based on heat transferred and grid loads
+  
+  // Apply inductive braking to the turbine based on the number of capacitors being charged
+  indicators.targetTurbineRPM = xferProperties.heatTransferred * 0.9; 
+  const chargingCapacitors = capacitors.filter(capacitor => capacitor.used).length;
+  const brakingFactor = chargingCapacitors * 0.03; // Adjust the multiplier to tune braking strength
+  const turbineDrag = Math.max(0, brakingFactor - TURBINE_FRICTION);
+  console.log(`Turbine Drag: ${turbineDrag}`);
+  indicators.turbineRPM += Math.min(1, (indicators.targetTurbineRPM - indicators.turbineRPM) * TURBINE_INERTIA) - turbineDrag; // Adjust turbine RPM based on target and drag
 
   // Generator voltage is proportional to turbine RPM
   indicators.generatorVoltage = indicators.turbineRPM * 0.9;
@@ -47,17 +53,12 @@ function tick() {
   // charge capacitors based on generator voltage and usage status and calculate draw from generator
   for (let i = 0; i < capacitors.length; i++) {
     if (capacitors[i].used) {
-      const chargeRate = indicators.generatorVoltage * 0.1; // Adjust charge rate based on generator voltage
+      const chargeRate = indicators.generatorVoltage * 0.005; // Adjust charge rate based on generator voltage
       capacitors[i].charge = Math.min(1, capacitors[i].charge + chargeRate); // Clamp to [0, 1]
     } else {
       capacitors[i].charge = Math.max(0, capacitors[i].charge - 0.01); // Discharge if not used
     }
   }
-
-  // Apply inductive braking to the turbine based on the number of capacitors being charged
-  const chargingCapacitors = capacitors.filter(capacitor => capacitor.used).length;
-  const brakingFactor = chargingCapacitors * 0.01; // Adjust the multiplier to tune braking strength
-  indicators.turbineRPM = Math.max(0, indicators.turbineRPM - brakingFactor);
 
   // Combine capacitors to discharge to all grid loads if used=true
   const totalCapacitorCharge = capacitors.reduce((sum, capacitor) => {
@@ -71,6 +72,12 @@ function tick() {
   }
 
   // Emit updated state
+
+  MessageBus.emit({
+    type: 'target_turbine_rpm',
+    value: indicators.targetTurbineRPM,
+  });
+
   MessageBus.emit({
     type: 'turbine_rpm_update',
     value: indicators.turbineRPM,
