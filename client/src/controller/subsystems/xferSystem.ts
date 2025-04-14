@@ -60,14 +60,6 @@ function updateTemperatureAndPressure() {
 
   // Update steam temperature based on heat from primary coolant
   waterTemperature = clamp(waterTemperature - WATER_COOLING_RATE + heatTransferToWater / WATER_HEAT_CAPACITY);
-
-  // Output stats to console
-  console.log('Coolant Temperature:', coolantTemperature.toFixed(2));
-  console.log('Steam/water Temperature:', waterTemperature.toFixed(2));
-  console.log('Steam Pressure:', steamPressure.toFixed(2));
-  console.log('Water Amount:', waterAmount.toFixed(2));
-  console.log('Flow Rate:', flowRate.toFixed(2));
-  console.log('Heat Transfer to Water:', heatTransferToWater.toFixed(2));
 }
 
 // Updated strings to use underscores instead of dashes
