@@ -20,7 +20,7 @@ export default function Panel({ children, labels }: PanelProps) {
         <div
           key={index}
           className="panel-label"
-          style={{ position: "absolute", top: label.y, left: label.x, color: "black", fontSize: label.size, fontWeight: "bold", textAlign: "center", width: label.width }}
+          style={{ position: "absolute", lineHeight: '1', top: label.y, left: label.x, color: "black", fontSize: label.size, fontWeight: "bold", textAlign: "center", width: label.width }}
         >
           {label.text}
         </div>

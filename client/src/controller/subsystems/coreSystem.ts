@@ -79,9 +79,22 @@ let fuelRodDistanceGrid : number[][][][] = Array.from({ length: FUEL_GRID_SIZE }
 // Variables for tuning (locked values)
 const HEAT_GAIN_SCALING_FACTOR = 0.018; // Keep increased value for critical temperatures
 const HEAT_LOSS_SCALING_FACTOR = 0.1; // Keep original for stability
-const INTERFERENCE_SCALING_FACTOR = 1 // 3.5;
+const INTERFERENCE_SCALING_FACTOR = 1.5 // 3.5;
 const NORMALIZATION_FACTOR = 1.3; // Keep current value
-const TEMP_INSTABILITY_FACTOR = 0.02;
+
+// Introduce sub 0.1Hz thermal instabilities in fuel rods
+const THERMAL_INSTABILITY_SCALING = 0.01; // Proportion of temperature max swing
+
+// Assign each rod its own frequency and phase for thermal instabilities
+const rodFrequencies: number[][] = Array.from({ length: FUEL_GRID_SIZE }, () =>
+  Array.from({ length: FUEL_GRID_SIZE }, () =>
+    Math.random() * (0.08 - 0.005) + 0.005 // Random frequency between 0.005 and 0.08 Hz
+  )
+);
+
+const rodPhases: number[][] = Array.from({ length: FUEL_GRID_SIZE }, () =>
+  Array.from({ length: FUEL_GRID_SIZE }, () => Math.random() * 2 * Math.PI) // Random phase between 0 and 2π
+);
 
 function precalculateDistances() {
   // Calculate distances between fuel rods and control rods ONLY
@@ -120,6 +133,20 @@ function findClosestControlRods(x: number, y: number, get: number): { cx: number
 
   // Sort by distance and return the closest "get" rods
   return rods.sort((a, b) => a.distance - b.distance).slice(0, get);
+}
+
+// Function to set a control rod position
+function setControlRodPosition(x: number, y: number, position: number) {
+  if (x >= 0 && x < CONTROL_GRID_SIZE && y >= 0 && y < CONTROL_GRID_SIZE) {
+    controlRods[x][y].position = Math.max(0, Math.min(1, position)); // Clamp between 0 and 1
+    MessageBus.emit({
+      type: 'control_rod_update',
+      id: 'system',
+      gridX: x,
+      gridY: y,
+      value: controlRods[x][y].position
+    });
+  }
 }
 
 // New function for fuel rod distance calculations
@@ -191,13 +218,24 @@ function precalculateBaseReactivities() {
 
 // Main tick function
 function tick() {
+  const now = Date.now() / 1000; // Current time in seconds
+
+  // Apply thermal instabilities to each fuel rod
+  for (let x = 0; x < FUEL_GRID_SIZE; x++) {
+    for (let y = 0; y < FUEL_GRID_SIZE; y++) {
+      const rod = fuelRods[x][y];
+      if (rod.state === 'engaged') {
+        applyThermalInstability(rod, now, x, y);
+      }
+    }
+  }
+
   try {
     let totalTemp = 0;
     let minTemp = 1;
     let maxTemp = 0;
     let critical = false;
     let warning = false;
-    let totalInstability = 0;
 
     // Check for completed transitions
     const now = Date.now();
@@ -264,8 +302,6 @@ function tick() {
         minTemp = Math.min(minTemp, rod.temperature);
         maxTemp = Math.max(maxTemp, rod.temperature);
 
-        
-
         // Emit temperature update command
         MessageBus.emit({
           type: 'temperature_update',
@@ -284,6 +320,11 @@ function tick() {
       }
     }
 
+    MessageBus.emit({
+      type: 'thermal_peak',
+      id: 'system',
+      value: maxTemp
+    });
 
     // Calculate average temperature
     const avgTemp = totalTemp / (FUEL_GRID_SIZE * FUEL_GRID_SIZE);
@@ -291,38 +332,6 @@ function tick() {
     MessageBus.emit({
       type: 'core_temp_update',
       value: avgTemp
-    });
-
-    // Emit total absolute instability to update the circular gauge
-    let averageInstability = (totalInstability / (FUEL_GRID_SIZE * FUEL_GRID_SIZE)) / (2 * TEMP_INSTABILITY_FACTOR);
-    averageInstability = Math.max(0, Math.min(1, averageInstability)); // Clamp to [0, 1]
-
-    MessageBus.emit({
-      type: 'core_instability_update',
-      value: averageInstability
-    });
-
-    // Calculate and log average reactivity
-    let totalReactivity = 0;
-    let maxReactivity = 0;
-    let activeRodCount = 0;
-
-    for (let x = 0; x < FUEL_GRID_SIZE; x++) {
-      for (let y = 0; y < FUEL_GRID_SIZE; y++) {
-        if (!isCorner(x, y) && fuelRods[x][y].state === 'engaged') {
-          totalReactivity += reactivity[x][y];
-          activeRodCount++;
-          maxReactivity = Math.max(maxReactivity, reactivity[x][y]);
-        }
-      }
-    }
-
-    const avgReactivity = activeRodCount > 0 ? totalReactivity / activeRodCount : 0;
-
-    // Emit average reactivity to update meter
-    MessageBus.emit({
-      type: 'core_reactivity_update',
-      value: avgReactivity / maxReactivity // Normalize to max reactivity
     });
 
     if (critical) {
@@ -382,14 +391,7 @@ function handleMessage (msg: Record<string, any>) {
       console.log('[coreSystem] Received scram command - setting target core temperature to 0');
       for (let x = 0; x < CONTROL_GRID_SIZE; x++) {
         for (let y = 0; y < CONTROL_GRID_SIZE; y++) {
-          controlRods[x][y].position = 0;
-          MessageBus.emit({
-            type: 'control_rod_update',
-            id: 'system',
-            gridX: x,
-            gridY: y,
-            value: 0
-          });
+          setControlRodPosition(x, y, 0); // Set control rod position to 0 (fully inserted)
         }
       }
     }
@@ -455,7 +457,7 @@ const coreSystem = {
 };
 
 export default coreSystem;
-export { findClosestControlRods };
+export { findClosestControlRods, setControlRodPosition };
 
 // Debounced function to schedule recalculations
 function scheduleRecalculation() {
@@ -505,4 +507,11 @@ function updateFuelRodTemperature(rod: FuelRod, x: number, y: number) {
 // Utility function to clamp values between 0 and 1
 function clamp(value: number): number {
   return Math.max(0, Math.min(1, value));
+}
+
+function applyThermalInstability(rod: FuelRod, time: number, x: number, y: number) {
+  const frequency = rodFrequencies[x][y];
+  const phase = rodPhases[x][y];
+  const instability = THERMAL_INSTABILITY_SCALING * Math.sin(2 * Math.PI * frequency * time + phase);
+  rod.temperature = clamp(rod.temperature + instability);
 }

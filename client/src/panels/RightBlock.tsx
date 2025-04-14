@@ -59,12 +59,6 @@ export default function RightBlock() {
             y={620}
             event='target_turbine_rpm'
           />
-      {/* <VerticalMeter
-            id='steam_pressure_meter'
-            x={120}
-            y={620}
-            event='steam_pressure_update'
-          /> */}
       <CircularGauge
         id="turbine_rpm_gauge"
         x={60}

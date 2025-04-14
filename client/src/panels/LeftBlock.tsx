@@ -54,17 +54,11 @@ export default function LeftBlock() {
         moveEvent='target_temp_update'
         initvalue={0.0}
       />
-      {/* <VerticalMeter
-            id='core_instability_meter'
-            x={120}
-            y={620}
-            event='core_instability_update'
-          /> */}
       <VerticalMeter
-            id='core_reactivity_meter'
+            id='thermal_peak'
             x={180}
             y={620}
-            event='core_reactivity_update'
+            event='thermal_peak'
           />
       <CircularGauge
         id="core_temp_gauge"

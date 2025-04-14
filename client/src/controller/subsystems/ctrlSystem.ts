@@ -1,6 +1,6 @@
 import MessageBus from '../../MessageBus';
 import { Subsystem } from '../types';
-import coreSystem, { findClosestControlRods } from './coreSystem';
+import coreSystem, { findClosestControlRods, setControlRodPosition } from './coreSystem';
 
 
 const STANDARD_CONTROL_ROD_DELTA = 0.01;
@@ -21,13 +21,8 @@ function tick() {
       const closestRods = findClosestControlRods(gridX, gridY, 4);
       closestRods.forEach(({ cx, cy }) => {
         const controlRod = coreProperties.controlRods[cx][cy];
-        controlRod.position = Math.max(0, Math.min(1, controlRod.position + delta))
-        MessageBus.emit({
-          type: 'control_rod_update',
-          gridX: cx,
-          gridY: cy,
-          value: controlRod.position,
-        });
+        const newPosition = controlRod.position + delta;
+        setControlRodPosition(cx, cy, newPosition);
       });
     });
   });
@@ -52,10 +47,8 @@ function handleMessage (msg: Record<string, any>) {
 
   if (msg.type === 'state_change') {
     // Handle state change messages
-    if (msg.state === 'startup' || msg.state === 'on') {
-      targetCoreTemp = 0.1; // Reset target core temperature on startup
+    if (msg.state !== 'scram') {
       scram = false; // Reset scram state
-      // Perform actions for 'on' state
     } else if (msg.state === 'scram') {
       console.log('[ctrlSystem] Received scram command - setting target core temperature to 0');
       scram = true;
