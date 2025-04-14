@@ -431,14 +431,7 @@ function handleMessage (msg: Record<string, any>) {
       ).filter(Boolean) as { cx: number; cy: number }[];
       // Set the positions of the grouped control rods to 1 (fully withdrawn)
       groupedRods.forEach(({ cx, cy }) => {
-        controlRods[cx][cy].position = 1;
-        MessageBus.emit({
-          type: 'control_rod_update',
-          id: 'system',
-          gridX: cx,
-          gridY: cy,
-          value: 1
-        });
+        setControlRodPosition(cx, cy, 1); // Set control rod position to 1 (fully withdrawn)        
       });
     }
   }
