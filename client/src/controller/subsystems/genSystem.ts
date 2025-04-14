@@ -2,13 +2,20 @@ import MessageBus from '../../MessageBus';
 import { Subsystem } from '../types';
 import xferSystem from './xferSystem';
 
-
+const capacitors: Array<{ charge: number; used: boolean }> = [
+  {
+    charge: 0, // Capacitor 1 charge (0-1)
+    used: true, // Capacitor 1 usage status (true/false)
+  },
+  {
+    charge: 0, // Capacitor 2 charge (0-1)
+    used: true, // Capacitor 2 usage status (true/false)
+  },
+];
 
 // State variables
 const indicators = {
   generatorVoltage: 0, // Normalized generator output voltage (0-1)
-  capacitor1Charge: 0, // Normalized charge for capacitor 1 (0-1)
-  capacitor2Charge: 0, // Normalized charge for capacitor 2 (0-1)
   turbineRPM: 0, // Normalized turbine RPM (0-1)
 };
 
@@ -29,7 +36,7 @@ function tick() {
   }
 
   // Target turbine RPM is proportional to coolant temperature
-  const targetTurbineRPM = xferProperties.steamPressure * 0.9;
+  const targetTurbineRPM = xferProperties.heatTransferred * 0.9; // must be a differential or there's no flow
 
   // Gradually adjust turbine RPM toward the target value based on inertia
   indicators.turbineRPM += (targetTurbineRPM - indicators.turbineRPM) * TURBINE_INERTIA;
@@ -37,13 +44,31 @@ function tick() {
   // Generator voltage is proportional to turbine RPM
   indicators.generatorVoltage = indicators.turbineRPM * 0.9;
 
-  // Capacitor 1 charge is affected by generator voltage and the first two grid loads
-  const totalLoad1 = gridLoads[0] + gridLoads[1];
-  indicators.capacitor1Charge = Math.max(0, Math.min(1, indicators.generatorVoltage - totalLoad1 * 0.2));
+  // charge capacitors based on generator voltage and usage status and calculate draw from generator
+  for (let i = 0; i < capacitors.length; i++) {
+    if (capacitors[i].used) {
+      const chargeRate = indicators.generatorVoltage * 0.1; // Adjust charge rate based on generator voltage
+      capacitors[i].charge = Math.min(1, capacitors[i].charge + chargeRate); // Clamp to [0, 1]
+    } else {
+      capacitors[i].charge = Math.max(0, capacitors[i].charge - 0.01); // Discharge if not used
+    }
+  }
 
-  // Capacitor 2 charge is affected by generator voltage and the last two grid loads
-  const totalLoad2 = gridLoads[2] + gridLoads[3];
-  indicators.capacitor2Charge = Math.max(0, Math.min(1, indicators.generatorVoltage - totalLoad2 * 0.2));
+  // Apply inductive braking to the turbine based on the number of capacitors being charged
+  const chargingCapacitors = capacitors.filter(capacitor => capacitor.used).length;
+  const brakingFactor = chargingCapacitors * 0.01; // Adjust the multiplier to tune braking strength
+  indicators.turbineRPM = Math.max(0, indicators.turbineRPM - brakingFactor);
+
+  // Combine capacitors to discharge to all grid loads if used=true
+  const totalCapacitorCharge = capacitors.reduce((sum, capacitor) => {
+    return capacitor.used ? sum + capacitor.charge : sum;
+  }, 0);
+
+  // Distribute the total capacitor charge across all grid loads
+  const chargePerLoad = totalCapacitorCharge / gridLoads.length;
+  for (let i = 0; i < gridLoads.length; i++) {
+    gridLoads[i] = Math.max(0, Math.min(1, gridLoads[i] - chargePerLoad));
+  }
 
   // Emit updated state
   MessageBus.emit({
@@ -52,12 +77,12 @@ function tick() {
   });
   MessageBus.emit({
     type: 'capacitor_charge_update',
-    value: indicators.capacitor1Charge,
+    value: capacitors[0].charge,
     index: 0,
   });
   MessageBus.emit({
     type: 'capacitor_charge_update',
-    value: indicators.capacitor2Charge,
+    value: capacitors[1].charge,
     index: 1,
   });
   for (let i = 0; i < gridLoads.length; i++) {
@@ -86,7 +111,7 @@ function tick() {
     });
   }
 
-  const averageCapacitorCharge = (indicators.capacitor1Charge + indicators.capacitor2Charge) / 2;
+  const averageCapacitorCharge = capacitors.reduce((acc, capacitor) => acc + capacitor.charge, 0) / capacitors.length;
 
   // Emit the average grid load and capacitor charge
   const loadRatio = averageCapacitorCharge / averageGridLoad;
@@ -124,6 +149,24 @@ function tick() {
       type: 'gen_state_update',
       value: 'normal'
     });
+  }
+}
+
+const isValidMessage = (msg: Record<string, any>): boolean => {
+  const validTypes = ['use_capacitor'];
+  return validTypes.includes(msg.type);
+}
+
+MessageBus.subscribe(handleMessage);
+
+function handleMessage(msg: Record<string, any>) {
+  if (!isValidMessage(msg)) return; // Guard clause
+
+  // Handle messages specific to this subsystem
+  if (msg.type === 'use_capacitor') {
+    // Handle condenser usage messages
+    console.log(`[genSystem] Received use_capacitor command - index: ${msg.index}, value: ${msg.value}`);
+    capacitors[msg.index].used = msg.value; // Update usage status based on message value
   }
 }
 

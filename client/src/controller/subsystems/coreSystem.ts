@@ -82,9 +82,6 @@ const HEAT_LOSS_SCALING_FACTOR = 0.1; // Keep original for stability
 const INTERFERENCE_SCALING_FACTOR = 1 // 3.5;
 const NORMALIZATION_FACTOR = 1.3; // Keep current value
 const TEMP_INSTABILITY_FACTOR = 0.02;
-const HEAT_TRANSFER_COEFFICIENT_ROD_TO_COOLANT = 0.05; // Adjusted for realistic heat transfer efficiency
-const FUEL_ROD_SURFACE_AREA = 0.8; // Normalized surface area affecting heat transfer
-const COOLANT_FLOW_RATE_SCALING = 1.2; // Scaling factor for coolant flow rate effect
 
 function precalculateDistances() {
   // Calculate distances between fuel rods and control rods ONLY
@@ -262,8 +259,6 @@ function tick() {
         reactivity[x][y] = finalReactivity;
 
         updateFuelRodTemperature(rod, x, y);
-
-
 
         totalTemp += rod.temperature;
         minTemp = Math.min(minTemp, rod.temperature);
@@ -491,11 +486,11 @@ function scheduleRecalculation() {
 function updateFuelRodTemperature(rod: FuelRod, x: number, y: number) {
   const xferProperties = xferSystem.getState();
   const heatGenerated = reactivity[x][y] * HEAT_GAIN_SCALING_FACTOR;
-  const heatTransferToCoolant =
-    HEAT_TRANSFER_COEFFICIENT_ROD_TO_COOLANT * FUEL_ROD_SURFACE_AREA * xferProperties.flowRate * COOLANT_FLOW_RATE_SCALING * (rod.temperature - xferProperties.coolantTemperature);
+  const fuelRodCount = FUEL_GRID_SIZE * FUEL_GRID_SIZE - 4; // Exclude corners
+  let rodHeatTransfer = xferProperties.heatTransferred / fuelRodCount;
   const naturalCooling = HEAT_LOSS_SCALING_FACTOR * rod.temperature;
 
-  rod.temperature = clamp(rod.temperature + heatGenerated - heatTransferToCoolant - naturalCooling);
+  rod.temperature = clamp(rod.temperature + heatGenerated - rodHeatTransfer - naturalCooling);
 
   // Emit temperature update command
   MessageBus.emit({
