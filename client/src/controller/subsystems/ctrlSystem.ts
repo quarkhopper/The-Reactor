@@ -10,6 +10,10 @@ let scram = false; // Track if the system is in scram state
 
 function tick() {
   if (scram) {
+    MessageBus.emit({
+      type: 'ctrl_state_update',
+      value: 'critical',
+    });
     return; // If in scram state, skip the tick
   }
   
