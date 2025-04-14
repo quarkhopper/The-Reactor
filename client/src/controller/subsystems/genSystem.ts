@@ -15,57 +15,85 @@ const capacitors: Array<{ charge: number; used: boolean }> = [
 
 // State variables
 const indicators = {
-  generatorVoltage: 0, // Normalized generator output voltage (0-1)
+  generatorPower: 0, // Normalized generator output voltage (0-1)
   turbineRPM: 0, // Normalized turbine RPM (0-1)
   targetTurbineRPM: 0, // Target turbine RPM (0-1)
 };
 
-const gridLoads = [0.4, 0.4, 0.4, 0.4]; // Initial grid loads (normalized 0-1)
+const gridLoads = [0, 0, 0, 0]; // Initial grid loads set to 0
 const TURBINE_INERTIA = 0.05; // Inertia factor for turbine RPM adjustment
 const TURBINE_FRICTION = 0.05; // Friction factor for turbine RPM adjustment
-const gridLoadFrequencies = [0.02, 0.03, 0.06, 0.08]; // Frequencies for each grid load (in Hz)
-const gridLoadNoiseAmplitude = 0.05; // Amplitude of noise added to the sinusoidal functions
+const HEAT_RPM_SCALE = 1.5; // Scale factor for heat transfer to RPM
+const RPM_POWER_SCALE = 0.3;
+const CAPACITOR_NATURAL_DRAIN = 0.01; // Natural drain rate for capacitors
+const MAX_CAPACITOR_OUPUT = 0.08; // Maximum output power from capacitors
+const MAX_CAPACITOR_CHARGE = 0.1; // Maximum charge for capacitors (0-1)
+const MAX_GRID_LOAD_INCREASE = 0.015; // Maximum increase in grid load per tick
 
+// Assign a random frequency and phase to each grid load
 function tick() {
   const xferProperties = xferSystem.getState();
-  const time = Date.now() / 1000; // Current time in seconds
 
-  // Calculate grid loads based on noisy sinusoidal functions
-  for (let i = 0; i < gridLoads.length; i++) {
-    const baseLoad = 0.4 + 0.2 * Math.sin(2 * Math.PI * gridLoadFrequencies[i] * time); // Sinusoidal function
-    const noise = (Math.random() - 0.5) * gridLoadNoiseAmplitude; // Add noise
-    gridLoads[i] = Math.max(0, Math.min(1, baseLoad + noise)); // Clamp to [0, 1]
-  }
- 
   // Apply inductive braking to the turbine based on the number of capacitors being charged
-  indicators.targetTurbineRPM = xferProperties.heatTransferred * 0.9; 
+  indicators.targetTurbineRPM = xferProperties.heatTransferred * HEAT_RPM_SCALE;
   const chargingCapacitors = capacitors.filter(capacitor => capacitor.used).length;
   const brakingFactor = chargingCapacitors * 0.03; // Adjust the multiplier to tune braking strength
   const turbineDrag = Math.max(0, brakingFactor - TURBINE_FRICTION);
   indicators.turbineRPM += Math.min(1, (indicators.targetTurbineRPM - indicators.turbineRPM) * TURBINE_INERTIA) - turbineDrag; // Adjust turbine RPM based on target and drag
+  indicators.turbineRPM = Math.max(0, Math.min(1, indicators.turbineRPM));
 
   // Generator voltage is proportional to turbine RPM
-  indicators.generatorVoltage = indicators.turbineRPM * 0.9;
+  indicators.generatorPower = Math.max(0, Math.min(1, indicators.turbineRPM * RPM_POWER_SCALE));
 
-  // charge capacitors based on generator voltage and usage status and calculate draw from generator
-  for (let i = 0; i < capacitors.length; i++) {
-    if (capacitors[i].used) {
-      const chargeRate = indicators.generatorVoltage * 0.02; // Adjust charge rate based on generator voltage
-      capacitors[i].charge = Math.min(1, capacitors[i].charge + chargeRate); // Clamp to [0, 1]
-    } else {
-      capacitors[i].charge = Math.max(0, capacitors[i].charge - 0.01); // Discharge if not used
-    }
+  // Add random amounts to each grid load per tick (between 0 and 0.015)
+  let totalIncrease = 0;
+  for (let i = 0; i < gridLoads.length; i++) {
+    const randomIncrease = Math.random() * MAX_GRID_LOAD_INCREASE; // Random value between 0 and 0.015
+    gridLoads[i] = Math.max(0, Math.min(1, gridLoads[i] + randomIncrease)); // Clamp to [0, 1]
+    totalIncrease += randomIncrease; // Sum the increases
   }
 
-  // Combine capacitors to discharge to all grid loads if used=true
-  const totalCapacitorCharge = capacitors.reduce((sum, capacitor) => {
-    return capacitor.used ? sum + capacitor.charge : sum;
-  }, 0);
+  // charge the capacitors based on the generator power
+  const usedCapacitors = capacitors.filter(capacitor => capacitor.used).length;
 
-  // Distribute the total capacitor charge across all grid loads
-  const chargePerLoad = totalCapacitorCharge / gridLoads.length;
-  for (let i = 0; i < gridLoads.length; i++) {
-    gridLoads[i] = Math.max(0, Math.min(1, gridLoads[i] - chargePerLoad));
+  // apply natural drain to the capacitors
+  for (let i = 0; i < capacitors.length; i++) {
+      capacitors[i].charge = Math.max(0, capacitors[i].charge - CAPACITOR_NATURAL_DRAIN); // Clamp to [0, 1]
+   }
+
+  let totalDischargeableCharge = 0; // Total charge available for discharge
+  if (usedCapacitors > 0) {
+
+    const chargePerCapacitor = Math.min(MAX_CAPACITOR_CHARGE, indicators.generatorPower / usedCapacitors); // Distribute charge evenly among capacitors
+    for (let i = 0; i < capacitors.length; i++) {
+      if (capacitors[i].used) {
+        const amountToCharge = Math.min(MAX_CAPACITOR_CHARGE, Math.min(chargePerCapacitor, (1 - capacitors[i].charge))); // Charge only if not fully charged 
+        capacitors[i].charge = Math.min(1, capacitors[i].charge + amountToCharge); // Clamp to [0, 1]
+      }
+    }
+
+    totalDischargeableCharge = capacitors.reduce((sum, capacitor) => sum + (capacitor.used ? Math.min(MAX_CAPACITOR_OUPUT, capacitor.charge) : 0), 0); // Total charge available for discharge
+
+    // Sum the grid loads
+    const powerDemand = gridLoads.reduce((sum, load) => sum + load, 0); // Total power demand from grid loads
+    
+    // Determine if we need to draw from capacitors
+    const powerToDistribute = Math.min(powerDemand, totalDischargeableCharge); // Limit power to distribute to the maximum output of capacitors or the total charge available
+
+    // discharge capacitors to meet the power demand
+    // calculate the mount per capacitor to discharge only counting the used ones
+    const drainPerCapacitor = powerToDistribute / usedCapacitors; // Distribute power evenly among used capacitors
+    for (let i = 0; i < capacitors.length; i++) {
+      if (capacitors[i].used) {
+        capacitors[i].charge = Math.max(0, capacitors[i].charge - drainPerCapacitor); // Clamp to [0, 1]
+      }
+    }
+
+    // Distribute power to grid loads
+    const powerPerLoad = powerToDistribute / gridLoads.length; // Distribute power evenly among loads
+    for (let i = 0; i < gridLoads.length; i++) {
+      gridLoads[i] = Math.max(0, Math.min(1, gridLoads[i] - powerPerLoad));
+    }
   }
 
   // Emit updated state
@@ -96,14 +124,15 @@ function tick() {
       index: i,
     });
   }
-  
+
   const averageGridLoad = gridLoads.reduce((acc, load) => acc + load, 0) / gridLoads.length;
-  if (averageGridLoad < 0.5) {
+  const peakGridLoad = Math.max(...gridLoads); // Get the peak grid load
+  if (peakGridLoad < 0.2) {
     MessageBus.emit({
       type: 'load_state_update',
       value: 'normal'
     });
-  } else if (averageGridLoad < 0.8) {
+  } else if (averageGridLoad < 0.6) {
     MessageBus.emit({
       type: 'load_state_update',
       value: 'warning'
@@ -115,10 +144,8 @@ function tick() {
     });
   }
 
-  const averageCapacitorCharge = capacitors.reduce((acc, capacitor) => acc + capacitor.charge, 0) / capacitors.length;
-
   // Emit the average grid load and capacitor charge
-  const loadRatio = averageCapacitorCharge / averageGridLoad;
+  const loadRatio = totalDischargeableCharge / averageGridLoad;
   // Emit the load ratio
   if (loadRatio > 0.5) {
     MessageBus.emit({
@@ -169,7 +196,7 @@ function handleMessage(msg: Record<string, any>) {
   // Handle messages specific to this subsystem
   if (msg.type === 'use_capacitor') {
     // Handle condenser usage messages
-    console.log(`[genSystem] Received use_capacitor command - index: ${msg.index}, value: ${msg.value}`);     
+    console.log(`[genSystem] Received use_capacitor command - index: ${msg.index}, value: ${msg.value}`);
     capacitors[msg.index].used = msg.value; // Update usage status based on message value
   }
 }

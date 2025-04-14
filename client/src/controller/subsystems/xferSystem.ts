@@ -30,19 +30,32 @@ function thermalTick() {
   }, 0);
 
   const targetTotalHeatFromRods = heatOfAllRods * HEAT_TRANSFER_COEFFICIENT_ROD_TO_COOLANT * flowRate; // Adjusted for realistic heat transfer efficiency
-    
   heatTransferred = applyDamping(heatTransferred, targetTotalHeatFromRods, 0.05); // Damping for heat transfer
- 
+  heatTransferred = Math.max(0, Math.min(1, heatTransferred)); // Clamp to [0, 1]
+  console.log(`[xferSystem] Heat transferred: ${heatTransferred}`); // Debugging output
 }
 
 // Updated strings to use underscores instead of dashes
 function tick() {
   thermalTick();
   
-  MessageBus.emit({
-    type: 'cooling_state_update',
-    value: 'normal'
-  });
+  if (heatTransferred > 0.8) {
+    // Emit a warning if heat transfer is too high
+    MessageBus.emit({
+      type: 'cooling_state_update',
+      value: 'critical'
+    });
+  } else if (heatTransferred > 0.6) {
+    MessageBus.emit({
+      type: 'cooling_state_update',
+      value: 'warning'
+    });
+  } else {
+    MessageBus.emit({
+      type: 'cooling_state_update',
+      value: 'normal'
+    });
+  }
 }
 
 function getState() {
