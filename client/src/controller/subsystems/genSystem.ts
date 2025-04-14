@@ -44,7 +44,6 @@ function tick() {
   const chargingCapacitors = capacitors.filter(capacitor => capacitor.used).length;
   const brakingFactor = chargingCapacitors * 0.03; // Adjust the multiplier to tune braking strength
   const turbineDrag = Math.max(0, brakingFactor - TURBINE_FRICTION);
-  console.log(`Turbine Drag: ${turbineDrag}`);
   indicators.turbineRPM += Math.min(1, (indicators.targetTurbineRPM - indicators.turbineRPM) * TURBINE_INERTIA) - turbineDrag; // Adjust turbine RPM based on target and drag
 
   // Generator voltage is proportional to turbine RPM
@@ -172,7 +171,7 @@ function handleMessage(msg: Record<string, any>) {
   // Handle messages specific to this subsystem
   if (msg.type === 'use_capacitor') {
     // Handle condenser usage messages
-    console.log(`[genSystem] Received use_capacitor command - index: ${msg.index}, value: ${msg.value}`);
+    console.log(`[genSystem] Received use_capacitor command - index: ${msg.index}, value: ${msg.value}`);     
     capacitors[msg.index].used = msg.value; // Update usage status based on message value
   }
 }

@@ -384,7 +384,7 @@ function handleMessage (msg: Record<string, any>) {
         for (let y = 0; y < CONTROL_GRID_SIZE; y++) {
           controlRods[x][y].position = 0;
           MessageBus.emit({
-            type: 'control_rod_position_update',
+            type: 'control_rod_update',
             id: 'system',
             gridX: x,
             gridY: y,
