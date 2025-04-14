@@ -36,9 +36,7 @@ function tick() {
     const noise = (Math.random() - 0.5) * gridLoadNoiseAmplitude; // Add noise
     gridLoads[i] = Math.max(0, Math.min(1, baseLoad + noise)); // Clamp to [0, 1]
   }
-
-  // Calculate target turbine RPM based on heat transferred and grid loads
-  
+ 
   // Apply inductive braking to the turbine based on the number of capacitors being charged
   indicators.targetTurbineRPM = xferProperties.heatTransferred * 0.9; 
   const chargingCapacitors = capacitors.filter(capacitor => capacitor.used).length;
@@ -52,7 +50,7 @@ function tick() {
   // charge capacitors based on generator voltage and usage status and calculate draw from generator
   for (let i = 0; i < capacitors.length; i++) {
     if (capacitors[i].used) {
-      const chargeRate = indicators.generatorVoltage * 0.005; // Adjust charge rate based on generator voltage
+      const chargeRate = indicators.generatorVoltage * 0.02; // Adjust charge rate based on generator voltage
       capacitors[i].charge = Math.min(1, capacitors[i].charge + chargeRate); // Clamp to [0, 1]
     } else {
       capacitors[i].charge = Math.max(0, capacitors[i].charge - 0.01); // Discharge if not used
