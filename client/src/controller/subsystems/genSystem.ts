@@ -23,7 +23,7 @@ function tick() {
 
   // Calculate grid loads based on noisy sinusoidal functions
   for (let i = 0; i < gridLoads.length; i++) {
-    const baseLoad = 0.4 + 0.1 * Math.sin(2 * Math.PI * gridLoadFrequencies[i] * time); // Sinusoidal function
+    const baseLoad = 0.4 + 0.2 * Math.sin(2 * Math.PI * gridLoadFrequencies[i] * time); // Sinusoidal function
     const noise = (Math.random() - 0.5) * gridLoadNoiseAmplitude; // Add noise
     gridLoads[i] = Math.max(0, Math.min(1, baseLoad + noise)); // Clamp to [0, 1]
   }
@@ -114,7 +114,7 @@ function tick() {
       type: 'gen_state_update',
       value: 'critical'
     });
-  } else if (indicators.turbineRPM > 0.75) {
+  } else if (indicators.turbineRPM > 0.8) {
     MessageBus.emit({
       type: 'gen_state_update',
       value: 'warning'

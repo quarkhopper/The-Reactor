@@ -1,7 +1,7 @@
 import MessageBus from '../MessageBus';
 
 // Tick configuration
-const TICK_INTERVAL = 1000; // 1 second between ticks
+const TICK_INTERVAL = 500; // milliseconds
 
 // Tick state
 let isRunning = false;
