@@ -27,10 +27,7 @@ class StateMachine {
     console.log('[StateMachine] Constructor called');
     // First pass - just construct
 
-    // Subscribe to MessageBus
-    MessageBus.subscribe((msg: Record<string, any>) => {
-      this.handleMessage(msg);
-    });
+
   }
 
   // Second pass - initialize
@@ -42,6 +39,11 @@ class StateMachine {
 
     console.log('[StateMachine] Initializing state machine');
     
+    // Subscribe to MessageBus
+    MessageBus.subscribe((msg: Record<string, any>) => {
+      this.handleMessage(msg);
+    });
+
     // Initialize managers in order - they will cascade to their dependencies
     initManager.init();   // This will cascade to registry
     testManager.init();
@@ -53,31 +55,19 @@ class StateMachine {
     console.log('[StateMachine] Initialization complete');
   }
 
-  // Get current state
-  getState(): AppState {
-    return this.currentState;
-  }
+  // // Get current state
+  // getState(): AppState {
+  //   return this.currentState;
+  // }
 
   // Get the current state
-  getCurrentState(): AppState {
-    return this.currentState;
-  }
-
-  // Set state (used by other managers)
-  setState(newState: AppState) {
-    if (newState !== this.currentState) {
-      console.log(`[StateMachine] State change: ${this.currentState} -> ${newState}`);
-      this.currentState = newState;
-      MessageBus.emit({
-        type: 'state_change',
-        id: 'system',
-        state: newState
-      });
-    }
-  }
+  // getCurrentState(): AppState {
+  //   return this.currentState;
+  // }
 
   // Update state with validation
   private updateState(newState: AppState) {
+    console.log(`[StateMachine] Attempting to update state: ${this.currentState} -> ${newState}`);
     if (this.currentState === newState) {
       console.log(`[StateMachine] No state change: ${this.currentState}`);
       return;
@@ -93,12 +83,14 @@ class StateMachine {
     console.log(`[StateMachine] State transition: ${this.currentState} -> ${newState}`);
     this.currentState = newState;
 
+
     // Emit state change using MessageBus
     MessageBus.emit({
       type: 'state_change',
       id: 'system',
-      state: newState
+      state: newState,
     });
+
   }
 
   // Added a guard function to validate if a message is relevant to the StateMachine
@@ -118,20 +110,21 @@ class StateMachine {
       return;
     }
 
+    console.log(`[StateMachine] Handling message: ${msg.type}`);
     if (msg.type === 'power_button_press') {
-      console.log(`[StateMachine] Power button pressed`);
       if (this.currentState === 'off') {
         this.updateState('init');
       } else if (this.currentState === 'on' || this.currentState === 'scram') {
         this.updateState('shutdown');
       } else if (this.currentState === 'fault') {
-        this.updateState('off');
+        this.updateState('shutdown');
         return;
       }
       return;
     }
-
+    
     if (this.currentState === 'off') {
+      console.error(`[StateMachine] trying to handle message while off: ${msg.type}`);
       return;
     }
 

@@ -26,7 +26,7 @@ const MessageBus = {
       }
     }
 
-    if (msg.type === 'state' && msg.state === 'off') {
+    if (msg.type === 'state_change' && msg.state === 'off') {
       poweredOn = false;
       console.log(`[MessageBus] Powering off and ignoring message:`, msg);
       return;
