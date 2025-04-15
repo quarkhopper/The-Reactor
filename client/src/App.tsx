@@ -1,4 +1,5 @@
 import Panel from './components/Panel';
+import FitToScreen from './components/FitToScreen';
 import MainPanel from './panels/MainPanel';
 import stateMachine from './controller/StateMachine';
 import './MessageBus';
@@ -8,7 +9,7 @@ function App() {
   stateMachine.init();
 
   return (
-    <div>
+    <FitToScreen>
       <Panel
         labels={[
           {
@@ -148,7 +149,7 @@ function App() {
       >
         <MainPanel />
       </Panel>
-    </div>
+    </FitToScreen>
   );
 }
 
