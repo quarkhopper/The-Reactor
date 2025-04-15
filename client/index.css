@@ -1,3 +1,11 @@
-
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    background: black; /* or whatever your app background is */
+    horizontal-align: center;
+    vertical-align: center;
+  }
   
   
