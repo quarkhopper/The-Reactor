@@ -100,7 +100,7 @@ class StateMachine {
       (msg.type === 'power_button_press' ||
        msg.type === 'process_complete' ||
        msg.type === 'process_fault' ||
-       msg.type === 'scram_button_press')
+       msg.type === 'emergency_scram')
     );
   }
 
@@ -143,8 +143,8 @@ class StateMachine {
       console.warn(`[StateMachine] Process fault: ${msg.process}`);
       this.updateState('fault');
       return;
-    } else if (msg.type === 'scram_button_press') {
-      console.log(`[StateMachine] Scram button pressed`);
+    } else if (msg.type === 'emergency_scram') {
+      console.log(`[StateMachine] SCRAM initiated`);
       if (this.currentState === 'scram') {
         this.updateState('on');
       } else {

@@ -41,17 +41,17 @@ function tick() {
   if (heatTransferred > 0.8) {
     // Emit a warning if heat transfer is too high
     MessageBus.emit({
-      type: 'cooling_state_update',
+      type: 'xfer_state_update',
       value: 'critical'
     });
   } else if (heatTransferred > 0.6) {
     MessageBus.emit({
-      type: 'cooling_state_update',
+      type: 'xfer_state_update',
       value: 'warning'
     });
   } else {
     MessageBus.emit({
-      type: 'cooling_state_update',
+      type: 'xfer_state_update',
       value: 'normal'
     });
   }

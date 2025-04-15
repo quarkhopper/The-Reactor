@@ -41,7 +41,11 @@ function tick() {
 
 // Type guard to validate if a message is relevant to this subsystem
 function isValidMessage(msg: Record<string, any>): boolean {
-  const validTypes = ['state_change', 'target_temp_update'];
+  const validTypes = [
+    'state_change', 
+    'target_temp_update',
+    'core_state_update',
+    'xfer_state_update'];
   return validTypes.includes(msg.type);
 }
 
@@ -55,13 +59,24 @@ function handleMessage (msg: Record<string, any>) {
     if (msg.state !== 'scram') {
       scram = false; // Reset scram state
     } else if (msg.state === 'scram') {
-      console.log('[ctrlSystem] Received scram command - setting target core temperature to 0');
       scram = true;
     }
   } else if (msg.type === 'target_temp_update') {
     // Update target power based on message value
     targetCoreTemp = msg.value;
-  } 
+  } else if (msg.type === 'core_state_update' && msg.value === 'critical') {
+    sendScramRequest(); // Send scram request
+  } else if (msg.type === 'xfer_state_update' && msg.value === 'critical') {
+    sendScramRequest(); // Send scram request
+  }
+}
+
+function sendScramRequest() {
+  console.log('[ctrlSystem] Received scram command - setting target core temperature to 0');
+  MessageBus.emit({
+    type: 'emergency_scram',
+    id: 'ctrl',
+  });
 }
 
 const ctrlSystem: Subsystem = {

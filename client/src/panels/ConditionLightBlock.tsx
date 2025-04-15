@@ -27,9 +27,9 @@ export default function ConditionLightBlock() {
       {type: 'core_state_update', value: 'warning', color: 'amber' },
     ] },
     { id: 'sys_cooling', label: 'XFER', conditionEvent: [
-        {type: 'cooling_state_update', value: 'normal', color: 'green' },
-        {type: 'cooling_state_update', value: 'critical', color: 'red' },
-        {type: 'cooling_state_update', value: 'warning', color: 'amber' },
+        {type: 'xfer_state_update', value: 'normal', color: 'green' },
+        {type: 'xfer_state_update', value: 'critical', color: 'red' },
+        {type: 'xfer_state_update', value: 'warning', color: 'amber' },
     ] },
     { id: 'sys_gen', label: 'GEN', conditionEvent: [
       {type: 'gen_state_update', value: 'normal', color: 'green' },

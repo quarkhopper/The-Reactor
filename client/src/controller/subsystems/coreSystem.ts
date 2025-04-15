@@ -234,8 +234,6 @@ function tick() {
     let totalTemp = 0;
     let minTemp = 1;
     let maxTemp = 0;
-    let critical = false;
-    let warning = false;
 
     // Check for completed transitions
     const now = Date.now();
@@ -252,6 +250,13 @@ function tick() {
             
             if (newState === 'withdrawn') {
               rod.temperature = 0; // Reset temperature for withdrawn rods
+              MessageBus.emit({
+                type: 'temperature_update',
+                gridX: x,
+                gridY: y,
+                id: 'system',
+                value: rod.temperature
+              });
             }
 
             // Emit state change
@@ -310,13 +315,6 @@ function tick() {
           id: 'system',
           value: rod.temperature
         });
-
-        if (rod.temperature > 0.9) {
-          critical = true;
-        }
-        if (rod.temperature > 0.7) {
-          warning = true;
-        }
       }
     }
 
@@ -334,13 +332,13 @@ function tick() {
       value: avgTemp
     });
 
-    if (critical) {
+    if (maxTemp > 0.95) {
       MessageBus.emit({
       type: 'core_state_update',
       id: 'system',
       value: 'critical'
       });
-    } else if (warning) {
+    } else if (maxTemp > 0.8) {
       MessageBus.emit({
       type: 'core_state_update',
       id: 'system',
@@ -360,7 +358,11 @@ function tick() {
 
 // Type guard to validate if a message is relevant to coreSystem
 function isValidMessage(msg: Record<string, any>): boolean {
-  const validTypes = ['state_change', 'fuel_rod_state_toggle', 'use_control_rod_group', 'control_rod_group_b_select'];
+  const validTypes = [
+    'state_change', 
+    'fuel_rod_state_toggle', 
+    'use_control_rod_group', 
+    'control_rod_group_b_select'];
   return validTypes.includes(msg.type);
 }
 
