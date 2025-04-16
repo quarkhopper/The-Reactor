@@ -74,9 +74,9 @@ export default function CoreBlock() {
             { range: [0, 0.5], color: 'green' },
             { range: [0.5, 0.8], color: 'amber' },
             { range: [0.8, 0.9], color: 'red' },
-            { range: [0.9, 1.0], color: 'white' },
+            { range: [0.9, 1.0], color: 'off' },
           ]}
-          colorEvent={{ type: 'control_rod_position_update'}}
+          colorEvent={{ type: 'control_rod_update'}}
         />
       );
     }

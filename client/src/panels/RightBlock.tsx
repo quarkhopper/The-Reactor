@@ -3,6 +3,7 @@ import SliderControl from '../components/SliderControl';
 import VerticalMeter from '../components/VerticalMeter';
 import CircularGauge from '../components/CircularGauge';
 import DigitalDisplay from '../components/DigitalDisplay';
+import KnobSelector from '../components/KnobSelector';
 
 export default function RightBlock() {
   return (
@@ -29,24 +30,34 @@ export default function RightBlock() {
             index={3}
         /> 
       <ScramButton x={60} y={400} />
+      <KnobSelector
+        id='use_capacitor_a'
+        x={130}
+        y={565}
+        leftLabel='OFF'
+        rightLabel='ON'
+        selectEvent={{ type: 'use_capacitor', index: 0 }}
+      />
+      <KnobSelector
+        id='use_capacitor_b'
+        x={130}
+        y={680}
+        leftLabel='OFF'
+        rightLabel='ON'
+        selectEvent={{ type: 'use_capacitor', index: 1 }}
+      />
       <SliderControl 
         id="pump_speed" 
         x={0} 
         y={620} 
         moveEvent='pump_speed_adjust'
-        initvalue={0.5}
+        initvalue={0.0}
       />
       <VerticalMeter
-            id='pump_temp_meter'
+            id='target_turbine_rpm'
             x={60}
             y={620}
-            event='coolant-temp-update'
-          />
-      <VerticalMeter
-            id='pump_pres_meter'
-            x={120}
-            y={620}
-            event='coolant-pressure-update'
+            event='target_turbine_rpm'
           />
       <CircularGauge
         id="turbine_rpm_gauge"
@@ -58,4 +69,4 @@ export default function RightBlock() {
         />
     </div>
   );
-} 
+}

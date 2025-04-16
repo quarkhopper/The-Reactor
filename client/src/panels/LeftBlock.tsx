@@ -3,6 +3,7 @@ import SliderControl from '../components/SliderControl';
 import VerticalMeter from '../components/VerticalMeter';
 import CircularGauge from '../components/CircularGauge';
 import DigitalDisplay from '../components/DigitalDisplay';
+import KnobSelector from '../components/KnobSelector';
 
 export default function LeftBlock() {
   return (
@@ -30,24 +31,34 @@ export default function LeftBlock() {
             index={1}
         /> 
       <PowerButton x={180} y={400} />
+      <KnobSelector
+        id='control_rod_group_a_sel'
+        x={110}
+        y={565}
+        leftLabel='OFF'
+        rightLabel='ON'
+        selectEvent={{ type: 'use_control_rod_group', index: 0 }}
+      />
+      <KnobSelector
+        id='control_rod_group_b_sel'
+        x={110}
+        y={680}
+        leftLabel='OFF'
+        rightLabel='ON'
+        selectEvent={{ type: 'use_control_rod_group', index: 1 }}
+      />
       <SliderControl
         id='target_power'
         x={240}
         y={625}
         moveEvent='target_temp_update'
-        initvalue={0.1}
+        initvalue={0.0}
       />
       <VerticalMeter
-            id='core_instability_meter'
+            id='thermal_peak'
             x={180}
             y={620}
-            event='core_instability_update'
-          />
-      <VerticalMeter
-            id='core_reactivity_meter'
-            x={120}
-            y={620}
-            event='core_reactivity_update'
+            event='thermal_peak'
           />
       <CircularGauge
         id="core_temp_gauge"

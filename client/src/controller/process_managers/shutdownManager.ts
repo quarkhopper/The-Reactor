@@ -42,16 +42,13 @@ class ShutdownManager {
     }
 
     if (msg.type === 'state_change') {
-      console.log('[shutdownManager] Received shutdown state change');
       this.beginShutdown();
-    }
-
-    if (msg.type === 'acknowledge' && this.componentIds.includes(msg.id)) {
+    } else if (msg.type === 'acknowledge' && this.componentIds.includes(msg.id)) {
       this.acknowledgedComponents.add(msg.id);
-    }
 
-    if (this.acknowledgedComponents.size === this.componentIds.length) {
-      this.handleShutdownComplete();
+        if (this.acknowledgedComponents.size === this.componentIds.length) {
+          this.handleShutdownComplete();
+        }
     }
   }
 

@@ -1,4 +1,5 @@
 import MessageBus from '../../MessageBus';
+import xferSystem from './xferSystem';
 
 const FUEL_GRID_SIZE = 7; // Size of the grid (7x7) with corners removed
 const CONTROL_GRID_SIZE = 6; // Size of the control rod grid (6x6) between fuel rods
@@ -16,7 +17,14 @@ interface FuelRod {
 
 interface ControlRod {
   position: number; // 0 = fully inserted, 1 = fully withdrawn
+  group: number;
 }
+
+// record to store control rod group selections
+const controlRodGroupSelections: Record<number,  boolean> = {
+  0: true,
+  1: true,
+};
 
 const fuelRods: FuelRod[][] = Array.from({ length: FUEL_GRID_SIZE }, () =>
   Array.from({ length: FUEL_GRID_SIZE }, () => ({
@@ -35,9 +43,10 @@ function isCorner(x: number, y: number): boolean {
 }
 
 // Control rods are represented in a 6x6 grid (in the gaps between fuel rods)
-const controlRods: ControlRod[][] = Array.from({ length: CONTROL_GRID_SIZE }, () =>
-  Array.from({ length: CONTROL_GRID_SIZE }, () => ({
+const controlRods: ControlRod[][] = Array.from({ length: CONTROL_GRID_SIZE }, (_, rowIndex) =>
+  Array.from({ length: CONTROL_GRID_SIZE }, (_, colIndex) => ({
     position: 0, // 0 = fully inserted, 1 = fully withdrawn
+    group: (rowIndex + colIndex) % 2 // Alternate between 0 and 1
   }))
 );
 
@@ -70,18 +79,22 @@ let fuelRodDistanceGrid : number[][][][] = Array.from({ length: FUEL_GRID_SIZE }
 // Variables for tuning (locked values)
 const HEAT_GAIN_SCALING_FACTOR = 0.018; // Keep increased value for critical temperatures
 const HEAT_LOSS_SCALING_FACTOR = 0.1; // Keep original for stability
-const INTERFERENCE_SCALING_FACTOR = 1 // 3.5;
+const INTERFERENCE_SCALING_FACTOR = 1.5 // 3.5;
 const NORMALIZATION_FACTOR = 1.3; // Keep current value
-const TEMP_INSTABILITY_FACTOR = 0.02;
 
-// Add coolant-related constants
-const COOLANT_COOLING_FACTOR = 0.06; 
+// Introduce sub 0.1Hz thermal instabilities in fuel rods
+const THERMAL_INSTABILITY_SCALING = 0.01; // Proportion of temperature max swing
 
-// Add coolant state
-let coolantState = {
-  temperature: 0,
-  flowRate: 0.0 // Default to 50% flow
-};
+// Assign each rod its own frequency and phase for thermal instabilities
+const rodFrequencies: number[][] = Array.from({ length: FUEL_GRID_SIZE }, () =>
+  Array.from({ length: FUEL_GRID_SIZE }, () =>
+    Math.random() * (0.08 - 0.005) + 0.005 // Random frequency between 0.005 and 0.08 Hz
+  )
+);
+
+const rodPhases: number[][] = Array.from({ length: FUEL_GRID_SIZE }, () =>
+  Array.from({ length: FUEL_GRID_SIZE }, () => Math.random() * 2 * Math.PI) // Random phase between 0 and 2π
+);
 
 function precalculateDistances() {
   // Calculate distances between fuel rods and control rods ONLY
@@ -101,31 +114,39 @@ function precalculateDistances() {
   }
 }
 
-function findClosestControlRods(x: number, y: number): { cx: number; cy: number; distance: number }[] {
+function findClosestControlRods(x: number, y: number, get: number): { cx: number; cy: number; distance: number }[] {
   if (isCorner(x, y)) {
     return []; // No control rods near corners
   }
 
   const rods: { cx: number; cy: number; distance: number }[] = [];
 
-  // Iterate over control rods located at the corners of fuel rods
+  // Iterate over all control rods
   for (let cx = 0; cx < CONTROL_GRID_SIZE; cx++) {
     for (let cy = 0; cy < CONTROL_GRID_SIZE; cy++) {
-      // Control rods are located at the corners of fuel rods
-      const isAtCorner = 
-        (cx === x - 1 && cy === y - 1) || 
-        (cx === x - 1 && cy === y) || 
-        (cx === x && cy === y - 1) || 
-        (cx === x && cy === y);
-
-      if (isAtCorner) {
+      if (controlRodGroupSelections[controlRods[cx][cy].group] === true) {
         const distance = distanceGrid[x][y][cx][cy];
         rods.push({ cx, cy, distance });
       }
     }
   }
 
-  return rods;
+  // Sort by distance and return the closest "get" rods
+  return rods.sort((a, b) => a.distance - b.distance).slice(0, get);
+}
+
+// Function to set a control rod position
+function setControlRodPosition(x: number, y: number, position: number) {
+  if (x >= 0 && x < CONTROL_GRID_SIZE && y >= 0 && y < CONTROL_GRID_SIZE) {
+    controlRods[x][y].position = Math.max(0, Math.min(1, position)); // Clamp between 0 and 1
+    MessageBus.emit({
+      type: 'control_rod_update',
+      id: 'system',
+      gridX: x,
+      gridY: y,
+      value: controlRods[x][y].position
+    });
+  }
 }
 
 // New function for fuel rod distance calculations
@@ -197,16 +218,22 @@ function precalculateBaseReactivities() {
 
 // Main tick function
 function tick() {
+  const now = Date.now() / 1000; // Current time in seconds
+
+  // Apply thermal instabilities to each fuel rod
+  for (let x = 0; x < FUEL_GRID_SIZE; x++) {
+    for (let y = 0; y < FUEL_GRID_SIZE; y++) {
+      const rod = fuelRods[x][y];
+      if (rod.state === 'engaged') {
+        applyThermalInstability(rod, now, x, y);
+      }
+    }
+  }
+
   try {
     let totalTemp = 0;
     let minTemp = 1;
     let maxTemp = 0;
-    let critical = false;
-    let warning = false;
-    let totalInstability = 0;
-
-    // Create a 2D array to store temperatures for this tick
-    const tempGrid = Array(FUEL_GRID_SIZE).fill(0).map(() => Array(FUEL_GRID_SIZE).fill(0));
 
     // Check for completed transitions
     const now = Date.now();
@@ -223,6 +250,13 @@ function tick() {
             
             if (newState === 'withdrawn') {
               rod.temperature = 0; // Reset temperature for withdrawn rods
+              MessageBus.emit({
+                type: 'temperature_update',
+                gridX: x,
+                gridY: y,
+                id: 'system',
+                value: rod.temperature
+              });
             }
 
             // Emit state change
@@ -267,35 +301,11 @@ function tick() {
         const finalReactivity = Math.max(0, baseReactivity - controlInterference);
         reactivity[x][y] = finalReactivity;
 
-        // Update temperature based on reactivity
-        const heatGain = HEAT_GAIN_SCALING_FACTOR * finalReactivity;
-        rod.temperature += heatGain;
-
-        // Apply proportional heat loss (natural cooling)
-        rod.temperature -= HEAT_LOSS_SCALING_FACTOR * rod.temperature;
-
-        // Apply coolant-based cooling
-        const tempDiff = rod.temperature - coolantState.temperature;
-        const coolantEffect = COOLANT_COOLING_FACTOR * coolantState.flowRate * tempDiff;
-        rod.temperature -= coolantEffect;
-
-        // Add random instability to the temperature
-        const instability = (Math.random() * 2 - 1) * TEMP_INSTABILITY_FACTOR * rod.temperature * reactivity[x][y];
-        rod.temperature += instability;
-        // Calculate total instability for this tick
-        totalInstability += Math.abs(instability);
-
-        // Clamp temperature to [0, 1] again after instability
-        rod.temperature = Math.max(0, Math.min(1, rod.temperature));
-
-        // Store temperature in grid
-        tempGrid[x][y] = rod.temperature;
+        updateFuelRodTemperature(rod, x, y);
 
         totalTemp += rod.temperature;
         minTemp = Math.min(minTemp, rod.temperature);
         maxTemp = Math.max(maxTemp, rod.temperature);
-
-        
 
         // Emit temperature update command
         MessageBus.emit({
@@ -305,16 +315,14 @@ function tick() {
           id: 'system',
           value: rod.temperature
         });
-
-        if (rod.temperature > 0.9) {
-          critical = true;
-        }
-        if (rod.temperature > 0.7) {
-          warning = true;
-        }
       }
     }
 
+    MessageBus.emit({
+      type: 'thermal_peak',
+      id: 'system',
+      value: maxTemp
+    });
 
     // Calculate average temperature
     const avgTemp = totalTemp / (FUEL_GRID_SIZE * FUEL_GRID_SIZE);
@@ -324,45 +332,13 @@ function tick() {
       value: avgTemp
     });
 
-    // Emit total absolute instability to update the circular gauge
-    let averageInstability = (totalInstability / (FUEL_GRID_SIZE * FUEL_GRID_SIZE)) / (2 * TEMP_INSTABILITY_FACTOR);
-    averageInstability = Math.max(0, Math.min(1, averageInstability)); // Clamp to [0, 1]
-
-    MessageBus.emit({
-      type: 'core_instability_update',
-      value: averageInstability
-    });
-
-    // Calculate and log average reactivity
-    let totalReactivity = 0;
-    let maxReactivity = 0;
-    let activeRodCount = 0;
-
-    for (let x = 0; x < FUEL_GRID_SIZE; x++) {
-      for (let y = 0; y < FUEL_GRID_SIZE; y++) {
-        if (!isCorner(x, y) && fuelRods[x][y].state === 'engaged') {
-          totalReactivity += reactivity[x][y];
-          activeRodCount++;
-          maxReactivity = Math.max(maxReactivity, reactivity[x][y]);
-        }
-      }
-    }
-
-    const avgReactivity = activeRodCount > 0 ? totalReactivity / activeRodCount : 0;
-
-    // Emit average reactivity to update meter
-    MessageBus.emit({
-      type: 'core_reactivity_update',
-      value: avgReactivity / maxReactivity // Normalize to max reactivity
-    });
-
-    if (critical) {
+    if (maxTemp > 0.95) {
       MessageBus.emit({
       type: 'core_state_update',
       id: 'system',
       value: 'critical'
       });
-    } else if (warning) {
+    } else if (maxTemp > 0.8) {
       MessageBus.emit({
       type: 'core_state_update',
       id: 'system',
@@ -382,7 +358,11 @@ function tick() {
 
 // Type guard to validate if a message is relevant to coreSystem
 function isValidMessage(msg: Record<string, any>): boolean {
-  const validTypes = ['state_change', 'coolant_temp_update', 'flow_rate_update', 'fuel_rod_state_toggle', 'control_rod_delta'];
+  const validTypes = [
+    'state_change', 
+    'fuel_rod_state_toggle', 
+    'use_control_rod_group', 
+    'control_rod_group_b_select'];
   return validTypes.includes(msg.type);
 }
 
@@ -413,22 +393,11 @@ function handleMessage (msg: Record<string, any>) {
       console.log('[coreSystem] Received scram command - setting target core temperature to 0');
       for (let x = 0; x < CONTROL_GRID_SIZE; x++) {
         for (let y = 0; y < CONTROL_GRID_SIZE; y++) {
-          controlRods[x][y].position = 0;
-          MessageBus.emit({
-            type: 'control_rod_position_update',
-            id: 'system',
-            gridX: x,
-            gridY: y,
-            value: 0
-          });
+          setControlRodPosition(x, y, 0); // Set control rod position to 0 (fully inserted)
         }
       }
     }
 
-  } else if (msg.type === 'coolant_temp_update') {
-    coolantState.temperature = msg.value;
-  } else if (msg.type === 'flow_rate_update') {
-    coolantState.flowRate = msg.value;
   } else if (msg.type === 'fuel_rod_state_toggle') {
     const { gridX: x, gridY: y } = msg;
     if (x >= 0 && x < FUEL_GRID_SIZE && y >= 0 && y < FUEL_GRID_SIZE) {
@@ -447,37 +416,43 @@ function handleMessage (msg: Record<string, any>) {
         });
       }
     }
-  } else if (msg.type === 'control_rod_delta') {
-    const { gridX: x, gridY: y, value } = msg;
-    if (x >= 0 && x < CONTROL_GRID_SIZE && y >= 0 && y < CONTROL_GRID_SIZE) {
-      controlRods[x][y].position = Math.max(0, Math.min(1, controlRods[x][y].position + value));
-      MessageBus.emit({
-        type: 'control_rod_position_update',
-        id: 'system',
-        gridX: x,
-        gridY: y,
-        value: controlRods[x][y].position
+  } else if (msg.type === 'use_control_rod_group') {
+    // Handle control rod group selection messages
+    console.log(`[coreSystem] Received control rod group selection: ${msg.index} - ${msg.value}`);
+    controlRodGroupSelections[msg.index] = msg.value;
+    if (msg.value === false) {
+      // Update control rod positions based on group selection
+      //  get all the control rods of the same group as msg.index
+      const groupedRods = controlRods.flatMap((row, rowIndex) =>
+        row.map((rod, colIndex) => {
+          if (rod.group === msg.index) {
+            return { cx: rowIndex, cy: colIndex };
+          }
+          return null;
+        })
+      ).filter(Boolean) as { cx: number; cy: number }[];
+      // Set the positions of the grouped control rods to 1 (fully withdrawn)
+      groupedRods.forEach(({ cx, cy }) => {
+        setControlRodPosition(cx, cy, 1); // Set control rod position to 1 (fully withdrawn)        
       });
     }
   }
 }
 
 // Export the core system as a subsystem
-// Initialize controlRodPositions as an array representing the positions of control rods
-const controlRodPositions = Array.from({ length: CONTROL_GRID_SIZE * CONTROL_GRID_SIZE }, () => 0);
 
 const coreSystem = {
   tick,
   getState: () => ({
     controlRods,
+    controlRodGroupSelections,
     fuelRods,
-    controlRodPositions,
     reactivity
   })
 };
 
 export default coreSystem;
-export { findClosestControlRods };
+export { findClosestControlRods, setControlRodPosition };
 
 // Debounced function to schedule recalculations
 function scheduleRecalculation() {
@@ -502,4 +477,36 @@ function scheduleRecalculation() {
     precalculateBaseReactivities();
     recalculationTimer = null;
   }, RECALCULATION_DELAY);
+}
+
+// Updated fuel rod temperature calculation to match energySolver
+function updateFuelRodTemperature(rod: FuelRod, x: number, y: number) {
+  const xferProperties = xferSystem.getState();
+  const heatGenerated = reactivity[x][y] * HEAT_GAIN_SCALING_FACTOR;
+  const fuelRodCount = FUEL_GRID_SIZE * FUEL_GRID_SIZE - 4; // Exclude corners
+  let rodHeatTransfer = xferProperties.heatTransferred / fuelRodCount;
+  const naturalCooling = HEAT_LOSS_SCALING_FACTOR * rod.temperature;
+
+  rod.temperature = clamp(rod.temperature + heatGenerated - rodHeatTransfer - naturalCooling);
+
+  // Emit temperature update command
+  MessageBus.emit({
+    type: 'temperature_update',
+    gridX: x,
+    gridY: y,
+    id: 'system',
+    value: rod.temperature
+  });
+}
+
+// Utility function to clamp values between 0 and 1
+function clamp(value: number): number {
+  return Math.max(0, Math.min(1, value));
+}
+
+function applyThermalInstability(rod: FuelRod, time: number, x: number, y: number) {
+  const frequency = rodFrequencies[x][y];
+  const phase = rodPhases[x][y];
+  const instability = THERMAL_INSTABILITY_SCALING * Math.sin(2 * Math.PI * frequency * time + phase);
+  rod.temperature = clamp(rod.temperature + instability);
 }

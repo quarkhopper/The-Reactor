@@ -78,7 +78,7 @@ export default function ScramButton({ x, y }: ScramButtonProps) {
   const handleClick = () => {
     if (!isTestMode) {
       MessageBus.emit({
-        type: 'scram_button_press',
+        type: 'emergency_scram',
         id: 'scram',
       });
     }

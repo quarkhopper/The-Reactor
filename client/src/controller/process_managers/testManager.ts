@@ -29,7 +29,7 @@ class TestManager {
   }
 
   // Added a guard function to validate if a message is relevant to the StateMachine
-  private isTestManagerMessage(msg: Record<string, any>): boolean {
+  private isValidMessage(msg: Record<string, any>): boolean {
     return (
       typeof msg.type === 'string' &&
       (msg.type === 'test_result' || (msg.type === 'state_change' && msg.state === 'test'))
@@ -37,7 +37,7 @@ class TestManager {
   }
 
   private handleCommand(msg: Record<string, any>) {
-    if (!this.isTestManagerMessage(msg)) {
+    if (!this.isValidMessage(msg)) {
       return;
     }
 
