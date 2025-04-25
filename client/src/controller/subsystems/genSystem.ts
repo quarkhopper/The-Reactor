@@ -20,7 +20,7 @@ const indicators = {
   targetTurbineRPM: 0, // Target turbine RPM (0-1)
 };
 
-const gridLoads = [0, 0, 0, 0]; // Initial grid loads set to 0
+const gridLoads = [1, 1, 1, 1]; // Initial grid loads set to 1
 const TURBINE_INERTIA = 0.05; // Inertia factor for turbine RPM adjustment
 const TURBINE_FRICTION = 0.05; // Friction factor for turbine RPM adjustment
 const HEAT_RPM_SCALE = 1.5; // Scale factor for heat transfer to RPM
@@ -120,7 +120,7 @@ function tick() {
   for (let i = 0; i < gridLoads.length; i++) {
     MessageBus.emit({
       type: `grid_load_update`,
-      value: gridLoads[i],
+      value: 1- gridLoads[i],
       index: i,
     });
   }
